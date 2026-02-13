@@ -1,0 +1,386 @@
+# Progress
+
+## In progress
+
+- **Cross-plugin broker runtime matrix (Feb 2026)**:
+  - Compile-time validation complete for Wheeler Refined and FavWheel broker integration.
+  - Pending in-game matrix verification:
+    - FavWheel open + Start/pause passthrough behavior.
+    - Mutual exclusion across FavWheel/MainWheel/AmmoWheel in gameplay and menus.
+    - Hook-order resilience confirmation from broker logs.
+
+- **Yps Immersive Hair Wheeler Activation (Jan 2026)**:
+  - **Problem:** Yps items (Hair Brush, Scissors, Shaving Knife) don't trigger their menus when activated via Wheeler, but work from vanilla inventory.
+  - **Status:** IMPLEMENTATION COMPLETE - pending in-game verification
+  - **Previous attempts (before VM dispatch):**
+    - TESEquipEvent via ScriptEventSourceHolder ❌ (works for Quest Alias listeners only)
+    - TESEquipEvent via SkyrimVM::ProcessEvent ❌ (doesn't reach base form scripts)
+    - Dual-path dispatch (both methods) ❌
+  - **New implementation (Jan 2026):**
+    - Added `YpsItems` namespace in `WheelItemMisc.cpp` with:
+      - `IsYpsItem()`: Detects Yps items by keyword prefix (`yps*`)
+      - `SendOnEquippedToBaseForm()`: Dispatches OnEquipped directly via Papyrus VM to scripts attached to base forms
+      - `QueueYpsItemActivation()`: Queues Yps items for deferred activation after wheel closes
+    - Updated `Wheeler::ProcessPendingActions()` to add Method 3: Direct VM dispatch using `BSScript::Internal::VirtualMachine::DispatchMethodCall()` with `FindBoundObject()` to get the script object
+    - Yps items now queue for activation after wheel closes (like SGT instruments) to ensure proper menu display
+  - **Build verified:** `cmake --build build --config Release --target wheeler`
+  - **Next step:** In-game testing with Yps Shaving Knife, Elastic Hairband, etc.
+
+- In-game verification for Keep Missing Items (missing/restored entries, activation guards, gear restore fallback).
+- In-game verification for MainWheel mouse stabilization guard rails (Enabled on/off, center hold, boundary hold, jump guard).
+
+## Reverted / Blocked
+- **GlobalScale Mouse Sensitivity**:
+  - Attempted to scale mouse input with visual `GlobalScale`.
+  - Resulted in cursor trapping/freezing issues.
+  - Fully reverted to maintain stability. Future approach: scale `CursorRadiusPerEntry` instead.
+
+## Done
+- **Cross-Plugin Input Broker + FavWheel Pause Passthrough (Feb 2026)**:
+  - Added `InputBroker` core module in Wheeler Refined (`src/bin/InputBroker.h/.cpp`):
+    - key reservation with priority and stable tie-break
+    - active owner arbitration
+    - `ShouldProcessKey` / `IsBlockedByActiveOwner` gating
+  - Added optional broker API export:
+    - `GetInputBrokerAPI(uint32_t requestedVersion)` in `src/bin/API/WheelerAPI.cpp`
+    - `WheelerInputBrokerAPI` declarations in `src/bin/API/WheelerAPI.h`
+    - Backward compatible with existing `GetWheelerAPI()` consumers
+  - Wheeler input integration:
+    - `src/bin/UserInput/Input.cpp` now gates wheel processing through broker while preserving key-state tracking and passthrough for blocked keys.
+    - `src/bin/Wheeler/Wheeler.cpp` and `src/bin/Wheeler/AmmoWheel.cpp` now sync active owner on open/close transitions.
+  - Added Wheeler config keys:
+    - `Data/SKSE/Plugins/wheeler/wheelBehavior.ini` `[InputBroker]`
+    - `Enabled`, `DebugLog`, `Priority_MainWheel`, `Priority_AmmoWheel`
+  - Added docs:
+    - `docs/INPUT_BROKER_API.md`
+  - FavWheel integration (`C:\workBench\WheelerFav\wheelerRefinedFavAddon`):
+    - Added broker API declarations to `src/bin/API/WheelerAPI.h`
+    - `src/bin/UserInput/Input.cpp` now resolves broker, registers reservations, syncs active owner, and checks `ShouldProcessKey`.
+    - Added pause/system passthrough detection via `UserEvents->pause` and suppressed/disabled `dispatchExclusive` global nuke to preserve pause menu navigation while wheel is open.
+  - Build verified:
+    - Wheeler: `cmake --build build --config Release --target wheeler -- /p:PostBuildEventUseInBuild=false`
+    - FavWheel: `cmake --build build --config Release --target favwheel -- /p:PostBuildEventUseInBuild=false`
+
+- **Input Compatibility Matrix + InputSpy (Feb 2026)**:
+  - Added cooperative input routing matrix in `Input.cpp` to avoid order-dependent cross-module blocking.
+  - Added debug-gated InputSpy diagnostics with ring buffer, rate limit, and dump hotkey (`logs/input_spy_dump.txt`).
+  - Added trigger edge normalization for LT/RT with hysteresis thresholds.
+  - Added startup/rebind binding inventory + conflict scan logs in `Controls::BindAllInputsFromConfig` (`[InputCompat]`).
+  - Added `[Debug] inputSpy*` keys in `wheelBehavior.ini` with parser support in `Config.cpp`.
+  - Added docs note: `docs/INPUT_COMPATIBILITY.md`.
+  - Build verified: `cmake --build build --config Release --target wheeler -- /p:PostBuildEventUseInBuild=false`.
+
+- **MainWheel SlowTimeScale Pause Mode (Feb 2026)**:
+  - SlowTimeScale=0 now opens an invisible `kPausesGame` menu for true vanilla pause (no SGTM).
+  - SlowTimeScale in (0,1) keeps time dilation with clamp to 0.01 and existing external-effect guard.
+  - Added `_wheelerOwnedPauseMenu` tracking and safety restore to prevent stuck pause.
+
+- **Hand Memory / Equipped Hand Memory (Feb 2026)**:
+  - Added `[WheelBehavior.HandMemory]` keys in `Data/SKSE/Plugins/wheeler/wheelBehavior.ini` with dMenu mapping.
+  - Added `Config::WheelBehavior::HandMemory` config load + snapshot updates.
+  - Implemented per-frame state machine in `Wheeler.cpp` to capture non-2H hands and restore after leaving 2H.
+  - Build verified: `cmake --build build --config Release --target wheeler -- /p:PostBuildEventUseInBuild=false`.
+
+- **ActionPolicy Activation System (Jan 2026)**:
+  - Implemented category-driven activation policy system for robust item activation
+  - **Files created**: `ActionPolicy.h`, `ActionPolicy.cpp` - policy system with classification, actions, fallbacks, post-condition verification
+  - **WheelItemScroll improved**: Added slot-clearing fallback (clears occupied hand before equip), toggle behavior, post-condition logging
+  - **Config**: `LogActionPolicy` debug option in `wheelBehavior.ini` under `[Debug]`
+  - **Test plan**: `docs/ActionPolicy_TestPlan.md` with full checklist
+  - **Key finding**: Skyrim scrolls already use correct type (`RE::ScrollItem`, FormType::Scroll) - not TESObjectBOOK
+  - Build verified
+
+- TransformWheels auto-populate fix (Jan 2026):
+  - **Fixed werewolf missing abilities (howls)**:
+    - Problem: Werewolf howls are `TESShout` forms (simulated via `TESDataHandler` scan), not race abilities or spells.
+    - Solution: Added `CollectTransformKitShouts` to scan all game shouts, filter by `shout->GetKnown()` + kit keywords, and merge into wheel.
+  - **Fixed werewolf wheel overpopulation**: Proper filtering ensured only relevant howls appear.
+  - **Other fixes**:
+    - Made `IsActivatableTransformSpell()` state-aware.
+    - Fixed baseline fallback: when human spell snapshot missing, use race kit + equipped only.
+    - Restored `IncludeShouts` logic: Howls are now detected as kit items, so `IncludeShouts` config is respected correctly (kit items are always included).
+    - Fixed Human revert ordering: restore wheel first, then delete transform wheels.
+
+- MainWheel mouse stabilization guard rails (Jan 2026):
+  - Added opt-in `MainWheel.MouseStabilization` settings (center hold, jump guard, boundary margin, optional motion hinting).
+  - Applied post-candidate guard layer to mouse hover only; defaults keep legacy behavior unchanged.
+  - Added step-toward option for distant candidates outside the guard radius.
+  - Added debug ring overlays and consolidated guard logging; mouse hover overlay now shows stabilize state + reason.
+- MainWheel hover revert + gamepad fix (Jan 2026):
+  - Removed UseNewMouseHoverModel toggle and intent-aware hover code path.
+  - Legacy mouse selection retained; gamepad hover restored (candidate default + hysteresis).
+  - Wheel Behavior dMenu: removed new model toggle, retitled mouse hover debug group.
+
+- Keep Missing Items feature (Jan 2026):
+  - Added `WheelBehavior.KeepMissing` INI keys + dMenu toggles (Enabled, KeepConsumables, KeepGears, KeepThrowableMods).
+  - Added `MissingCategory` classification + heuristic (Throwable keyword/EditorID/name) stored per entry.
+  - Added `WheelItemMissing` placeholder for unresolved forms and missing slot rendering ("MISSING").
+  - Prune now marks missing per category instead of clearing; restores on reacquire.
+  - Activation guards skip missing entries across RTU/confirm/primary/secondary/special paths.
+  - Gear restore fix: fallback to FormID inventory presence, refresh uniqueID when available, and allow weapons/armor to reactivate without re-adding.
+  - Build verified: `cmake --build build --config Release --target wheeler -- /p:PostBuildEventUseInBuild=false`.
+- Safe debug/guard patch (Jan 2026):
+  - Added `[Debug]` keys to `wheelBehavior.ini` and dMenu (`LogActivateRejects`, `LogMenuBlockReasons`, `LogPopupAnim`, `PopupAnimLogIntervalMs`).
+  - Main wheel activation guard skips invalid `FormID` activations with optional logging.
+  - `DeniedMenuBlocked` now logs conflicting menu name and flags when enabled.
+  - AmmoWheel popup animation logging gated + rate-limited (no per-frame spam).
+  - Build verified: `cmake --build build --config Release --target wheeler -- /p:PostBuildEventUseInBuild=false`.
+- MainWheel debug system parity with AmmoWheel:
+  - Added `MainWheelDebug` helper with category toggles, rate limiting, and optional overlay.
+  - Instrumented open/close/config/input/scaling/clamp/reskin and perf timing logs.
+  - Exposed debug toggles in `wheelBehavior.ini` and `Wheel Behavior.json`.
+- MainWheel input capture fixes:
+  - Centralized edge tracking and decision logging (Down/Up, heldMs, consumer, open/close reason).
+  - MainWheel reverted to DIK-only bindings; no rebind UI or override writes.
+- Keybinding rebind UX (press-to-bind):
+  - Rebind/cancel/reset actions wired for AmmoWheel.
+  - Friendly key names persisted to INI and exposed in dMenu panel.
+- Low-end toggles (safe, default OFF):
+  - `DisableBlurOnOpen` and `PreferPrimitiveBackgrounds` exposed in `wheelBehavior.ini` and dMenu UI.
+- Introduced a dedicated Wheel Behavior settings file:
+  - `wheeler-dev/Data/SKSE/Plugins/wheeler/wheelBehavior.ini`
+  - Backward compatible loading from legacy `InstantUse.ini` and legacy `[InstantUse]` keys, with best-effort migration to the new file.
+- Updated dMenu settings UI:
+  - `wheeler-dev/Data/SKSE/Plugins/dmenu/customSettings/Wheel Behavior.json`
+- Simplified settings model exposed to users:
+  - `ReleaseToUse`, `RTUAlchemy`, `RTUSpell`, `RTUShout`, `HoverActivateDelaySeconds`, `CloseWheelAfterUse`, `AutoDrawOnUse`, `InstantSpell`
+  - Cooldown/indicator styling keys live alongside behavior settings.
+- Added crash-safe consumable slot cleanup:
+  - `ClearDepletedConsumables` removes 0-count food/potions/poisons from wheel slots (avoids stale "0" slots and historical last-consumable CTDs).
+  - Crafted potion safeguard behavior is now tied to `ClearDepletedConsumables`:
+    - ON: allows consuming the last crafted potion and clears the slot safely (no warning).
+    - OFF: keeps the legacy warning/guard that blocks consuming the last crafted potion.
+- Cooldown timer text:
+  - `Cooldowns.ShowTimer` renders remaining seconds in the slot center.
+  - Styling is configurable via `[Cooldowns.TimerText]` (`FontIndex`, `Size`, `Color`) in `wheeler-dev/Data/SKSE/Plugins/wheeler/wheelBehavior.ini` and exposed in dMenu.
+- Added Wheel Behavior defaults restore:
+  - dMenu button restores to `Data/SKSE/Plugins/wheeler/wheelBehavior.defaults.ini` (captured on first Save).
+- Build verified with:
+  - `cmake --build build --config Release --target wheeler -- /p:PostBuildEventUseInBuild=false`
+
+- Skyrim’s Got Talent (SkyrimsGotTalent-Bards.esp) instruments via Wheeler:
+  - Selecting Flute/Drum/Lute from the wheel now plays correctly.
+  - Implementation detects instrument `MISC` items and triggers the corresponding SGT spell.
+  - Uses post-close queued action execution to avoid UI/menu state issues.
+- OAR animation integration for instruments:
+  - OpenAnimationReplacer conditions relied on `HasSpell` (e.g., `HasSpell: Drum Spell`).
+  - Fixed by adding the instrument spell to the player (`PlayerCharacter::AddSpell`) before casting.
+  - Result: instrument animations now match OAR replacer rules.
+
+- **Privacy build configuration** (Dec 2024):
+  - Defined `SPDLOG_NO_SOURCE_LOC` in `PCH.h` and `CMakeLists.txt` to disable spdlog source location injection.
+  - Updated log pattern in `main.cpp` from `"%s(%#): [%^%l%$] %v"` to `"[%^%l%$] %v"`.
+  - Added MSVC `/d1trimfile:${CMAKE_SOURCE_DIR}/` flag to strip project root from `__FILE__` macros.
+  - Result: User paths (`C:\Users\...`) no longer appear in the DLL. External library paths (CommonLibSSE) still present.
+
+- **Serialization crash fix** (Dec 2024) - CTD on save reload after consuming last poison:
+  - Added null guard in `WheelItemAlchemy` constructor for null alchemy item and null `GetCostliestEffectItem()`.
+  - Hardened `WheelItemFactory::MakeWheelItemFromJsonObject` with diagnostic logging and type-safe `LookupByID<T>`.
+  - Added try-catch per entry/item in `Wheel::SerializeFromJsonObj` and `WheelEntry::SerializeFromJsonObj`.
+  - Added global exception handling in `SerializationEntry::Load` - clears wheel state on any failure instead of crashing.
+  - Fixed off-by-one in `selecteditem` bounds checking.
+
+- **RTU Anti-Slip rollback** (Dec 2024):
+  - Rolled back anti-slip v2 (stable hover tracking + directional hysteresis) to v1 (simple deadzone + lockout + dwell).
+  - v2 caused issues with hover acquisition ("hovering not possible" bug).
+
+- **AmmoWheel refactor** (Dec 2025): modern, independent ammo selector wheel
+  - Start hover on last selected/equipped ammo:
+    - Tracks selection by index (`_lastSelectedIndex`) and by FormID (`_lastSelectedAmmoID`).
+    - `FindInitialHoverIndex()` priority: last selected FormID → equipped ammo → last selected index → 0.
+  - Fixed hover drop / “center-pull”:
+    - `AmmoWheel::getHoveredIndex()` clamps to nearest valid slot; never returns -1 for non-empty wheel.
+  - Gamepad navigation improvements:
+    - Added `Config::AmmoWheel::GamepadDeadzone` and `Config::AmmoWheel::GamepadSmoothingSpeed`.
+    - `UpdateCursorPosGamepad()` applies deadzone scaling and smoothing.
+  - Popup behavior + safety:
+    - Popup shown immediately on open by setting `_hoverPopupScale = 1.0f`.
+    - `drawHoverPopup()` guards against empty list / out-of-range hovered index.
+  - dMenu/INI integration:
+    - dMenu panel: `Data/SKSE/Plugins/dmenu/customSettings/Ammo Wheel.json`.
+    - INI: `Data/SKSE/Plugins/wheeler/AmmoWheel.ini`.
+    - Added `[Navigation]` settings in INI.
+    - Fixed dMenu/INI key mismatches by reading both prefixed keys and legacy keys in `Config::ReadAmmoWheelConfig()`:
+      - Popup keys (prefixed): `PopupEnabled`, `PopupIconSizePx`, `PopupNameFontPx`, `PopupCountFontPx`, `PopupOffsetPx`, `PopupPaddingPx`, `PopupUseCustomColor`, `PopupBackgroundColor`.
+      - Labels keys (prefixed): `LabelShow`, `LabelTruncateLength`, `LabelAbbreviate`.
+
+- **AmmoWheel Visual Regressions & Refactor** (Dec 2025):
+  - **Visual Polish Fixes**:
+    - Fixed BackgroundOpacity and PopupBackgroundOpacity being ignored under Skyrim Theme (now applied as multipliers).
+    - Fixed decorative border ring disappearing permanently by adding geometry validation and clamping (inner < outer, min thickness).
+    - Changed default hover sound to "UIMenuFocus" for native feel.
+  - **Debug Logging**:
+    - Added new flags: `LogStyleResolution`, `LogThemeState`, `LogResourceState`.
+    - Integrated logging into dMenu "Debug Logging" group.
+  - **dMenu UX Improvements**:
+    - Cleaned up JSON group names (removed internal "Phase X" terminology).
+    - Added missing debug logging options to the UI.
+
+- **Layout scaling & resolution mapping (Dec 2025)**:
+  - `AmmoWheel.LayoutScaling` now reuses `MainWheel.Layout.ini`/`user/MainWheel.Layout.ini` shared sections (no new files).
+  - Geometry and style px values are scaled by `combinedU` (= layout scale * resolution mismatch) while normalized anchor percents stay untouched.
+  - Missing `[AmmoWheel.LayoutScaling]` user sections are appended automatically so scaling activates after the shared file exists.
+  - Logs and clamps now report source/multiplier and keep the wheel visible across resolution switches and mismatch cases.
+- **AmmoWheel time slow integration (Dec 2025)**:
+  - Optional `[TimeSlow]` config with `Enabled` and `SlowTimeScale` (default OFF).
+  - dMenu "Time Slow" group wired; preset overrides write to `AmmoWheel_Override.ini`.
+  - Uses the same timescale guard as the Main Wheel: only apply when current timescale ~1.0; restore only if AmmoWheel modified.
+- **AmmoWheel performance tiers (Dec 2025)**:
+  - Added `[Performance]` section with `Tier` (Custom/Low/Balanced/High) and per-category override flags.
+  - dMenu "Performance" group exposes tier selector and advanced override toggles.
+  - Tier overrides apply after config load in `ReadAmmoWheelConfig()`; no reskin or indicator rendering changes.
+- **Shared layout maintenance**:
+  - Template `MainWheel.Layout.ini` ships with both `[MainWheel.LayoutScaling]` and `[AmmoWheel.LayoutScaling]` so defaults are safe for each wheel.
+  - The user override is auto-created once with both sections enabled and `Ref=Display`, keeping first-run scaling at 1 while enabling future resolution switches to apply LayoutRefScaling.
+  - If the user override was missing `[AmmoWheel.LayoutScaling]`, the loader appends the section (logging `Repaired user override`), reloads, and the open-time log now reports `src=user`, `geom=on`, combined scales, and clamp diagnostics.
+
+- **AmmoWheel CTD fix** (Dec 2025): hard CTD on ammo selection with repeated equip spam
+  - Symptom: log spam repeating "AmmoWheel: Equipped ammo ..." followed by CTD (no crash log).
+  - Fix:
+    - Added `_activationConsumed` debounce flag.
+    - `ActivateHoveredAmmo()` consumes activation once per open session.
+    - Skips equip if hovered ammo already equipped.
+    - Resets debounce on `TryOpen()` and `ForceClose()`.
+
+- **AmmoWheel Critical Fixes & Enhancements** (Dec 2025):
+  - **TASK 1: LMB Attack Blocking** - Stop bow attack while AmmoWheel is open
+    - `HandleMouseButton()` now always blocks LMB/RMB when wheel is open (not just fixed-open mode)
+    - Added gamepad RT/LT attack blocking in `Input.cpp`
+    - LMB selects ammo, RMB unequips current ammo, attacks blocked
+    - New config: `[InputBlocking]` section with `BlockAttackWhenOpen`, `ConsumeLMBWhenOpen`, `ConsumeRMBWhenOpen`, `ConsumeGamepadAttackWhenOpen`, `ClickSelectRequiresHover`, `AllowRMBUnequip`
+  - **TASK 2: Center Panel Shape + Stacked Text**
+    - Configurable shapes: Auto, Rectangle, Circle, RoundedRect
+    - Auto mode matches wheel geometry (full circle → circle panel, partial arc → rounded rect)
+    - Stacked text layout with configurable font sizes, line spacing
+    - Screen clamping with safe margins, border rendering
+    - New config: `[CenterPanel]` section with `ShapeType`, `CornerRounding`, `BorderThickness`, `BorderAlpha`, `ClampToScreen`, `PositionMode`, `OffsetX/Y`
+    - New config: `[CenterPanel.Text]` section with `Enabled`, `MinFontSize`, `MaxFontSize`, `LayoutMode`, `MaxLines`, `EllipsisEnabled`, `MaxTextWidthRatio`, `PreferWordSplit`, `ShadowEnabled`, `OutlineEnabled`
+  - **TASK 3: Config Audit** - Verified all settings properly wired
+    - All `Config.h` settings loaded in `Config.cpp`
+    - INI keys match between `AmmoWheel.ini` and `Config.cpp`
+    - dMenu JSON controls properly reference INI sections/keys
+    - Legacy fallback keys maintained for backward compatibility
+
+- **InstantSpell UI & Focus Fixes** (Jan 2026):
+  - **Countdown UI**:
+    - Added progress arc indicator for timed instant spells.
+    - Implemented smooth alpha pulse effect when ready threshold (3s) is reached.
+  - **RTU OFF Fix**:
+    - Fixed regression where RMB only latched left-hand override.
+    - Restored vanilla behavior: RMB directly equips to left hand when RTU is OFF.
+  - **Hand Resolution**:
+    - Centralized `ResolveTargetHand()` logic decoupled from RTU activation timing.
+    - Ensures consistent hand targeting across RTU and Hold-to-Use modes.
+  - **Logging & Stability**:
+    - Added state-change logging for InstantSpell entry/ready/cancel events (prevents log spam).
+    - Verified cancel suppression resets correctly on hover change and wheel close.
+
+
+- **AmmoWheel Fully Data-Driven Reskin System** (Dec 2025):
+  - **Phase 0: Data-Driven Skin Architecture**
+    - `Config::AmmoWheel::Skin` namespace with 100+ configurable parameters
+    - Separate `Styles.ini` for all visual parameters (no hard-coded design values)
+    - `LoadAmmoWheelStylesIni()`: Complete loader with validation and clamping
+    - Backward compatibility: Falls back to legacy VisualOverrides if Styles.ini missing
+  - **Phase 1: Safety Guards** - Prevent CTDs from filesystem/texture operations
+    - `SafeFileExists()`: Exception handling, timeout warnings, UNC path rejection
+    - `SafeLoadTexture()`: Size validation (5MB max), D3D11 texture creation with error handling
+    - Thread-safe KID loading with atomic + mutex + double-checked locking
+  - **Phase 2: Icon Rotation System**
+    - `DrawRotatedTexture()`: Rotated quad rendering via `AddImageQuad`
+    - `ComputeIconRectForSlot()`: Conservative fit calculation for wedge-shaped slots
+    - Rotation modes: FollowSlot (rotate with slot direction), Upright, Fixed
+    - Safety scale to prevent icon overlap when rotated
+    - Configurable radial offset, padding, and tint color
+  - **Phase 3: Configurable Indicator System**
+    - `DrawIndicatorArc()`: Generic arc indicator with animation support
+    - Four indicator types: Selected, Hovered, Active, Charge
+    - Each indicator fully configurable: shape, thickness, radius offset, colors, alpha, animation
+    - Action rules: ShowWhenSelected, ShowWhenHovered, etc.
+  - **Phase 4: Keyword-Based Design Presets** (NEW)
+    - `StylePreset` struct: Contains ALL visual parameters for a slot
+    - `IndicatorPreset` struct: Per-indicator styling (shape, thickness, colors, animation)
+    - `PresetSystem` namespace: Cached presets and lookup tables
+    - `LoadPresetMappings()`: Thread-safe AMMO_KID.ini loader for preset mappings
+    - `LoadStylePresets()`: Loads `[Preset.XXX]` sections from Styles.ini
+    - `ResolvePresetForAmmo()`: Priority resolver (FormID -> Keyword -> Type -> Fallback)
+    - `ResolveIconPathForAmmo()`: Preset icon override -> priority search
+    - Per-entry preset resolution at cache build time (no per-frame IO)
+    - **AMMO_KID.ini sections**: `[FormIDPresets]`, `[KeywordPresets]`, `[TypePresets]`, `[Fallback]`
+    - **Sample presets**: Default, Daedric, Elven, Dwarven, Ebony, Glass, Stalhrim, SunHallowed, Bloodcursed
+  - **Config Files**:
+    - `Config.h`: Added `StylePreset`, `IndicatorPreset`, `PresetSystem` namespace
+    - `AmmoWheel.cpp`: +400 lines (preset loaders, resolvers, preset-based rendering)
+    - `AmmoWheel.h`: Added `resolvedPreset`, `resolvedIconPath` to `AmmoEntry`
+    - `AMMO_KID.ini`: Updated with preset mapping sections
+    - `Styles.ini`: Added 10 sample preset blocks (200+ lines)
+  - **Reskin Author Capabilities**:
+    - Change slot colors per ammo type (material/rarity/vendor keywords)
+    - Enable/disable borders with custom thickness and color
+    - Customize all indicator styles per preset
+    - Override icon paths and tint colors
+    - All via INI files only, no code changes required
+  - **Emergency Rollback**: Set `UseDedicatedIconFolder = false` or `UseAmmoWheelStylesIni = false`
+
+- **AmmoWheel Unified Reskin System Documentation** (Dec 2025):
+  - **Goal**: Comprehensive guide for reskin authors with self-documenting INI files
+  - **Root Cause Analysis**: Default preset referenced non-existent `popup/universal_{:02}.png`; fixed to use existing `popup/blood_mist_{:02}.png` (50 frames)
+  - **Documentation Created**:
+    - `docs/GUIDE.md`: Canonical end-to-end guide with mental model, preset resolution chain, visual targets, troubleshooting
+    - `docs/CONFIG_MAP.md`: Settings table with code references (file:line), ranges, defaults, dependencies, conflicts
+    - `docs/CONFLICT_MATRIX.md`: Precedence chains, conflict pairs, toggle decision table, section name validation
+    - `docs/OPTIONAL_PATCH.md`: Detailed explanation of popup flipbook root cause and fix options
+  - **Templates Created**:
+    - `INI_TEMPLATES/Simple_Preset.ini`: Minimal configuration for vanilla-like or modern minimal setups
+    - `INI_TEMPLATES/Advanced_Preset.ini`: Full control template showing all available settings
+    - `INI_TEMPLATES/Skyrim_Theme_Recipe.ini`: Parchment/gold Skyrim-inspired aesthetic
+    - `INI_TEMPLATES/README.md`: Template usage guide
+  - **INI Annotations Completed**:
+    - `AmmoWheel_Reskin.ini`: Per-key documentation with code references, ranges, defaults, dependencies, conflicts, guidance
+  - **INI Annotations Remaining**:
+    - `AmmoWheel_Styles.ini`, `AMMO_KID.ini`, `AmmoWheel.ini`, `wheelBehavior.ini`, `Styles.ini` (legacy notes), `skins/default/skin.ini` (legacy notes)
+  - **Key Findings Documented**:
+    - Unified ReskinSystem is authoritative when `[Reskin] Enabled = true`
+    - Master config is `AmmoWheel.ini`; `AmmoWheel_Reskin.ini` is legacy/duplicate
+    - `Styles.ini` and `skins/*/skin.ini` are NOT used by unified system
+    - Section names critical: `[Preset_X]` not `[Preset.X]`, `[FormIDPresets]` not `[FormID]`
+    - Popup vs PopupBubble distinction: Popup = inside wheel, PopupBubble = tooltip outside wheel
+
+## Known constraints / decisions
+- Auto-charge then release-on-click for spells was not reliable and is not part of the safe feature set.
+- InstantSpell is intentionally labeled as overpowered/cheaty because it bypasses charge time.
+- Instrument `MISC` items should not rely on `EquipObject` for SGT-style behavior; spell-driven activation is more reliable.
+- RTU Anti-Slip v2 was reverted to v1 due to hover acquisition issues.
+
+## Next steps (optional)
+- In-game validation pass for RTU categories and hover delay feel across common reskins.
+- In-game validation pass for AmmoWheel:
+  - Confirm no CTD on selection and no repeated equip spam.
+  - Verify dMenu AmmoWheel sliders/toggles update live without instability.
+- If timer font options need more than 2 choices, add explicit font registration in `RenderManager` and expand `Cooldowns.TimerText.FontIndex` mapping.
+- Consider adding `/PDBALTPATH:%_PDB%` linker flag to fully strip PDB path from DLL for release builds.
+- Consider applying path trimming to CommonLibSSE build for fully private binaries.
+
+## Feb 2026 - Instant Power Cast Fix (Vanilla Pipeline)
+- Completed a safe routing change for instant-cast powers/greater powers:
+  - Power instant-cast no longer uses `WheelItemSpell::CastImmediate`/`CastSpellImmediate`.
+  - It now queues post-close activation and triggers vanilla shout/power input path through `PlayerControls::shoutHandler`.
+- Added queue/state and logs:
+  - `QueuePowerActivation(FormID)` and `_pendingPowerFormID`.
+  - `[PowerPipe]` logs for queue, equip-to-voice-slot, next-task activation, and failures.
+- Updated call sites:
+  - RTU instant cast branch in `Wheeler.cpp`.
+  - Hold-to-Use primary and secondary release instant cast branches in `Wheeler.cpp`.
+- Safety behavior:
+  - Activation executes only after wheel closed + popup cleared.
+  - Equip-to-voice-slot happens before activation.
+  - Activation issued on next task tick to avoid same-frame equip/use race.
+- Build verification:
+  - `cmake --build build --config Release --target wheeler` succeeds.
+
+## Feb 2026 - Scripted Misc Dispatch Fix (LotD repeat activation)
+- Added `ScriptedMiscDispatchMode` config and dispatch helper for deferred scripted MISC activation.
+- Auto mode defaults to single `EquipObject` dispatch; Yps/Shovel auto-route to temp-ref `OnEquipped`.
+- Added `ScriptedMiscUse` log line + 200ms dedupe guard to prevent accidental double execution.
+- Updated `wheelBehavior.ini` with `ScriptedMiscDispatchMode = 0` default.
+- Ported the same implementation to FavWheel (`wheelerRefinedFavAddon`) and added the matching key in `Data/SKSE/Plugins/favwheel/wheelBehavior.ini`.
