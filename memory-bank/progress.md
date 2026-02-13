@@ -4,6 +4,7 @@
 
 - **Cross-plugin broker runtime matrix (Feb 2026)**:
   - Compile-time validation complete for Wheeler Refined and FavWheel broker integration.
+  - Applied follow-up broker hotfix: active owner now bypasses reservation checks for self-processing (`InputBroker::ShouldProcessKey`), fixing shared nav-key responsiveness while FavWheel is open.
   - Pending in-game matrix verification:
     - FavWheel open + Start/pause passthrough behavior.
     - Mutual exclusion across FavWheel/MainWheel/AmmoWheel in gameplay and menus.

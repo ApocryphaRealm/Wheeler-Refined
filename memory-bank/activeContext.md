@@ -17,6 +17,10 @@
   - `cmake --build build --config Release --target wheeler -- /p:PostBuildEventUseInBuild=false`
   - `cmake --build build --config Release --target favwheel -- /p:PostBuildEventUseInBuild=false` (FavWheel repo)
 - **Runtime verification status**: in-game matrix still pending; compile-time verification complete.
+- **Hotfix (Feb 2026, post-initial test)**:
+  - Adjusted `InputBroker::ShouldProcessKey` so the current `activeOwner` always passes its own key processing before reservation checks.
+  - Reason: shared nav keys (e.g., FavWheel category key overlapping AmmoWheel key) were being blocked despite FavWheel owning input.
+  - File: `src/bin/InputBroker.cpp`.
 
 ## Current work focus (Feb 2026 - Input Compatibility Matrix + InputSpy)
 - **COMPLETED** Input routing reliability pass for shared keybinds across MainWheel and AmmoWheel.
