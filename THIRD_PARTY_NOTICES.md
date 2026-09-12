@@ -57,6 +57,24 @@ in the build instructions.
   bundled nor linked and is discovered at runtime with
   `GetModuleHandleA`/`GetProcAddress`
 
+### devbench cross-plugin API
+
+- Upstream: devbench (Alan Tse and devbench contributors)
+- Audited revision: not pinned upstream; the two files were vendored from the
+  copy in this project's Apocrypha Menu Framework source tree
+- License: MIT — and only these two files. The devbench plugin itself is
+  GPL-3.0; its authors carved this interface out under MIT expressly so any
+  plugin may vendor it, which is what makes it usable here
+- Use: `src/bin/DevBench/DevBenchAPI.h` and `src/bin/DevBench/DevBenchAPI.cpp`
+  are vendored verbatim except for one include path, adjusted because Wheeler's
+  include roots differ from the upstream layout. They let Wheeler register its
+  `wheeler.page` driving tool with a running devbench host
+- Bundled status: source is bundled; no devbench binary is bundled or linked,
+  and the interface is obtained at runtime through an SKSE messaging dispatch
+  that simply returns nullptr when devbench is absent. The MIT notice is
+  preserved at `src/bin/DevBench/DevBenchAPI.LICENSE.txt` and shipped at
+  `SKSE/Plugins/third-party-notices/devbench-api.LICENSE.txt`
+
 ### MaxsuDetectionMeter
 
 - Upstream: [max-su-2019/MaxsuDetectionMeter](https://github.com/max-su-2019/MaxsuDetectionMeter)

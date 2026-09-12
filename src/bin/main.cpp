@@ -19,6 +19,11 @@
 #include "ModCallbackEventHandler.h"
 #include "Integrations/ActionHotkeysBridge.h"
 #include "Integrations/OStimIntegration.h"
+#include "SettingsPage/Descriptor.h"
+#include "SettingsPage/PageModel.h"
+#include "SettingsPage/ValueStore.h"
+#include "SettingsPage/Page.h"
+#include "DevBench/DevBenchTool.h"
 
 namespace
 {
@@ -268,6 +273,21 @@ namespace
 		Texts::LoadTranslations();
 		ActionHotkeysBridge::Init();
 		OStimIntegration::Init();
+
+		// Parse the dMenu descriptors that will drive our own settings page. Read-only for now:
+		// nothing draws from this yet, and the census written to the log is what proves the parse
+		// against the independent measurement in plans/wheeler-refined/descriptor-census.py.
+		if (SettingsPage::Catalog::GetSingleton().LoadAll()) {
+			SettingsPage::Catalog::GetSingleton().LogCensus();
+			SettingsPage::PageModel::GetSingleton().Build(SettingsPage::Catalog::GetSingleton());
+			SettingsPage::PageModel::GetSingleton().LogStructure();
+			SettingsPage::ValueStore::GetSingleton().LoadAll(SettingsPage::Catalog::GetSingleton());
+			SettingsPage::ValueStore::GetSingleton().LogSummary(SettingsPage::Catalog::GetSingleton());
+			SettingsPage::Page::LoadStartupFlag();
+		} else {
+			logger::warn("[SettingsPage] No descriptors parsed; the settings page would be empty");
+		}
+
 		ModCallbackEventHandler::Register();
 		LogEnvironmentCompatibilityProbe();
 
@@ -316,8 +336,14 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 		break;
 	case SKSE::MessagingInterface::kDataLoaded:
 		EnsureDataInit("kDataLoaded");
+		// Second and last attempt. devbench may not have finished loading at kPostLoad, so its
+		// absence is only worth reporting once, here.
+		DevBenchTool::Init(true);
 		break;
 	case SKSE::MessagingInterface::kPostLoad:
+		// First attempt at registering the settings-page driving tool. Harmless and silent when
+		// devbench is not installed - the interface lookup simply returns nullptr.
+		DevBenchTool::Init(false);
 		break;
 	case SKSE::MessagingInterface::kSaveGame:
 		break;

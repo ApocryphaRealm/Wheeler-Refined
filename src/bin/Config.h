@@ -529,6 +529,21 @@ namespace Config
 			inline bool EnableOpenInFavoritesMenu = true;
 			inline bool EnableEditModeInFavoritesMenu = true;
 			inline bool HideGameUIInEditMode = true;
+
+			// DIK scan code that opens/closes the settings page. 0 = unbound.
+			// Default 0x57 (F11): Wheeler binds no F-keys, and F12 is Steam's screenshot key.
+			// A uint32 rather than a float because it is a scan code, like every InputBindings key.
+			inline std::uint32_t SettingsPageKey = 0x57;
+
+			// Suppress the game's own Favorites menu entirely (owner request, 2026-09-12).
+			//
+			// Distinct from EnableOpenInFavoritesMenu above, which decides whether WHEELER may open
+			// while that menu is up. This stops the menu being opened at all, by consuming its user
+			// event before the game sees it.
+			//
+			// Default OFF: taking away a vanilla menu is not something to do to someone who did not
+			// ask for it.
+			inline bool DisableVanillaFavoritesMenu = false;
 		}
 
 	}

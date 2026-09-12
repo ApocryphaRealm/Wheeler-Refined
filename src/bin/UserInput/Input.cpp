@@ -20,6 +20,8 @@
 #include "bin/InputBroker.h"
 #include "bin/InitState.h"
 #include "bin/Rendering/ResolutionScaleContext.h"
+#include "bin/SettingsPage/Page.h"
+#include "bin/SettingsPage/PageInput.h"
 #include "bin/Utilities/Utils.h"
 #include "bin/Wheeler/Wheeler.h"
 #include "Controls.h"
@@ -751,6 +753,29 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 					}
 				}
 
+				// ---- turn the vanilla Favorites menu off (owner request, 2026-09-12) ----------
+				//
+				// Placed HERE, right after the user event is resolved and before every wheel-open
+				// branch, because it must hold whether or not a wheel is up.
+				//
+				// Wheeler already filters "Favorites" through EventsToFilterWhenWheelerActive, but
+				// only inside the main-wheel-open branch further down - that suppresses the key
+				// WHILE the wheel is showing, which is a different feature. This one is the setting
+				// the owner asked for: the menu never opens at all.
+				//
+				// Every edge is consumed, not just the press. Since the game never receives the
+				// down-edge there is no held state for a release to complete, and ObserveOutcome
+				// only records a button as held when the game actually saw it - so passing the
+				// release would hand the game an up-edge for a press it never got.
+				if (!consumeEvent &&
+				    Config::Control::Wheel::DisableVanillaFavoritesMenu &&
+				    userEventName == "Favorites") {
+					consumeEvent = true;
+					spyCandidates = "DisableVanillaFavorites";
+					spyWinner = "DisableVanillaFavorites";
+					spyResult = "ConsumedFavoritesUserEvent";
+				}
+
 				RE::UI* ui = RE::UI::GetSingleton();
 				if (isGamePad && input != kInvalid && (isDown || isUp)) {
 					LogInventoryGamepadUserEventTrace(ui, userEventName, spyRawInput, input, isDown, isUp);
@@ -1108,6 +1133,49 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 		} else if (mainWheelOpenBeforeEvent && !mainWheelOpenAfterEvent) {
 			mainWheelClosedDuringThisDispatch = true;
 		}
+
+		// ---- the key that opens the settings page ------------------------------------------
+		//
+		// Tested OUTSIDE the page-open gate below, and that placement is the whole point: the
+		// capture path runs only while the page is open, so a key checked there could close the
+		// page but could never open it.
+		//
+		// Down-edge only (a held key must not retrigger), keyboard only, and consumed so the game
+		// never sees the page's own key. 0 means unbound and must be excluded explicitly, or an
+		// unset binding would match every event whose idCode is 0.
+		{
+			const auto* pageKeyEvent = event->AsButtonEvent();
+			if (pageKeyEvent &&
+			    Config::Control::Wheel::SettingsPageKey != 0 &&
+			    pageKeyEvent->GetDevice() == RE::INPUT_DEVICE::kKeyboard &&
+			    pageKeyEvent->GetIDCode() == Config::Control::Wheel::SettingsPageKey &&
+			    pageKeyEvent->IsDown()) {
+				SettingsPage::Page::Toggle();
+				consumeEvent = true;
+				spyCandidates = "SettingsPage";
+				spyWinner = "SettingsPage";
+				spyResult = "ConsumedPageToggle";
+			}
+		}
+
+		// ---- settings page input, decided LAST so it sees Wheeler's final verdict ----------
+		//
+		// When the page is open its decision DOMINATES rather than combining with the wheel's: the
+		// page is modal for input, so it consumes everything except a release whose press the game
+		// already saw. That exception is not optional - Skyrim fires shouts on button RELEASE, so
+		// passing every release would let a shout complete from a press consumed inside the page,
+		// while swallowing a press without its release leaves a key stuck down.
+		//
+		// ObserveOutcome runs UNCONDITIONALLY, open or closed, because the record of what the game
+		// believes is held is only truthful if it is maintained on every event. Folding it into the
+		// open-only path would leave it permanently empty and defeat the exception above.
+		if (SettingsPage::Page::IsOpen()) {
+			// spyMappedInput is the post-offset dispatch code computed above (line ~732), AFTER every
+			// device offset including the gamepad's GetGamepadIndex remap. It is the value the INI
+			// actually stores, so keymap capture binds what the player pressed.
+			consumeEvent = SettingsPage::PageInput::CaptureAndShouldConsume(event, spyMappedInput);
+		}
+		SettingsPage::PageInput::ObserveOutcome(event, consumeEvent);
 
 		RE::InputEvent* nextEvent = event->next;
 		if (consumeEvent) {

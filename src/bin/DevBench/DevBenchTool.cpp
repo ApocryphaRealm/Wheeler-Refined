@@ -1,0 +1,170 @@
+#include "bin/DevBench/DevBenchTool.h"
+
+#include "bin/DevBench/DevBenchAPI.h"
+#include "bin/SettingsPage/Page.h"
+
+#include <cstdlib>
+#include <string>
+
+namespace DevBenchTool
+{
+	namespace
+	{
+		// Minimal extractors for this tool's small, controlled argument shape. The same approach the
+		// other driving tools in this project take: a JSON library is not worth a dependency for
+		// reading three top-level fields, and the descriptor below fixes what those fields are.
+		std::string JsonStr(const std::string& a_json, const char* a_key)
+		{
+			const std::string needle = std::string("\"") + a_key + "\"";
+			auto pos = a_json.find(needle);
+			if (pos == std::string::npos) {
+				return "";
+			}
+			pos = a_json.find(':', pos + needle.size());
+			if (pos == std::string::npos) {
+				return "";
+			}
+			++pos;
+			while (pos < a_json.size() && (a_json[pos] == ' ' || a_json[pos] == '\t')) {
+				++pos;
+			}
+			if (pos >= a_json.size() || a_json[pos] != '"') {
+				return "";
+			}
+			++pos;
+			std::string out;
+			while (pos < a_json.size() && a_json[pos] != '"') {
+				if (a_json[pos] == '\\' && pos + 1 < a_json.size()) {
+					++pos;
+				}
+				out += a_json[pos];
+				++pos;
+			}
+			return out;
+		}
+
+		double JsonNum(const std::string& a_json, const char* a_key, double a_default)
+		{
+			const std::string needle = std::string("\"") + a_key + "\"";
+			auto pos = a_json.find(needle);
+			if (pos == std::string::npos) {
+				return a_default;
+			}
+			pos = a_json.find(':', pos + needle.size());
+			if (pos == std::string::npos) {
+				return a_default;
+			}
+			++pos;
+			while (pos < a_json.size() && (a_json[pos] == ' ' || a_json[pos] == '\t')) {
+				++pos;
+			}
+			try {
+				return std::stod(a_json.substr(pos));
+			} catch (...) {
+				return a_default;
+			}
+		}
+
+		// Reads the token immediately after the key's colon, rather than searching for "true"
+		// somewhere later in the document. The searching version answers correctly for the shapes
+		// this tool expects but misreads a false value whose LATER sibling is true, which is the
+		// kind of wrong answer that would look like the cancel flag being ignored.
+		bool JsonBool(const std::string& a_json, const char* a_key)
+		{
+			const std::string needle = std::string("\"") + a_key + "\"";
+			auto pos = a_json.find(needle);
+			if (pos == std::string::npos) {
+				return false;
+			}
+			pos = a_json.find(':', pos + needle.size());
+			if (pos == std::string::npos) {
+				return false;
+			}
+			++pos;
+			while (pos < a_json.size() && (a_json[pos] == ' ' || a_json[pos] == '\t')) {
+				++pos;
+			}
+			return (pos + 4 <= a_json.size()) && a_json.compare(pos, 4, "true") == 0;
+		}
+
+		// NOTE the JSON delimiter. A plain R"( ... )" ends at the first `)"` sequence, and this
+		// descriptor's own help text contains four of them - "(get, set, rebind)", "(set)",
+		// "(list, selecttab)", "(rebind)" - each closing paren sitting immediately before the JSON
+		// string's closing quote. With the default delimiter the literal terminated mid-descriptor
+		// and the rest of the file parsed as garbage.
+		constexpr const char* kDescriptor = R"JSON({
+"description":"Drive Wheeler's in-game settings page: open or close it, move to a tab, read and write any setting by its INI key, and run a keymap rebind end to end without a physical key press. Setting keys may be given as 'Key' or, when a bare key is ambiguous across the eight descriptor files, as 'Section/Key'.",
+"inputSchema":{"type":"object","properties":{
+"op":{"type":"string","enum":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab"],"description":"what to do"},
+"key":{"type":"string","description":"setting INI key, 'Key' or 'Section/Key' (get, set, rebind)"},
+"value":{"type":"string","description":"raw value to write, in the notation the INI already uses (set)"},
+"panel":{"type":"string","description":"panel tab label (list, selecttab)"},
+"tab":{"type":"string","description":"tab label within the panel (list, selecttab)"},
+"code":{"type":"number","description":"post-offset dispatch code to bind: keyboard is the raw DIK scan code, mouse is +256, gamepad is an index above 266 (rebind)"},
+"cancel":{"type":"boolean","description":"exercise the cancel branch instead of binding (rebind)"}
+},"required":["op"]},
+"readOnly":false})JSON";
+
+		// Runs on devbench's LISTENER thread. Everything that touches render-thread state goes
+		// through Page's Drive* entry points, which queue the request and wait for the render thread;
+		// the read-only ops answer straight from the Catalog and PageModel, which are never mutated
+		// after load.
+		void PageTool(void*, const char* a_argsJson, void* a_sink, DevBenchAPI::WriteFn a_write)
+		{
+			const std::string args = a_argsJson ? a_argsJson : "{}";
+			const std::string op = JsonStr(args, "op");
+
+			std::string result;
+
+			if (op.empty() || op == "status") {
+				result = SettingsPage::Page::DriveStatusJson();
+			} else if (op == "open" || op == "close" || op == "toggle") {
+				if (op == "toggle") {
+					SettingsPage::Page::Toggle();
+				} else {
+					SettingsPage::Page::SetOpen(op == "open");
+				}
+				result = SettingsPage::Page::DriveStatusJson();
+			} else if (op == "tabs") {
+				result = SettingsPage::Page::DriveTabsJson();
+			} else if (op == "list") {
+				result = SettingsPage::Page::DriveListJson(JsonStr(args, "panel"), JsonStr(args, "tab"));
+			} else if (op == "get") {
+				SettingsPage::Page::DriveGet(JsonStr(args, "key"), result);
+			} else if (op == "set") {
+				SettingsPage::Page::DriveSet(JsonStr(args, "key"), JsonStr(args, "value"), result);
+			} else if (op == "rebind") {
+				const auto code = static_cast<std::uint32_t>(JsonNum(args, "code", 0.0));
+				SettingsPage::Page::DriveRebind(JsonStr(args, "key"), code, JsonBool(args, "cancel"), result);
+			} else if (op == "selecttab") {
+				SettingsPage::Page::DriveSelectTab(JsonStr(args, "panel"), JsonStr(args, "tab"), result);
+			} else {
+				result =
+					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab"]})";
+			}
+
+			a_write(a_sink, result.c_str());
+		}
+
+		bool g_registered = false;
+	}
+
+	void Init(bool a_lastAttempt)
+	{
+		if (g_registered) {
+			return;
+		}
+
+		auto* devbench = DevBenchAPI::GetDevBenchInterface001();
+		if (!devbench) {
+			if (a_lastAttempt) {
+				INFO("[SettingsPage] devbench not present - the wheeler.page driving tool is unavailable");
+			}
+			return;
+		}
+
+		g_registered = devbench->RegisterTool("wheeler.page", kDescriptor, PageTool, nullptr);
+		INFO("[SettingsPage] devbench build {}: wheeler.page registered = {}",
+			devbench->GetBuildNumber(), g_registered);
+	}
+}

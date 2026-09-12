@@ -9,6 +9,14 @@ list(FILTER SOURCE_FILES EXCLUDE REGEX "imgui_freetype\\.cpp$")
 
 # Explicitly include newly added capability helpers (guards against stale glob caches).
 list(APPEND SOURCE_FILES
+	# devbench cross-plugin API (MIT, vendored - see THIRD_PARTY_NOTICES.md) and the settings-page
+	# driving tool built on it. Listed here for the same reason as everything below: CONFIGURE_DEPENDS
+	# re-globs on most generators, but a stale cache silently drops a new file and the failure looks
+	# like a linker error in unrelated code.
+	"${SOURCE_DIR}/bin/DevBench/DevBenchAPI.cpp"
+	"${SOURCE_DIR}/bin/DevBench/DevBenchAPI.h"
+	"${SOURCE_DIR}/bin/DevBench/DevBenchTool.cpp"
+	"${SOURCE_DIR}/bin/DevBench/DevBenchTool.h"
 	"${SOURCE_DIR}/bin/Utilities/ItemCapabilities.cpp"
 	"${SOURCE_DIR}/bin/Utilities/ItemCapabilities.h"
 	"${SOURCE_DIR}/bin/Integrations/ExternalFavWheelState.cpp"

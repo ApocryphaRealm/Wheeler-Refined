@@ -370,6 +370,37 @@ public:
 	static void AddEmptyEntryToCurrentWheel();
 
 	/// <summary>
+	/// Set how many slots the active wheel has (M7, owner request 2026-09-12: a slider "so you
+	/// don't have to constantly add or remove slots from the controller").
+	///
+	/// Grows by appending empty slots. Shrinks ONLY from the tail, and only while the tail slot is
+	/// empty - the same rule ActivateHoveredEntrySecondary applies to removing a slot and
+	/// DeleteCurrentWheel applies to removing a wheel. It stops at the first filled slot and says
+	/// so, rather than discarding anything.
+	///
+	/// Tail-only is forced by the data, not chosen: RemoveEntryByIndex erases by index, which
+	/// renumbers every surviving slot after it - trimming from the middle would silently move the
+	/// player's items to different positions.
+	///
+	/// Clamped to 1..kMaxSlotsPerWheel. Past that ceiling a wheel still SAVES, but
+	/// Wheel::SerializeFromJsonObj rejects the entries array on load and returns an EMPTY wheel -
+	/// a pre-existing upstream data-loss path this must not lead anyone into.
+	///
+	/// Unlike its siblings this does NOT require edit mode: it is driven from the settings page,
+	/// where refusing silently would make the slider look broken. It takes the same unique
+	/// _wheelDataLock they do.
+	/// </summary>
+	/// <returns>the slot count actually reached, which may fall short of the request</returns>
+	static int SetCurrentWheelSlotCount(int a_desired);
+
+	/// Slots on the active wheel right now, or -1 when there is no valid active wheel.
+	static int GetCurrentWheelSlotCount();
+
+	/// The ceiling a wheel can be saved AND reloaded at. Upstream's own convention: the
+	/// ActionHotkeysBridge EntryCapacity slider is 1..64, clamped at Config.cpp:5340.
+	static constexpr int kMaxSlotsPerWheel = 64;
+
+	/// <summary>
 	/// Add a new empty wheel to the set of wheels.
 	/// Wheel is added only if the user is in edit mode.
 	/// </summary>

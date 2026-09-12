@@ -11469,6 +11469,79 @@ void Wheeler::DeleteCurrentWheel()
 	}
 }
 
+int Wheeler::GetCurrentWheelSlotCount()
+{
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (_wheels.empty() || !HasValidActiveWheel_NoLock()) {
+		return -1;
+	}
+	return _wheels[_activeWheelIdx]->GetNumEntries();
+}
+
+int Wheeler::SetCurrentWheelSlotCount(int a_desired)
+{
+	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (_wheels.empty() || !HasValidActiveWheel_NoLock()) {
+		return -1;
+	}
+
+	Wheel* wheel = _wheels[_activeWheelIdx].get();
+	if (!wheel) {
+		return -1;
+	}
+
+	// 1..64. The ceiling is not cosmetic: a wheel above it saves happily and then comes back EMPTY,
+	// because Wheel::SerializeFromJsonObj discards an entries array longer than MAX_ENTRIES_PER_WHEEL.
+	// That path is pre-existing upstream - nothing here creates it - but the slider must not walk
+	// anyone into it.
+	const int desired = (std::max)(1, (std::min)(a_desired, kMaxSlotsPerWheel));
+	const bool clampedDown = (a_desired > kMaxSlotsPerWheel);
+
+	int current = wheel->GetNumEntries();
+
+	while (current < desired) {
+		wheel->PushEmptyEntry();
+		const int grown = wheel->GetNumEntries();
+		if (grown <= current) {
+			break;  // refused to grow for some reason; do not spin
+		}
+		current = grown;
+	}
+
+	// Shrink from the TAIL only, and only while the tail is empty. RemoveEntryByIndex erases by
+	// index and renumbers everything after it, so trimming from the middle would move the player's
+	// items to other slots without telling them.
+	bool blockedByFilledSlot = false;
+	while (current > desired) {
+		const int tail = current - 1;
+		WheelEntry* entry = wheel->GetEntry(tail);
+		if (!entry || !entry->IsEmpty()) {
+			// The rule already in this codebase twice: what the player filled is not thrown away to
+			// satisfy a number.
+			blockedByFilledSlot = true;
+			break;
+		}
+		wheel->RemoveEntryByIndex(tail);
+		const int shrunk = wheel->GetNumEntries();
+		if (shrunk >= current) {
+			break;  // refused to shrink; do not spin
+		}
+		current = shrunk;
+	}
+
+	if (wheel->GetHoveredEntryIndex() >= current) {
+		wheel->SetHoveredEntryIndex(current - 1);
+	}
+
+	if (blockedByFilledSlot) {
+		Utils::NotificationMessage(Texts::GetText(Texts::TextType::SlotCountBlockedByFilledSlot));
+	} else if (clampedDown) {
+		Utils::NotificationMessage(Texts::GetText(Texts::TextType::SlotCountAtMaximum));
+	}
+
+	return current;
+}
+
 void Wheeler::MoveEntryForwardInCurrentWheel()
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);

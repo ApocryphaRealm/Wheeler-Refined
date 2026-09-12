@@ -41,7 +41,11 @@ public:
 		AmmoWheelFactoryDefaultsRestored,
 		AmmoWheelFactoryDefaultsFailed,
 		InsufficientMagickaForInstantCast,
-		
+
+		// M7 - slots-per-wheel slider. Added BEFORE Total: it is a sentinel and must stay last.
+		SlotCountBlockedByFilledSlot,
+		SlotCountAtMaximum,
+
 		Total
 	};
 
@@ -87,6 +91,8 @@ private:
 		MAP_ENTRY(GamepadModifierCleared, "Wheeler: Gamepad modifier cleared."),
 		MAP_ENTRY(ClickMouseButtonToBind, "Wheeler: click a mouse button to bind."),
 		MAP_ENTRY(MouseToggleCleared, "Wheeler: Mouse toggle cleared."),
+		MAP_ENTRY(SlotCountBlockedByFilledSlot, "Wheeler: stopped - the next slot still holds an item. Empty it first."),
+		MAP_ENTRY(SlotCountAtMaximum, "Wheeler: 64 slots is the most a wheel can be saved with."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsRestored, "Wheeler: Ammo Wheel restored to factory defaults."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsFailed, "Wheeler: Failed to restore Ammo Wheel factory defaults."),
 		MAP_ENTRY(InsufficientMagickaForInstantCast, "Not enough magicka for instant cast.")

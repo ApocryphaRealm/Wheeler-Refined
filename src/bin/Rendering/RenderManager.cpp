@@ -25,6 +25,8 @@
 #include "bin/Rendering/ResolutionScaleContext.h"
 #include "bin/InitState.h"
 #include "bin/Config.h"
+#include "bin/SettingsPage/Page.h"
+#include "bin/SettingsPage/PageInput.h"
 
 #include "bin/Animation/TimeInterpolator/TimeInterpolatorManager.h"
 
@@ -460,6 +462,18 @@ void RenderManager::DXGIPresentHook::thunk(std::uint32_t a_p1)
 	// prologue
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
+
+	// Drain the settings page's input queue here and nowhere else: AFTER the backend NewFrame
+	// calls, so our positions land after (and therefore win over) ImGui_ImplWin32_NewFrame's own
+	// GetCursorPos poll, and BEFORE ImGui::NewFrame() consumes the event queue.
+	//
+	// Only while the page is open. Closed, this does not run at all and the wheel's frame is
+	// byte-identical to before - which is the point: this context is shared with the wheel, so no
+	// global io setting may be changed on its behalf.
+	if (SettingsPage::Page::IsOpen()) {
+		SettingsPage::PageInput::ProcessQueuedEvents();
+	}
+
 	ImGui::NewFrame();
 
 	// do stuff
@@ -552,6 +566,12 @@ void RenderManager::draw()
 	if (Config::Font::Debug::ShowGlyphTestOverlay) {
 		DrawGlyphTestOverlay();
 	}
+
+	// The settings page, drawn LAST so it sits above the wheel - ImGui composites in call order.
+	// Costs one boolean test per frame while closed, and it is closed until something opens it:
+	// the page is not interactive yet, because this context receives no mouse buttons or keyboard
+	// until the input translation step lands.
+	SettingsPage::Page::Draw();
 }
 
 void RenderManager::DrawGlyphTestOverlay()
