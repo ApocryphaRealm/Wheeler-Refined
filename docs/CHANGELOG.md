@@ -1,5 +1,29 @@
 # Changelog
 
+Entries dated 2026-04-26 and earlier are C0kadam's, from the upstream Wheeler Refined releases this
+fork derives from. They are kept verbatim: they are his release history and are not ours to restate.
+Entries above that line are the ApocryphaRealm fork, which starts its own version line at 1.0.0
+rather than continuing his numbering.
+
+## 1.0.0 - 2026-09-12 (ApocryphaRealm fork)
+
+- Settings page: an in-game page built from the eight dMenu descriptors - 980 nodes, 810 controls
+  across 8 panels and 86 tabs, with each value resolved from the shipped defaults with the user INI
+  layered over it, and the page reporting which layer a value came from.
+- Input: the events already passing through `Input::ProcessAndFilter` are translated into Wheeler's
+  ImGui context, and keymap capture lets all 63 keymaps be rebound in place. Upstream's
+  `Controls::BeginRebind` only ever understood five Ammo Wheel targets.
+- New setting `Control.Wheel/SettingsPageKey` (default 87 = F11) opens and closes the settings page.
+- New setting `Control.Wheel/DisableVanillaFavoritesMenu` suppresses the game's own Favorites menu
+  entirely, distinct from the existing option that only decides whether Wheeler may open over it.
+- Wheel slot count is settable at runtime, clamped 1-64, refusing to discard a slot that still
+  holds an item.
+- Boolean settings render as on/off switches rather than checkboxes.
+- A devbench driving tool (`wheeler.page`) exposes status/open/close/toggle/tabs/list/get/set/
+  rebind/selecttab so the page can be operated and verified without a person at the keyboard.
+- Fixed: `translations.txt` shipped a duplicate key block that warned on every launch and left two
+  messages blank; the slot-count strings it never carried are now present.
+
 ## 2026-04-26
 - Release metadata updated for `v1.3.3`.
 - Build/version logging banner updated to report `v1.3.3` with build date `4/26/2026`.

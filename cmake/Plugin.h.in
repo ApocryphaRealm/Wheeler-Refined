@@ -17,9 +17,21 @@ namespace Plugin
 
 	inline constexpr auto NAME = "@PROJECT_NAME@"sv;
 
-	// Wheeler Refined branding
+	// Branding.
+	//
+	// DISPLAY_VERSION and BUILD_TIMESTAMP are GENERATED, not typed. They used to be string literals
+	// ("v1.3.3", "4/26/2026"), which is precisely how the startup banner went on announcing 1.3.3
+	// after the build system had moved on - the number appeared in five places and only four of them
+	// were reachable by the version tooling. Deriving them means the binary cannot contradict itself.
 	inline constexpr auto DISPLAY_NAME = "Wheeler - Refined"sv;
-	inline constexpr auto DISPLAY_VERSION = "v1.3.3"sv;
-	inline constexpr auto AUTHOR = "C0kadam"sv;
-	inline constexpr auto BUILD_TIMESTAMP = "4/26/2026"sv;
+	inline constexpr auto DISPLAY_VERSION = "v@PROJECT_VERSION@"sv;
+	inline constexpr auto AUTHOR = "ApocryphaRealm"sv;
+	inline constexpr auto BUILD_TIMESTAMP = __DATE__ ""sv;
+
+	// The upstream this fork derives from. Recorded so the credit survives in the log and in any
+	// crash report, and so the fork's own 1.0.0 line is never mistaken for a continuation of his
+	// numbering - see THIRD_PARTY_NOTICES.md and docs/CHANGELOG.md.
+	inline constexpr auto UPSTREAM_NAME = "Wheeler - Refined"sv;
+	inline constexpr auto UPSTREAM_VERSION = "v1.3.3"sv;
+	inline constexpr auto UPSTREAM_AUTHOR = "C0kadam"sv;
 }

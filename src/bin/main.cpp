@@ -421,9 +421,16 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	logger::critical("[BUILD_MARK] wheeler build {} {}", __DATE__, __TIME__);
 
-	// Startup banner - ALWAYS log version/author info (not gated)
+	// Startup banner - ALWAYS log version/author info (not gated).
+	//
+	// The line below used to repeat this one with the version, date and author written out as a
+	// STRING LITERAL, which is how it stayed at v1.3.3 while the build system moved on. Everything
+	// here now comes from the generated Plugin.h, so the banner cannot disagree with the binary.
+	// The upstream author is credited from Plugin::UPSTREAM_* rather than being the only name shown:
+	// this is the ApocryphaRealm fork of C0kadam's Wheeler Refined, and the log should say both.
 	logger::info("{} {} by {} | Build: {}"sv, Plugin::DISPLAY_NAME, Plugin::DISPLAY_VERSION, Plugin::AUTHOR, Plugin::BUILD_TIMESTAMP);
-	logger::info("=== Wheeler - Refined v1.3.3 | 4/26/2026 | External API Enabled | C0kadam ===");
+	logger::info("=== {} {} | fork of Wheeler - Refined {} by {} | External API Enabled ==="sv,
+		Plugin::DISPLAY_NAME, Plugin::DISPLAY_VERSION, Plugin::UPSTREAM_VERSION, Plugin::UPSTREAM_AUTHOR);
 
 	SKSE::Init(a_skse);
 
