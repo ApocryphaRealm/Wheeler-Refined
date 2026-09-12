@@ -1,14 +1,18 @@
-# Wheeler custom texts (example)
-AlchemyDynamicIDConsumptionWarning = This crafted potion is unique. Keep at least one copy if you want to reuse this slot.
-NoWheelPresent = No wheel layout is available. Enter edit mode and add a wheel first.
-
-
 ; Wheeler Translation File
 ; Format: Key = Translated Text
 ; Lines starting with ; or # are comments.
+;
+; This file previously opened with a second, undocumented "custom texts (example)" block that
+; assigned these first two keys ABOVE the header, while the entries below left them empty. The
+; loader keeps the first non-empty value and warned about both on every single launch:
+;   translations.txt: Duplicate key 'AlchemyDynamicIDConsumptionWarning' at line 10 (first at line 2)
+;   translations.txt: Duplicate key 'NoWheelPresent' at line 11 (first at line 3)
+; The duplicate block is gone and its English text has been MOVED onto the canonical entries below -
+; not deleted, because those two lines held the only copy of that text: Texts.h maps both keys to ""
+; as their compiled default, so dropping the block would have silently blanked two real messages.
 
-AlchemyDynamicIDConsumptionWarning = 
-NoWheelPresent = 
+AlchemyDynamicIDConsumptionWarning = This crafted potion is unique. Keep at least one copy if you want to reuse this slot.
+NoWheelPresent = No wheel layout is available. Enter edit mode and add a wheel first.
 EditHintTitle = Edit Mode Controls
 EditHintDeviceHeaderMkb = KB/M
 EditHintDeviceHeaderGamepad = Gamepad
@@ -44,3 +48,8 @@ ClickMouseButtonToBind = Wheeler: click a mouse button to bind.
 MouseToggleCleared = Wheeler: Mouse toggle cleared.
 AmmoWheelFactoryDefaultsRestored = Wheeler: Ammo Wheel restored to factory defaults.
 AmmoWheelFactoryDefaultsFailed = Wheeler: Failed to restore Ammo Wheel factory defaults.
+
+; Slots-per-wheel limits (ApocryphaRealm fork). Both are shown through
+; Utils::NotificationMessage from Wheeler.cpp when a slot-count change is refused.
+SlotCountBlockedByFilledSlot = Wheeler: stopped - the next slot still holds an item. Empty it first.
+SlotCountAtMaximum = Wheeler: 64 slots is the most a wheel can be saved with.
