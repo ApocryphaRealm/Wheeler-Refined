@@ -4,6 +4,8 @@
 #include "bin/DevBench/InputInject.h"
 #include "bin/Config.h"
 #include "bin/AMF/AMFLaunch.h"
+#include "bin/AMF/AmfPage.h"
+#include "bin/SettingsPage/PageShared.h"
 #include "bin/DevBench/DevBenchAPI.h"
 #include "bin/SettingsPage/Page.h"
 
@@ -177,10 +179,18 @@ namespace DevBenchTool
 				// sub=arm does what the button does, for a rig with no framework menu open.
 				const std::string sub = JsonStr(args, "sub");
 				if (sub == "arm") {
-					AMFLaunch::ArmLaunch();
+					// M9: arm a keymap row's capture the way the framework page's Rebind button does
+					// (args key = "Section/Key"); the next real press through Wheeler's hook binds it.
+					const std::string key = JsonStr(args, "key");
+					const auto slash = key.find('/');
+					SettingsPage::Page::Shared::BeginCapture(slash == std::string::npos ? key : key.substr(slash + 1));
+				} else if (sub == "cancel") {
+					SettingsPage::Page::Shared::CancelCapture();
 				}
 				const auto r = AMFLaunch::GetButtonRect();
-				result = std::string("{\"ok\":true,\"op\":\"amf\",\"registeredWith\":\"") + AMFLaunch::RegisteredWith() +
+				result = std::string("{\"ok\":true,\"op\":\"amf\",\"hosted\":") + (AmfPage::IsHosted() ? "true" : "false") +
+					",\"hostedBy\":\"" + AmfPage::HostedBy() + "\",\"capturing\":" + (SettingsPage::Page::Shared::IsAnyCapturing() ? "true" : "false") +
+					",\"registeredWith\":\"" + AMFLaunch::RegisteredWith() +
 					"\",\"launchPending\":" + (AMFLaunch::IsLaunchPending() ? "true" : "false") +
 					",\"pageOpen\":" + (SettingsPage::Page::IsOpen() ? "true" : "false") +
 					",\"buttonRect\":[" + std::to_string(r.x0) + "," + std::to_string(r.y0) + "," + std::to_string(r.x1) + "," + std::to_string(r.y1) + "]}";

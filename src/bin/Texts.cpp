@@ -113,6 +113,8 @@ namespace
 			return "KeymapReservedByFramework";
 		case Texts::TextType::KeymapAlreadyBoundTo:
 			return "KeymapAlreadyBoundTo";
+		case Texts::TextType::SettingsLiveInFramework:
+			return "SettingsLiveInFramework";
 		default:
 			return "";
 		}

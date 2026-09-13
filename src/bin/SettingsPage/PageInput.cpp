@@ -251,7 +251,22 @@ namespace SettingsPage
 
 		bool CaptureAndShouldConsume(const RE::InputEvent* a_event, std::uint32_t a_dispatchCode)
 		{
-			if (!a_event || !Page::IsOpen()) {
+			if (!a_event) {
+				return false;
+			}
+
+			// M9: a keymap row armed on the framework-hosted page captures here too, with the overlay
+			// closed - the capture bookkeeping is the same, only the widget that armed it differs.
+			if (!Page::IsOpen()) {
+				const auto* hostedButton = a_event->AsButtonEvent();
+				if (hostedButton && hostedButton->IsDown() && IsCapturingKeymap()) {
+					const bool isCancel =
+						hostedButton->device.get() == RE::INPUT_DEVICE::kKeyboard &&
+						(a_dispatchCode == DIK_ESCAPE || a_dispatchCode == DIK_HOME);
+					if (BeginCaptureFromInputThread(a_dispatchCode, isCancel)) {
+						return true;
+					}
+				}
 				return false;
 			}
 

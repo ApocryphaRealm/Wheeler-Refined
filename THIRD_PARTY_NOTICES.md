@@ -214,3 +214,11 @@ runtime-only discovery are recorded in section B.
 
 Redistributors must preserve the license and notice files applicable to the
 source or binaries they distribute.
+
+## SKSE Menu Framework 3 consumer header (vendored, MIT)
+
+`src/bin/AMF/SKSEMenuFramework.h` is the consumer header of SKSE Menu Framework 3
+(https://github.com/QTR-Modding/SKSE-Menu-Framework-3), MIT licence, as vendored and adjusted by
+the ApocryphaRealm mods to prefer the Apocrypha Menu Framework's module name; `src/bin/AMF/Toggle.h`
+is the ApocryphaRealm on/off switch drawn with that header (MIT). Both reach the menu framework by
+exported name only; nothing of the framework is linked or copied into this binary.

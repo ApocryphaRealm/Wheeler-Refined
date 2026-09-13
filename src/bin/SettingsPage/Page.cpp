@@ -4,6 +4,7 @@
 #include "PageInput.h"
 #include "PageLogic.h"
 #include "PageModel.h"
+#include "PageShared.h"
 #include "ValueStore.h"
 
 #include "bin/AMF/AMFLaunch.h"
@@ -219,6 +220,9 @@ namespace SettingsPage
 			//
 			// The bodies deliberately mirror ModCallbackEventHandler's dmenu_buttonCallback cases
 			// rather than paraphrasing them; a subtly different reset is worse than no reset.
+			void RunButtonAction(const std::string& id);
+			bool IsKnownButtonId(const std::string& id);
+
 			void DrawButton(const Entry& a_entry)
 			{
 				const std::string& id = a_entry.id;
@@ -244,7 +248,21 @@ namespace SettingsPage
 				if (!ImGui::Button(a_entry.name.c_str())) {
 					return;
 				}
+				RunButtonAction(id);
+			}
 
+			bool IsKnownButtonId(const std::string& id)
+			{
+				return id == "wheeler_reset_all_wheels" ||
+				       id == "wheeler_actionhotkeysbridge_reset_layout" ||
+				       id == "wheeler_ammowheel_rebind_reset" ||
+				       id == "wheeler_ammowheel_rebind_cancel" ||
+				       id == "wheeler_ammowheel_restore_factory_defaults";
+			}
+
+			// The action behind a descriptor button, shared with the framework-hosted page (M9).
+			void RunButtonAction(const std::string& id)
+			{
 				if (id == "wheeler_reset_all_wheels") {
 					Wheeler::SetupDefaultWheels();
 				} else if (id == "wheeler_actionhotkeysbridge_reset_layout") {
@@ -1286,6 +1304,84 @@ namespace SettingsPage
 			// per frame - the left while nothing is held, the right once an item is taken hold of.
 			// The input side cannot know which without being told from in here.
 			PageInput::SetItemActive(ImGui::IsAnyItemActive());
+		}
+
+		// ---- M9: the framework-hosted page (AmfPage.cpp) reaches the shared logic through these ----
+		namespace Shared
+		{
+			void BeginCapture(const std::string& a_iniKey)
+			{
+				PageInput::BeginKeymapCapture();
+				g_capturingKey = a_iniKey;
+				if (g_rowNoticeKey == a_iniKey) {
+					g_rowNoticeKey.clear();
+					g_rowNotice.clear();
+				}
+			}
+
+			void CancelCapture()
+			{
+				PageInput::CancelKeymapCapture();
+				g_capturingKey.clear();
+			}
+
+			bool IsCapturing(const std::string& a_iniKey)
+			{
+				return !a_iniKey.empty() && g_capturingKey == a_iniKey;
+			}
+
+			bool IsAnyCapturing()
+			{
+				return !g_capturingKey.empty();
+			}
+
+			CaptureOutcome ConsumeCapture(const Panel& a_panel, const Entry& a_entry,
+				const ResolvedValue& a_current, std::uint32_t& a_boundCode)
+			{
+				switch (SettingsPage::Page::ConsumeCapture(a_panel, a_entry, a_current, a_boundCode)) {
+				case SettingsPage::Page::CaptureOutcome::NotPending:  return CaptureOutcome::NotPending;
+				case SettingsPage::Page::CaptureOutcome::Waiting:     return CaptureOutcome::Waiting;
+				case SettingsPage::Page::CaptureOutcome::Cancelled:   return CaptureOutcome::Cancelled;
+				case SettingsPage::Page::CaptureOutcome::Bound:       return CaptureOutcome::Bound;
+				case SettingsPage::Page::CaptureOutcome::Reserved:    return CaptureOutcome::Reserved;
+				case SettingsPage::Page::CaptureOutcome::InUse:       return CaptureOutcome::InUse;
+				case SettingsPage::Page::CaptureOutcome::WriteFailed: return CaptureOutcome::WriteFailed;
+				}
+				return CaptureOutcome::NotPending;
+			}
+
+			std::string RowNotice(const std::string& a_iniKey)
+			{
+				return (!a_iniKey.empty() && g_rowNoticeKey == a_iniKey) ? g_rowNotice : std::string{};
+			}
+
+			void ClearRowNotice(const std::string& a_iniKey)
+			{
+				if (g_rowNoticeKey == a_iniKey) {
+					g_rowNoticeKey.clear();
+					g_rowNotice.clear();
+				}
+			}
+
+			bool LooksLikeGamepad(const Entry& a_entry)
+			{
+				return SettingsPage::Page::LooksLikeGamepad(a_entry);
+			}
+
+			bool IsKnownButton(const std::string& a_id)
+			{
+				return IsKnownButtonId(a_id);
+			}
+
+			void RunButtonAction(const std::string& a_id)
+			{
+				SettingsPage::Page::RunButtonAction(a_id);
+			}
+
+			void ApplyChangedSettings()
+			{
+				SettingsPage::Page::ApplyChangedSettings();
+			}
 		}
 	}
 }

@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.0.8 - 2026-09-13 - untested
+
+### Changed
+- The settings are a Wheeler mod menu inside the Apocrypha Menu Framework: every settings panel is a section under "Wheeler - Refined" in the framework's menu, drawn with the framework's own ImGui and theme, with the same tabs, switches, sliders, colours, dropdowns, key rows (reserved-key and one-key-one-action refusals included) and buttons. The "open the Wheeler page" button the framework used to show is gone. Wheeler's own overlay page remains only as the fallback when no framework is loaded; with one loaded, the settings key shows a message saying where the settings are.
+
 ## 1.0.7 - 2026-09-13 - untested
 
 ### Added

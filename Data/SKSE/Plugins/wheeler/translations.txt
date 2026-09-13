@@ -58,6 +58,7 @@ AmfLaunchButton = Open the Wheeler settings page
 AmfLaunchPending = Ready - close this menu and the Wheeler page will open.
 KeymapReservedByFramework = not bound - the menu framework reserves that key
 KeymapAlreadyBoundTo = not bound - that key is already used by
+SettingsLiveInFramework = Wheeler: the settings are in the Apocrypha Menu Framework menu - open it and choose Wheeler - Refined.
 SlotCountLabel = Slots on this wheel
 SlotCountHelp = Set how many slots the current wheel has (1 to 64). Growing adds empty slots; shrinking removes empty slots from the end and stops at the first slot that still holds an item, so nothing you placed is ever discarded.
 SlotCountNoWheel = No wheel exists yet.

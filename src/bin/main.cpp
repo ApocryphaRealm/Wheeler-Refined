@@ -1,5 +1,6 @@
 #include "UserInput/Input.h"
 #include "bin/AMF/AMFLaunch.h"
+#include "bin/AMF/AmfPage.h"
 #include "UserInput/Controls.h"
 
 #include "Rendering/RenderManager.h"
@@ -289,8 +290,9 @@ namespace
 			logger::warn("[SettingsPage] No descriptors parsed; the settings page would be empty");
 		}
 
-		// M3: the page is reachable from the menu framework's Mod Control Panel when one is loaded.
-		AMFLaunch::Register();
+		// M9 (the owner, 2026-09-13): the settings ARE a mod menu inside the framework. The M3 launch
+		// button is retired; AMFLaunch still serves the reserved-key list.
+		AmfPage::Register();
 
 		ModCallbackEventHandler::Register();
 		LogEnvironmentCompatibilityProbe();

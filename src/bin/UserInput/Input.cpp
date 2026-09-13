@@ -17,6 +17,8 @@
 #include <string_view>
 
 #include "bin/Config.h"
+#include "bin/Texts.h"
+#include "bin/AMF/AmfPage.h"
 #include "bin/DevBench/InputInject.h"
 #include "bin/InputBroker.h"
 #include "bin/InitState.h"
@@ -1239,7 +1241,13 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 			    pageKeyEvent->GetDevice() == RE::INPUT_DEVICE::kGamepad &&
 			    spyMappedInput == Config::Control::Wheel::SettingsPageGamepadButton;
 			if ((pageKeyboardHit || pageGamepadHit) && pageKeyEvent->IsDown()) {
-				SettingsPage::Page::Toggle();
+				if (AmfPage::IsHosted()) {
+					// M9: the settings live in the framework's menu. Until the framework exports an
+					// "open on this mod" call, the key tells the player where they are.
+					Utils::NotificationMessage(Texts::GetText(Texts::TextType::SettingsLiveInFramework));
+				} else {
+					SettingsPage::Page::Toggle();
+				}
 				consumeEvent = true;
 				spyCandidates = "SettingsPage";
 				spyWinner = "SettingsPage";
@@ -1258,7 +1266,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 		// ObserveOutcome runs UNCONDITIONALLY, open or closed, because the record of what the game
 		// believes is held is only truthful if it is maintained on every event. Folding it into the
 		// open-only path would leave it permanently empty and defeat the exception above.
-		if (SettingsPage::Page::IsOpen()) {
+		if (SettingsPage::Page::IsOpen() || SettingsPage::PageInput::IsCapturingKeymap()) {
 			// spyMappedInput is the post-offset dispatch code computed above (line ~732), AFTER every
 			// device offset including the gamepad's GetGamepadIndex remap. It is the value the INI
 			// actually stores, so keymap capture binds what the player pressed.
