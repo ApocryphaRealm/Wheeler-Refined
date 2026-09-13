@@ -451,6 +451,8 @@ public:
 	/// Used to create a template when a user starts a new game.
 	/// </summary>
 	static void SetupDefaultWheels();
+	// Creates the first wheel (eight empty slots) when the loaded save has none. kPostLoadGame and kNewGame.
+	static void EnsureFirstWheel();
 
 	// ============================================================================
 	// External API Accessors

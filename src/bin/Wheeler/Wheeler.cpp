@@ -431,6 +431,11 @@ namespace
 				bindings.mkb = { key, 0 };
 			}
 		}
+		// 1.0.7: the page has its own gamepad row; it wins over a gamepad code parked in SettingsPageKey.
+		const std::uint32_t button = Config::Control::Wheel::SettingsPageGamepadButton;
+		if (button != 0 && IsGamepadInputCode(button)) {
+			bindings.gamepad = { button, 0 };
+		}
 		return bindings;
 	}
 
@@ -11683,10 +11688,27 @@ void Wheeler::SerializeIntoJsonObj(nlohmann::json& j_wheeler)
 	j_wheeler["activewheel"] = activeSaveIdx;
 }
 
+// The owner, 2026-09-13: "ship it with a presetting of eight slots on the first wheel already
+// created". The original and Wheeler Refined start a save with no wheel at all (upstream's new-game
+// default was two wheels of four, and a LOADED save that had none stayed empty), so a fresh install
+// showed nothing until the player built a wheel in edit mode. One wheel, eight slots, on new game
+// and on any loaded save that comes back without a wheel (EnsureFirstWheel).
+void Wheeler::EnsureFirstWheel()
+{
+	{
+		std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+		if (!_wheels.empty()) {
+			return;
+		}
+	}
+	logger::info("[Wheeler] no wheel in this save - creating the first wheel with 8 empty slots");
+	SetupDefaultWheels();
+}
+
 void Wheeler::SetupDefaultWheels()
 {
-	const int defaultWheelNum = 2;
-	const int defaultEntryNum = 4;
+	const int defaultWheelNum = 1;
+	const int defaultEntryNum = 8;
 	Wheeler::Clear();
 	int wheelIdx = 0;
 	while (wheelIdx < defaultWheelNum) {
@@ -11705,8 +11727,17 @@ void Wheeler::SetupDefaultWheels()
 inline ImVec2 Wheeler::getWheelCenter()
 {
 	using namespace Config::Styling::Wheel;
-	ImVec2 renderSize = ResolutionScale::Context::GetSingleton().GetRenderSize();
-	return ImVec2(renderSize.x / 2 + CenterOffsetX, renderSize.y / 2 + CenterOffsetY);
+	// The owner, 2026-09-13: anchor to the screen centre and add X/Y offsets, so one setting works at
+	// any resolution. The offsets are 1080p reference pixels scaled ONCE here by the uniform ratio;
+	// they are deliberately NOT in Config's viewport scaling table any more (that pass, on top of
+	// this one, put the inherited 450 at about +1330 px on a 3200x1800 display).
+	// Measured 2026-09-13 on a 3200x1800 display: ResolutionScale's render size is the swap chain
+	// (3200x1800) while ImGui draws in its own DisplaySize (2133x1200, the client rect as this
+	// process sees it), so a centre computed from the render size landed at 0.75 of the screen.
+	// The centre is taken from the space the wheel is DRAWN in.
+	const ImVec2 canvas = ImGui::GetIO().DisplaySize;
+	const float uniform = canvas.y > 0.0f ? canvas.y / 1080.0f : 1.0f;
+	return ImVec2(canvas.x / 2 + CenterOffsetX * uniform, canvas.y / 2 + CenterOffsetY * uniform);
 }
 
 bool Wheeler::shouldBeInEditMode(RE::UI* a_ui)

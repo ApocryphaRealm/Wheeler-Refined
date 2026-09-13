@@ -8,6 +8,19 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.0.7 - 2026-09-13 - untested
+
+### Added
+- A first wheel with eight empty slots is created on a new game and on any loaded save that has no wheel, so the wheel exists the moment the mod is installed instead of after a trip into edit mode.
+- A gamepad row for the settings page: `Control.Wheel/SettingsPageGamepadButton`, rebindable on the Wheeler Controls tab, shown on the edit-mode hint list next to the keyboard key. Ships unbound; the page is also reachable from the menu framework's Mod Control Panel with a controller.
+
+### Fixed
+- The wheel drew nothing at all. The shipped Styles.defaults.ini set UseGeometricPrimitiveForBackgroundTexture to false, which makes the wheel draw its slots from slot_background.svg and wheel_background.svg, files that no release of Wheeler or Wheeler Refined ships; with no texture pack installed the wheel was invisible while every key still worked. The shipped default is now true, the value the original mod ships and the settings page's own text asks for. A Styles.ini written by an earlier test build keeps false; switch Render Texture From Geometric Primitives on, or delete that file.
+
+### Changed
+- The wheel is anchored to the screen centre; Wheel Center Offset X and Y move it from there in 1080p pixels scaled once for the display, so the same numbers work at every resolution. The inherited default of 450 (and a second scaling pass on top of it) had put the wheel half off the right edge at 3200x1800. Both offsets now default to 0.
+- The settings page opens on Wheeler Controls, then Wheel Behavior, Styles, Ammo Wheel, I4, Action Hotkeys Bridge, OStim Integration, with the legacy layout-reset helper last. It opened on the legacy helper because the panels were in file-name order.
+
 ## 1.0.6 - 2026-09-13 - untested
 
 ### Added

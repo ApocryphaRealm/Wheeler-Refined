@@ -535,6 +535,11 @@ namespace Config
 			// F-key, and F12 is Steam's screenshot key (DEFAULT-KEYS.md).
 			// A uint32 rather than a float because it is a scan code, like every InputBindings key.
 			inline std::uint32_t SettingsPageKey = 0x44;   // F10 - F11 is AMF's menu key (DEFAULT-KEYS.md, 2026-09-12)
+			// The gamepad row for the same page (the owner, 2026-09-12: a rebindable KEY and a rebindable
+			// BUTTON for every activation). Wheeler gamepad code (266 + button index); 0 = unbound. Ships
+			// unbound: every controller button has a vanilla gameplay meaning and the page is also reachable
+			// from the menu framework's Mod Control Panel with a controller. Rebind it on the page.
+			inline std::uint32_t SettingsPageGamepadButton = 0;
 
 			// Suppress the game's own Favorites menu entirely (owner request, 2026-09-12).
 			//
@@ -634,7 +639,11 @@ namespace Config
 
 		namespace Wheel
 		{
-			inline bool UseGeometricPrimitiveForBackgroundTexture = false;
+			// true: the wheel draws its slots and arcs from geometric primitives. false means draw them from
+			// slot_background.svg / wheel_background.svg, files no release of Wheeler or Wheeler Refined ships:
+			// with false and no texture pack the wheel is INVISIBLE (found 2026-09-13 taking pictures). The
+			// descriptor's default is true and its text says do not turn it off without a texture pack.
+			inline bool UseGeometricPrimitiveForBackgroundTexture = true;
 
 			inline float WheelBackgroundTextureScale = 1.f;
 
@@ -677,7 +686,7 @@ namespace Config
 
 			
 			// offset of wheel center, to which everything else is relative to
-			inline float CenterOffsetX = 450.f;
+			inline float CenterOffsetX = 0.f;   // 1080p reference px from the screen centre, scaled once (the owner, 2026-09-13)
 			inline float CenterOffsetY = 0.f;
 
 			inline ImU32 TextColor = C_SKYRIMWHITE;

@@ -355,6 +355,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 		Wheeler::SetupDefaultWheels();
 		[[fallthrough]];
 	case SKSE::MessagingInterface::kPostLoadGame:
+		Wheeler::EnsureFirstWheel();   // a save with no wheel gets one (the owner, 2026-09-13)
 		UniqueIDHandler::QueuePostLoadInventoryRepair(GetMessageTypeName(a_msg->type));
 		break;
 	default:

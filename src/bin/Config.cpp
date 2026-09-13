@@ -3139,8 +3139,7 @@ static void EnsureScaleEntries()
 	add(Config::Styling::Wheel::OuterCircleRadius, ScaleAxis::Uniform);
 	add(Config::Styling::Wheel::InnerSpacing, ScaleAxis::Uniform);
 	add(Config::Styling::Wheel::ActiveArcWidth, ScaleAxis::Uniform);
-	add(Config::Styling::Wheel::CenterOffsetX, ScaleAxis::X);
-	add(Config::Styling::Wheel::CenterOffsetY, ScaleAxis::Y);
+	// CenterOffsetX/Y are scaled once in Wheeler::getWheelCenter (centre anchor + uniform ratio); not here.
 	add(Config::Styling::HoverDelay::Radius, ScaleAxis::Uniform);
 	add(Config::Styling::HoverDelay::RadiusOffset, ScaleAxis::Uniform);
 	add(Config::Styling::HoverDelay::Thickness, ScaleAxis::Uniform);
@@ -5185,6 +5184,7 @@ void Config::ReadControlConfig()
 	GetBoolValue(ini, "Control.Wheel", "EnableEditModeInFavoritesMenu", Config::Control::Wheel::EnableEditModeInFavoritesMenu);
 	GetBoolValue(ini, "Control.Wheel", "HideGameUIInEditMode", Config::Control::Wheel::HideGameUIInEditMode);
 	GetUInt32Value(ini, "Control.Wheel", "SettingsPageKey", Config::Control::Wheel::SettingsPageKey);
+	GetUInt32Value(ini, "Control.Wheel", "SettingsPageGamepadButton", Config::Control::Wheel::SettingsPageGamepadButton);
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
 	GetBoolValue(ini, "Control.Wheel", "ToggleKeyPassThrough", Config::Control::Wheel::ToggleKeyPassThrough);
 	GetBoolValue(ini, "Control.Wheel", "DpadHoldToToggle", Config::Control::Wheel::DpadHoldToToggle);

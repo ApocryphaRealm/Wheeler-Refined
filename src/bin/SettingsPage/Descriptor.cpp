@@ -6,6 +6,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 
 namespace SettingsPage
 {
@@ -388,7 +389,23 @@ namespace SettingsPage
 				files.push_back(path);
 			}
 		}
+		// 1.0.7: panels open in the order a player needs them, not alphabetically - alphabetical put
+		// "Action Hotkeys Bridge Layout" (a legacy helper) on the first tab. Unknown files keep their
+		// alphabetical place after the known ones.
+		const auto rank = [](const std::filesystem::path& a_path) {
+			static const char* kOrder[] = { "wheeler controls", "wheel behavior", "wheeler styles", "ammo wheel",
+				"wheeler i4", "action hotkeys bridge", "ostim integration", "action hotkeys bridge layout" };
+			std::string stem = a_path.stem().string();
+			std::transform(stem.begin(), stem.end(), stem.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			for (std::size_t i = 0; i < std::size(kOrder); ++i) {
+				if (stem == kOrder[i]) {
+					return static_cast<int>(i);
+				}
+			}
+			return 100;
+		};
 		std::sort(files.begin(), files.end());
+		std::stable_sort(files.begin(), files.end(), [&](const auto& a, const auto& b) { return rank(a) < rank(b); });
 
 		for (const auto& path : files) {
 			std::ifstream input(path);

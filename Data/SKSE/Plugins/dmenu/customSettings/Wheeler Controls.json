@@ -209,6 +209,25 @@
                                          "control":  {
                                                          "failAction":  "disable"
                                                      },
+                                         "default":  0,
+                                         "ini":  {
+                                                     "id":  "SettingsPageGamepadButton",
+                                                     "section":  "Control.Wheel"
+                                                 },
+                                         "text":  {
+                                                      "desc":  "Opens and closes this settings page from a controller. Press Rebind and then the button. Ships unbound: every controller button already has a vanilla meaning, and the page is also reachable from the menu framework's Mod Control Panel with a controller. 0 = unbound.",
+                                                      "name":  "Settings Page Button (Gamepad)"
+                                                  },
+                                         "translation":  {
+                                                             "desc":  "",
+                                                             "name":  ""
+                                                         },
+                                         "type":  "keymap"
+                                     },
+                                     {
+                                         "control":  {
+                                                         "failAction":  "disable"
+                                                     },
                                          "entries":  [
                                                          {
                                                              "control":  {

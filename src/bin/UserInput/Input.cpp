@@ -1229,11 +1229,16 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 		// unset binding would match every event whose idCode is 0.
 		{
 			const auto* pageKeyEvent = event->AsButtonEvent();
-			if (pageKeyEvent &&
+			const bool pageKeyboardHit = pageKeyEvent &&
 			    Config::Control::Wheel::SettingsPageKey != 0 &&
 			    pageKeyEvent->GetDevice() == RE::INPUT_DEVICE::kKeyboard &&
-			    pageKeyEvent->GetIDCode() == Config::Control::Wheel::SettingsPageKey &&
-			    pageKeyEvent->IsDown()) {
+			    pageKeyEvent->GetIDCode() == Config::Control::Wheel::SettingsPageKey;
+			// The gamepad row (1.0.7): spyMappedInput is the 266+index code the INI stores, computed above.
+			const bool pageGamepadHit = pageKeyEvent &&
+			    Config::Control::Wheel::SettingsPageGamepadButton != 0 &&
+			    pageKeyEvent->GetDevice() == RE::INPUT_DEVICE::kGamepad &&
+			    spyMappedInput == Config::Control::Wheel::SettingsPageGamepadButton;
+			if ((pageKeyboardHit || pageGamepadHit) && pageKeyEvent->IsDown()) {
 				SettingsPage::Page::Toggle();
 				consumeEvent = true;
 				spyCandidates = "SettingsPage";
