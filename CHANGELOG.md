@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.3 - 2026-09-13 - untested
+
+### Fixed
+- The highlighted item's damage or armour figure was drawn on top of its name ("Iron War9Axe"): the shipped stat text and stat icon offsets were 0/0 while the descriptor's own defaults put them 130 px below the name with the icon beside them at a fifth of the old scale. Compiled defaults and `Styles.defaults.ini` now carry the descriptor's values. An existing `Styles.ini` keeps its old zeros until Reset to defaults is pressed or the two sections are edited.
+
 ## 1.1.2 - 2026-09-13 - untested
 
 ### Added

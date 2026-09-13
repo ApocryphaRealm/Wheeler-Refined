@@ -748,17 +748,19 @@ namespace Config
 					inline float MaxShiftUp = 32.0f;
 				}
 
+				// 1.1.3: the descriptor's own defaults (upstream's). Shipping 0/0 put the damage figure ON the name
+				// ("Iron War9Axe", the owner 2026-09-13).
 				namespace StatIcon
 				{
-					inline float OffsetX = 0;
-					inline float OffsetY = 0;
-					inline float Scale = .2f;
+					inline float OffsetX = -20;
+					inline float OffsetY = 150;
+					inline float Scale = .05f;
 				}
 
 				namespace StatText
 				{
 					inline float OffsetX = 0;
-					inline float OffsetY = 0;
+					inline float OffsetY = 130;
 					inline float Size = 35;
 				}
 			}
