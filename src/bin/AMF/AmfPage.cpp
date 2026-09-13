@@ -265,8 +265,8 @@ namespace AmfPage
 			}
 		}
 
-	// Settings presets (the owner, 2026-09-13): the shipped defaults, named user presets, and
-		// the preset THIS SAVE uses. Drawn at the top of Wheeler Controls / General on both
+	// Settings presets (the owner, 2026-09-13): the shipped defaults and named user presets - global,
+		// never tied to a save. Drawn at the top of Wheeler Controls / General on both
 		// surfaces; the state (name box, notice, selection) lives in SettingsPresets so the two
 		// pages cannot disagree about what is selected or what just happened.
 		void DrawPresetsPanel()
@@ -275,7 +275,7 @@ namespace AmfPage
 			MCP::SeparatorText(Texts::GetText(Texts::TextType::PresetsHeader));
 			MCP::TextWrapped("%s", Texts::GetText(Texts::TextType::PresetsHelp));
 			const auto names = SettingsPresets::List();
-			const std::string current = SettingsPresets::SavePreset();
+			const std::string current = SettingsPresets::Selected();
 			std::vector<const char*> items;
 			items.push_back(Texts::GetText(Texts::TextType::PresetNone));
 			int index = 0;
@@ -286,13 +286,13 @@ namespace AmfPage
 				}
 			}
 			MCP::SetNextItemWidth(280.0f);
-			if (MCP::Combo(Texts::GetText(Texts::TextType::PresetForSave), &index, items.data(), static_cast<int>(items.size()))) {
+			if (MCP::Combo(Texts::GetText(Texts::TextType::PresetLabel), &index, items.data(), static_cast<int>(items.size()))) {
 				std::string err;
 				if (index <= 0) {
-					SettingsPresets::ClearSavePreset();
-					SettingsPresets::SetNotice(Texts::GetText(Texts::TextType::PresetClearedForSave));
+					SettingsPresets::ClearSelected();
+					SettingsPresets::SetNotice(Texts::GetText(Texts::TextType::PresetNoneSelected));
 				} else if (SettingsPresets::Load(names[index - 1], err)) {
-					SettingsPresets::SetSavePreset(names[index - 1]);
+					SettingsPresets::SetSelected(names[index - 1]);
 					SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetLoaded)) + " " + names[index - 1]);
 				} else {
 					SettingsPresets::SetNotice(err);
@@ -304,12 +304,12 @@ namespace AmfPage
 			if (MCP::Button(Texts::GetText(Texts::TextType::PresetSaveAs))) {
 				std::string name = SettingsPresets::NameBuffer();
 				if (name.find_first_not_of(' ') == std::string::npos) {
-					name = current;   // nothing typed: overwrite the save's own preset
+					name = current;   // nothing typed: overwrite the selected preset
 				}
 				std::string err;
 				if (SettingsPresets::SaveAs(name, err)) {
-					SettingsPresets::SetSavePreset(name);
-					SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetSaved)) + " " + SettingsPresets::SavePreset());
+					SettingsPresets::SetSelected(name);
+					SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetSaved)) + " " + SettingsPresets::Selected());
 				} else {
 					SettingsPresets::SetNotice(err);
 				}
@@ -322,7 +322,7 @@ namespace AmfPage
 				const std::string to = SettingsPresets::NameBuffer();
 				std::string err;
 				if (SettingsPresets::Rename(current, to, err)) {
-					SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetRenamed)) + " " + SettingsPresets::SavePreset());
+					SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetRenamed)) + " " + SettingsPresets::Selected());
 				} else {
 					SettingsPresets::SetNotice(err);
 				}

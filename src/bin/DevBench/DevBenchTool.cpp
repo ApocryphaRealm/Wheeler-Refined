@@ -174,21 +174,20 @@ namespace DevBenchTool
 				result = "{\"ok\":true,\"op\":\"wheels\",\"before\":" + std::to_string(before) + ",\"requested\":" + std::to_string(desired) + ",\"after\":" + std::to_string(after) + "}";
 			} else if (op == "presets") {
 				// Settings presets (the owner, 2026-09-13). sub = list | save | load | rename | delete |
-				// reset | reload | setsave | apply; name / to as the sub needs. The result carries the
-				// list, the save's preset and the last applied one, so a proof reads the state it just set.
+				// reset | reload | select; name / to as the sub needs. The result carries the
+				// list, the selected preset and the last applied one, so a proof reads the state it just set.
 				const std::string sub = JsonStr(args, "sub");
 				const std::string name = JsonStr(args, "name");
 				const std::string to = JsonStr(args, "to");
 				bool ok = true;
 				std::string err;
-				if (sub == "save") { ok = SettingsPresets::SaveAs(name, err); if (ok) { SettingsPresets::SetSavePreset(name); } }
-				else if (sub == "load") { ok = SettingsPresets::Load(name, err); if (ok) { SettingsPresets::SetSavePreset(name); } }
+				if (sub == "save") { ok = SettingsPresets::SaveAs(name, err); if (ok) { SettingsPresets::SetSelected(name); } }
+				else if (sub == "load") { ok = SettingsPresets::Load(name, err); if (ok) { SettingsPresets::SetSelected(name); } }
 				else if (sub == "rename") { ok = SettingsPresets::Rename(name, to, err); }
 				else if (sub == "delete") { ok = SettingsPresets::Delete(name, err); }
 				else if (sub == "reset") { ok = SettingsPresets::ResetToDefaults(err); }
 				else if (sub == "reload") { SettingsPresets::ReloadFromIni(); }
-				else if (sub == "setsave") { SettingsPresets::SetSavePreset(name); }
-				else if (sub == "apply") { SettingsPresets::ApplySavePresetOnLoad("devbench"); }
+				else if (sub == "select") { SettingsPresets::SetSelected(name); }
 				else if (!sub.empty() && sub != "list" && sub != "status") { ok = false; err = "unknown sub '" + sub + "'"; }
 				std::string escErr; for (char c : err) { if (c == '"' || c == '\\') { escErr += '\\'; } escErr += c; }
 				result = std::string("{\"ok\":") + (ok ? "true" : "false") + ",\"op\":\"presets\",\"sub\":\"" + sub + "\",\"error\":\"" + escErr + "\"," + SettingsPresets::StatusJson() + "}";

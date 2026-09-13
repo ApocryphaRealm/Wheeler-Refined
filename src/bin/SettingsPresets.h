@@ -1,17 +1,14 @@
 #pragma once
 
 // Settings presets (the owner, 2026-09-13: "add the default settings ini and user preset ini with
-// renameability and several to save to, that is save specific so different saves can have different
-// settings ini activated").
+// renameability and several to save to"; the same day: "we dont need cosave specific preset ini
+// files ... they are not save specific").
 //
-// Three parts, all plain files:
+// Two parts, all plain files, global to the install - nothing is written into a save:
 //   * the shipped defaults - X.defaults.ini / wheelBehavior.factory.ini - never rewritten; "Reset to
 //     defaults" copies them over the live user INIs;
 //   * user presets - a folder per preset under Data\SKSE\Plugins\wheeler\user\presets\<name>\ holding a
-//     copy of every live settings INI; save, load, rename, delete;
-//   * the preset in force for THIS SAVE - its name travels in Wheeler's own co-save record, so loading
-//     a save that names a preset applies it (once per session per preset: switching saves switches
-//     presets, reloading the same save keeps the tweaks made since).
+//     copy of every live settings INI; save, load, rename, delete.
 //
 // The live user INIs stay the thing the settings page edits; a preset is a snapshot of them.
 // Both settings surfaces (the overlay page and the framework-hosted page) draw the same panel
@@ -45,15 +42,12 @@ namespace SettingsPresets
 	bool ResetToDefaults(std::string& a_err);
 	void ReloadFromIni();
 
-	// The preset recorded for the loaded save (empty = none). Set by the co-save reader and by the
-	// page; cleared by the revert callback (new game, or a save without Wheeler data).
-	void SetSavePreset(const std::string& a_name);
-	std::string SavePreset();
-	void ClearSavePreset();
+	// The preset the panel has selected (empty = none): the last one saved or loaded this session.
+	// Session state only - it is never written to a save or a file.
+	void SetSelected(const std::string& a_name);
+	std::string Selected();
+	void ClearSelected();
 	std::string LastApplied();
-
-	// kPostLoadGame: apply the save's preset if it names one that exists and is not already in force.
-	void ApplySavePresetOnLoad(const char* a_reason);
 
 	// Shared page state: the name box and the sticky one-line notice under the panel.
 	char* NameBuffer();
@@ -61,6 +55,6 @@ namespace SettingsPresets
 	std::string Notice();
 	void SetNotice(std::string a_notice);
 
-	// For the DevBench driving op: the list, the save's preset, the last applied one.
+	// For the DevBench driving op: the list, the selected preset, the last applied one.
 	std::string StatusJson();
 }

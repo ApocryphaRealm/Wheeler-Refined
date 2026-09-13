@@ -12,8 +12,8 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 
 ### Added
 - Settings presets, at the top of Wheeler Controls / General on both settings surfaces: Reset to defaults (every shipped `*.defaults.ini` / `wheelBehavior.factory.ini` copied back over the live INIs), Reload from INI, and named user presets under `Data\SKSE\Plugins\wheeler\user\presets\<name>\` - save the current settings under a name, load, rename, delete. The seven settings INIs travel in a preset; the resolution-specific layout files do not.
-- The preset a save uses is recorded in Wheeler's own co-save record: loading a save that names a preset applies it, so different saves can run different settings. Switching to a save with another preset switches the settings; reloading the same save keeps the tweaks made since. A save that names no preset leaves the settings alone.
-- DevBench op `wheeler.page presets` (sub = list, save, load, rename, delete, reset, reload, setsave, apply) drives all of it headlessly.
+- Presets are global to the install: nothing about them is written into a save, and loading a game changes no settings (the owner dropped the per-save link the same day it was built).
+- DevBench op `wheeler.page presets` (sub = list, save, load, rename, delete, reset, reload, select) drives all of it headlessly.
 
 ## 1.1.0 - 2026-09-13 - untested
 

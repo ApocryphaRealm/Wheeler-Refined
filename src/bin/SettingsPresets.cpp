@@ -41,7 +41,7 @@ namespace SettingsPresets
 		};
 
 		std::mutex g_lock;
-		std::string g_savePreset;   // the loaded save's preset name
+		std::string g_selected;   // the preset the panel has selected (session state)
 		std::string g_lastApplied;  // the preset whose files were last copied over the live INIs
 		std::string g_notice;
 		std::array<char, 64> g_nameBuffer{};
@@ -283,7 +283,7 @@ namespace SettingsPresets
 		}
 		{
 			std::scoped_lock l(g_lock);
-			if (Lower(g_savePreset) == Lower(from)) { g_savePreset = to; }
+			if (Lower(g_selected) == Lower(from)) { g_selected = to; }
 			if (Lower(g_lastApplied) == Lower(from)) { g_lastApplied = to; }
 		}
 		logger::info("[SettingsPresets] renamed preset '{}' -> '{}'", from, to);
@@ -309,7 +309,7 @@ namespace SettingsPresets
 		}
 		{
 			std::scoped_lock l(g_lock);
-			if (Lower(g_savePreset) == Lower(name)) { g_savePreset.clear(); }
+			if (Lower(g_selected) == Lower(name)) { g_selected.clear(); }
 			if (Lower(g_lastApplied) == Lower(name)) { g_lastApplied.clear(); }
 		}
 		logger::info("[SettingsPresets] deleted preset '{}'", name);
@@ -352,54 +352,28 @@ namespace SettingsPresets
 		logger::info("[SettingsPresets] settings reloaded from the INI files");
 	}
 
-	void SetSavePreset(const std::string& a_name)
+	void SetSelected(const std::string& a_name)
 	{
 		std::scoped_lock l(g_lock);
-		g_savePreset = Trim(a_name);
+		g_selected = Trim(a_name);
 	}
 
-	std::string SavePreset()
+	std::string Selected()
 	{
 		std::scoped_lock l(g_lock);
-		return g_savePreset;
+		return g_selected;
 	}
 
-	void ClearSavePreset()
+	void ClearSelected()
 	{
 		std::scoped_lock l(g_lock);
-		g_savePreset.clear();
+		g_selected.clear();
 	}
 
 	std::string LastApplied()
 	{
 		std::scoped_lock l(g_lock);
 		return g_lastApplied;
-	}
-
-	void ApplySavePresetOnLoad(const char* a_reason)
-	{
-		const std::string name = SavePreset();
-		if (name.empty()) {
-			logger::debug("[SettingsPresets] {}: the save names no preset; settings unchanged", a_reason ? a_reason : "load");
-			return;
-		}
-		if (!Exists(name)) {
-			logger::warn("[SettingsPresets] {}: the save names preset '{}' but no such folder exists under {}; settings unchanged", a_reason ? a_reason : "load", name, kRoot);
-			SetNotice(std::string(Texts::GetText(Texts::TextType::PresetNotFound)) + " " + name);
-			return;
-		}
-		if (Lower(LastApplied()) == Lower(name)) {
-			logger::info("[SettingsPresets] {}: preset '{}' is already in force; settings kept as they are", a_reason ? a_reason : "load", name);
-			return;
-		}
-		std::string err;
-		if (Load(name, err)) {
-			const std::string msg = std::string(Texts::GetText(Texts::TextType::PresetAppliedForSave)) + " " + name;
-			SetNotice(msg);
-			Utils::NotificationMessage(msg);
-		} else {
-			SetNotice(err);
-		}
 	}
 
 	char* NameBuffer() { return g_nameBuffer.data(); }
@@ -424,7 +398,7 @@ namespace SettingsPresets
 			if (!list.empty()) { list += ","; }
 			list += "\"" + Escape(n) + "\"";
 		}
-		return "\"presets\":[" + list + "],\"savePreset\":\"" + Escape(SavePreset()) + "\",\"lastApplied\":\"" + Escape(LastApplied()) +
+		return "\"presets\":[" + list + "],\"selected\":\"" + Escape(Selected()) + "\",\"lastApplied\":\"" + Escape(LastApplied()) +
 		       "\",\"notice\":\"" + Escape(Notice()) + "\",\"root\":\"" + Escape(kRoot) + "\"";
 	}
 }

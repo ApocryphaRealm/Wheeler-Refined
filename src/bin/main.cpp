@@ -12,7 +12,6 @@
 #include "Wheeler/Wheeler.h"
 #include "Utilities/UniqueIDHandler.h"
 #include "Serialization/SerializationEntry.h"
-#include "SettingsPresets.h"
 
 #include "InitState.h"
 #include "Config.h"
@@ -358,7 +357,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 		Wheeler::SetupDefaultWheels();
 		[[fallthrough]];
 	case SKSE::MessagingInterface::kPostLoadGame:
-		SettingsPresets::ApplySavePresetOnLoad(GetMessageTypeName(a_msg->type));   // the save's own settings preset (the owner, 2026-09-13)
 		Wheeler::EnsureFirstWheel();   // a save with no wheel gets one (the owner, 2026-09-13)
 		UniqueIDHandler::QueuePostLoadInventoryRepair(GetMessageTypeName(a_msg->type));
 		break;

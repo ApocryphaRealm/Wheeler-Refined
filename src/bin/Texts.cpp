@@ -119,8 +119,8 @@ namespace
 			return "PresetsHeader";
 		case Texts::TextType::PresetsHelp:
 			return "PresetsHelp";
-		case Texts::TextType::PresetForSave:
-			return "PresetForSave";
+		case Texts::TextType::PresetLabel:
+			return "PresetLabel";
 		case Texts::TextType::PresetNone:
 			return "PresetNone";
 		case Texts::TextType::PresetNameLabel:
@@ -143,8 +143,8 @@ namespace
 			return "PresetRenamed";
 		case Texts::TextType::PresetDeleted:
 			return "PresetDeleted";
-		case Texts::TextType::PresetClearedForSave:
-			return "PresetClearedForSave";
+		case Texts::TextType::PresetNoneSelected:
+			return "PresetNoneSelected";
 		case Texts::TextType::PresetDefaultsRestored:
 			return "PresetDefaultsRestored";
 		case Texts::TextType::PresetReloaded:
@@ -155,8 +155,6 @@ namespace
 			return "PresetNotFound";
 		case Texts::TextType::PresetAlreadyExists:
 			return "PresetAlreadyExists";
-		case Texts::TextType::PresetAppliedForSave:
-			return "PresetAppliedForSave";
 		case Texts::TextType::EditHintActionToggleWheel:
 			return "EditHintActionToggleWheel";
 		case Texts::TextType::EditHintActionNextItem:

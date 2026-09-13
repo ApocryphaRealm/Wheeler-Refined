@@ -3,7 +3,6 @@
 #include "SerializationEntry.h"
 #include "bin/Wheeler/Wheeler.h"
 #include "bin/API/WheelerAPI.h"
-#include "bin/SettingsPresets.h"
 
 namespace Serial
 {
@@ -124,7 +123,6 @@ void SerializationEntry::Load(SKSE::SerializationInterface* a_intfc)
 void SerializationEntry::Revert(SKSE::SerializationInterface* a_intfc)
 {
 	Wheeler::Clear();
-	SettingsPresets::ClearSavePreset();   // a new game, or a save without Wheeler data, names no preset
 }
 
 // serialization example:
