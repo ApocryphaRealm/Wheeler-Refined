@@ -648,6 +648,38 @@ namespace SettingsPage
 				}
 			}
 
+			void DrawLiveSlotCount()
+			{
+				const int live = Wheeler::GetCurrentWheelSlotCount();
+				if (live < 0) {   // -1 = no wheel; 0 = a wheel with no slots yet, which the slider can grow
+					ImGui::TextDisabled("%s", Texts::GetText(Texts::TextType::SlotCountNoWheel));
+					ImGui::SameLine();
+					// PushWheel is the serialization-side constructor: no edit-mode guard, so the first wheel
+					// can be made from the page without the Favorites-menu edit-mode dance.
+					if (ImGui::Button(Texts::GetText(Texts::TextType::SlotCountCreateFirst))) {
+						Wheeler::PushWheel();
+						INFO("[SettingsPage] first wheel created from the page");
+					}
+					ImGui::Separator();
+					return;
+				}
+				static int s_pending = 0;
+				static bool s_dragging = false;
+				if (!s_dragging) {
+					s_pending = live;
+				}
+				ImGui::SetNextItemWidth(220.0f);
+				ImGui::SliderInt(Texts::GetText(Texts::TextType::SlotCountLabel), &s_pending, 1, 64);
+				s_dragging = ImGui::IsItemActive();
+				if (ImGui::IsItemDeactivatedAfterEdit() && s_pending != live) {
+					const int result = Wheeler::SetCurrentWheelSlotCount(s_pending);
+					INFO("[SettingsPage] slot count {} -> requested {} -> now {}", live, s_pending, result);
+					s_pending = result;
+				}
+				ImGui::TextDisabled("%s", Texts::GetText(Texts::TextType::SlotCountHelp));
+				ImGui::Separator();
+			}
+
 			void DrawTab(const Panel& a_panel, const Tab& a_tab)
 			{
 				// ImGui identifies widgets by a hash of their label within the current ID scope, and
@@ -1120,6 +1152,16 @@ namespace SettingsPage
 							g_pendingPanelTab.clear();
 						}
 						if (ImGui::BeginTabItem(panelTab.label.c_str(), nullptr, panelFlags)) {
+							// M7 - slots per wheel. A LIVE control, not a descriptor entry: it acts on the wheel
+							// currently loaded (Wheeler::SetCurrentWheelSlotCount, tail-only shrink that refuses to
+							// discard a filled slot), so it cannot be an INI value and lives above the Wheel
+							// Behavior panel's tabs, where the wheel's structure is configured. The design call
+							// (2026-09-12, auto sort mode): a slider 1..64 applied on release, mirroring the live
+							// count whenever it is not being dragged; refusals arrive through the existing
+							// notification path.
+							if (panelTab.label.find("Wheel Behavior") != std::string::npos) {
+								DrawLiveSlotCount();
+							}
 							if (ImGui::BeginTabBar("tabs",
 									ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_TabListPopupButton)) {
 								for (const auto& tab : panelTab.tabs) {

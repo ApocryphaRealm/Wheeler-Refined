@@ -63,6 +63,14 @@ namespace
 			return "AmfLaunchButton";
 		case Texts::TextType::AmfLaunchPending:
 			return "AmfLaunchPending";
+		case Texts::TextType::SlotCountLabel:
+			return "SlotCountLabel";
+		case Texts::TextType::SlotCountHelp:
+			return "SlotCountHelp";
+		case Texts::TextType::SlotCountNoWheel:
+			return "SlotCountNoWheel";
+		case Texts::TextType::SlotCountCreateFirst:
+			return "SlotCountCreateFirst";
 		case Texts::TextType::EditHintActionExitWheel:
 			return "EditHintActionExitWheel";
 		case Texts::TextType::EditHintNavToggleMkb:

@@ -1,5 +1,6 @@
 #include "bin/DevBench/DevBenchTool.h"
 
+#include "bin/Wheeler/Wheeler.h"
 #include "bin/DevBench/InputInject.h"
 #include "bin/Config.h"
 #include "bin/AMF/AMFLaunch.h"
@@ -153,6 +154,14 @@ namespace DevBenchTool
 					InputInject::QueuePress(d, code, hold);
 					result = "{\"ok\":true,\"op\":\"inject\",\"device\":\"" + dev + "\",\"code\":" + std::to_string(code) + ",\"hold\":" + std::to_string(hold) + ",\"queued\":" + std::to_string(InputInject::Pending()) + "}";
 				}
+			} else if (op == "slots") {
+				// M7: read or set the loaded wheel's slot count through the same setter the slider uses.
+				if (JsonBool(args, "create") && Wheeler::GetCurrentWheelSlotCount() < 0) { Wheeler::PushWheel(); }   // the page's 'Create the first wheel'
+				const int before = Wheeler::GetCurrentWheelSlotCount();
+				const int desired = static_cast<int>(JsonNum(args, "value", -1.0));
+				int after = before;
+				if (desired > 0 && before >= 0) { after = Wheeler::SetCurrentWheelSlotCount(desired); }   // a fresh wheel has 0 entries and is still a wheel
+				result = "{\"ok\":true,\"op\":\"slots\",\"before\":" + std::to_string(before) + ",\"requested\":" + std::to_string(desired) + ",\"after\":" + std::to_string(after) + "}";
 			} else if (op == "spy") {
 				// Runtime switch for the input spy and the menu-block reasons, so a proof can read every
 				// event's verdict from wheeler.log without depending on INI layering. sub=on|off|status.
@@ -177,7 +186,7 @@ namespace DevBenchTool
 					",\"buttonRect\":[" + std::to_string(r.x0) + "," + std::to_string(r.y0) + "," + std::to_string(r.x1) + "," + std::to_string(r.y1) + "]}";
 			} else {
 				result =
-					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf","spy","inject"]})";
+					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf","spy","inject","slots"]})";
 			}
 
 			a_write(a_sink, result.c_str());

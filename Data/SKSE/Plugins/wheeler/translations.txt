@@ -56,3 +56,7 @@ SlotCountAtMaximum = Wheeler: 64 slots is the most a wheel can be saved with.
 AmfLaunchExplain = Wheeler draws its settings page in its own overlay, not inside this menu. Press the button, then close this menu: the Wheeler page opens as soon as it is gone.
 AmfLaunchButton = Open the Wheeler settings page
 AmfLaunchPending = Ready - close this menu and the Wheeler page will open.
+SlotCountLabel = Slots on this wheel
+SlotCountHelp = Set how many slots the current wheel has (1 to 64). Growing adds empty slots; shrinking removes empty slots from the end and stops at the first slot that still holds an item, so nothing you placed is ever discarded.
+SlotCountNoWheel = No wheel exists yet.
+SlotCountCreateFirst = Create the first wheel
