@@ -6,6 +6,7 @@
 #include "PageModel.h"
 #include "ValueStore.h"
 
+#include "bin/AMF/AMFLaunch.h"
 #include "bin/Config.h"
 #include "bin/UserInput/Controls.h"
 
@@ -27,6 +28,7 @@
 #include <SimpleIni.h>
 
 #include <algorithm>
+#include <functional>
 #include <array>
 #include <atomic>
 #include <cctype>
@@ -473,14 +475,60 @@ namespace SettingsPage
 			// catalogue and survives a reload, whereas the model (and every Entry in it) is rebuilt.
 			std::string g_capturingKey;
 
+			// A notice that stays on its row until that row is armed again or binds: a one-frame
+			// TextDisabled after a refused capture is invisible at 120 FPS.
+			std::string g_rowNoticeKey;
+			std::string g_rowNotice;
+
 			enum class CaptureOutcome
 			{
 				NotPending,   // this row never armed
 				Waiting,      // armed, nothing captured yet
 				Cancelled,    // the player pressed Escape or Home
 				Bound,        // a code was captured and written
+				Reserved,     // captured, but the menu framework reserves that key (the owner, 2026-09-12)
+				InUse,        // captured, but another Wheeler action on the same device already holds it (the owner, same day)
 				WriteFailed   // captured, but ValueStore::Set refused (see its read-back check)
 			};
+
+			// The owner, 2026-09-12: "within the mod ... two separate functions cannot be bound to the same
+			// key". Every keymap row in every descriptor is checked, on the SAME device as the row being
+			// bound (a gamepad code and a keyboard code can never collide - the stored ranges differ).
+			// Modifier rows count too: a chord key that is also a plain action fires both. Returns the
+			// name of the row that holds the code, or empty when nothing does.
+			std::string FindOtherActionOnCode(const Entry& a_self, bool a_gamepad, std::uint32_t a_code)
+			{
+				std::string holder;
+				const auto& store = ValueStore::GetSingleton();
+				std::function<void(const Panel&, const Entry&)> walk = [&](const Panel& panel, const Entry& entry) {
+					if (!holder.empty()) {
+						return;
+					}
+					for (const Entry& child : entry.entries) {
+						walk(panel, child);
+					}
+					if (entry.type != EntryType::Keymap || !entry.HasIniTarget()) {
+						return;
+					}
+					if (entry.iniSection == a_self.iniSection && entry.iniKey == a_self.iniKey) {
+						return;   // the row being bound
+					}
+					if (LooksLikeGamepad(entry) != a_gamepad) {
+						return;
+					}
+					const auto held = static_cast<std::uint32_t>(
+						store.Get(panel, entry).AsNumber(entry.defaultNumber.value_or(0.0)));
+					if (held != 0u && held == a_code) {
+						holder = entry.name.empty() ? (entry.iniSection + "/" + entry.iniKey) : entry.name;
+					}
+				};
+				for (const Panel& panel : Catalog::GetSingleton().Panels()) {
+					for (const Entry& entry : panel.entries) {
+						walk(panel, entry);
+					}
+				}
+				return holder;
+			}
 
 			// Takes whatever capture produced for this row and, if it is a real code, writes it.
 			//
@@ -512,11 +560,39 @@ namespace SettingsPage
 				}
 
 				g_capturingKey.clear();
+
+				// The framework's keys are off limits (the owner, 2026-09-12: our mods never take AMF's
+				// menu key or the others it reserves). Asked fresh at every capture so the answer is
+				// whatever AMF has bound NOW, not what it shipped with. Refused before the write, so
+				// neither the INI nor the dispatcher ever holds the reserved code.
+				AMFLaunch::RefreshReservedKeys();
+				if (AMFLaunch::IsKeyReservedByFramework(captured)) {
+					logger::info("[SettingsPage] rebind of {} refused: code {} is reserved by the menu framework", a_entry.iniKey, captured);
+					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNotice = Texts::GetText(Texts::TextType::KeymapReservedByFramework);
+					return CaptureOutcome::Reserved;
+				}
+
+				// Same mod, same device, same code, different action: refused, naming the holder.
+				const std::string holder = FindOtherActionOnCode(a_entry, LooksLikeGamepad(a_entry), captured);
+				if (!holder.empty()) {
+					logger::info("[SettingsPage] rebind of {} refused: code {} is already bound to '{}'", a_entry.iniKey, captured, holder);
+					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNotice = std::string(Texts::GetText(Texts::TextType::KeymapAlreadyBoundTo)) + " " + holder;
+					return CaptureOutcome::InUse;
+				}
+
 				a_boundCode = captured;
 
 				if (!ValueStore::GetSingleton().Set(a_panel, a_entry,
 						FormatIndexLike(static_cast<int>(captured), a_current))) {
+					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNotice = "(write failed)";
 					return CaptureOutcome::WriteFailed;
+				}
+				if (g_rowNoticeKey == a_entry.iniKey) {
+					g_rowNoticeKey.clear();
+					g_rowNotice.clear();
 				}
 
 				// Writing the INI alone changes nothing in a running game: the dispatcher holds a
@@ -569,12 +645,22 @@ namespace SettingsPage
 				if (ImGui::SmallButton("Rebind")) {
 					PageInput::BeginKeymapCapture();
 					g_capturingKey = a_entry.iniKey;
+					if (g_rowNoticeKey == a_entry.iniKey) {
+						g_rowNoticeKey.clear();
+						g_rowNotice.clear();
+					}
 				}
 				ImGui::EndDisabled();
 
-				if (outcome == CaptureOutcome::WriteFailed) {
+				if (g_rowNoticeKey == a_entry.iniKey && !g_rowNotice.empty()) {
 					ImGui::SameLine();
-					ImGui::TextDisabled("(write failed)");
+					ImGui::TextDisabled("%s", g_rowNotice.c_str());
+				} else if (!LooksLikeGamepad(a_entry) && AMFLaunch::IsKeyReservedByFramework(current)) {
+					// The stored value collides with the framework (an INI edit or an old default): the
+					// dispatcher left it unbound at load, and the row says so instead of showing a key
+					// name that does nothing.
+					ImGui::SameLine();
+					ImGui::TextDisabled("%s", Texts::GetText(Texts::TextType::KeymapReservedByFramework));
 				}
 			}
 
@@ -853,6 +939,8 @@ namespace SettingsPage
 						case CaptureOutcome::Waiting:     outcomeName = "waiting"; break;
 						case CaptureOutcome::Cancelled:   outcomeName = "cancelled"; break;
 						case CaptureOutcome::Bound:       outcomeName = "bound"; break;
+						case CaptureOutcome::Reserved:    outcomeName = "reserved"; break;
+						case CaptureOutcome::InUse:       outcomeName = "inUse"; break;
 						case CaptureOutcome::WriteFailed: outcomeName = "writeFailed"; break;
 						}
 

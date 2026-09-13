@@ -20,6 +20,9 @@
 //
 // Degrades silently: with no framework loaded, nothing registers and the page stays reachable by
 // its own key (Control.Wheel/SettingsPageKey).
+#include <cstddef>
+#include <cstdint>
+
 namespace AMFLaunch
 {
 	// Call once at kDataLoaded (AMF registers pages at any time; kDataLoaded is when Wheeler's own
@@ -44,4 +47,30 @@ namespace AMFLaunch
 
 	// Was the page registered with a framework this session (and under which module name)?
 	const char* RegisteredWith();
+
+	// ---- reserved keys (the owner, 2026-09-12): a mod with hotkeys never takes the framework's --
+	//
+	// AMF exports SMF_GetReservedKeyCodes(int32_t* buffer, uint32_t capacity) -> count: the DirectInput
+	// scan codes the framework consumes (its menu key and its navigation keys). Dragon's Eye Minimap
+	// 1.5.3+ probes the same export. Wheeler treats every reported code as off limits on the keyboard:
+	// a keymap capture that lands on one is refused (Page.cpp), and a shipped or INI-edited default
+	// that collides is left UNBOUND with a log line rather than silently stealing the framework's key.
+	// Gamepad codes (266+) and mouse codes (256+) are never reserved - the export is keyboard only.
+	// Every call degrades to "nothing reserved" when no framework is loaded or the export is missing.
+
+	// Re-reads the list from the framework (GetProcAddress, null-checked). Cheap; called on every
+	// config (re)bind and at every capture so the answer reflects what AMF CURRENTLY has bound.
+	void RefreshReservedKeys();
+
+	// Cached answer from the last refresh. Safe to call per row per frame.
+	bool IsKeyReservedByFramework(std::uint32_t a_code);
+
+	// Refresh, then check the bindings that fire OUTSIDE Wheeler's own wheel (the settings-page key
+	// and the keyboard wheel toggle with its modifier) and unbind any that collide, with a warning.
+	// Keys that only act while the wheel is already open (closeWheel, nextWheel...) are not touched:
+	// they cannot take a key away from the framework, which is what the policy guards against.
+	void ApplyReservedKeyPolicy();
+
+	// For the devbench tool and the log.
+	std::size_t ReservedKeyCount();
 }

@@ -109,6 +109,10 @@ namespace
 			return "AmmoWheelFactoryDefaultsFailed";
 		case Texts::TextType::InsufficientMagickaForInstantCast:
 			return "InsufficientMagickaForInstantCast";
+		case Texts::TextType::KeymapReservedByFramework:
+			return "KeymapReservedByFramework";
+		case Texts::TextType::KeymapAlreadyBoundTo:
+			return "KeymapAlreadyBoundTo";
 		default:
 			return "";
 		}

@@ -1,4 +1,5 @@
 #include "Controls.h"
+#include "bin/AMF/AMFLaunch.h"
 #include "bin/SettingsPage/Page.h"
 #include "bin/Wheeler/Wheeler.h"
 #include "bin/Config.h"
@@ -268,6 +269,11 @@ bool Controls::ToggleBindingsAllowNormalFallback(const std::vector<ToggleBinding
 
 void Controls::BindAllInputsFromConfig()
 {
+	// Before anything is bound: a keyboard opener that sits on a key the menu framework reserves is
+	// unbound here (with a warning), so the table below never claims the framework's key. Runs on
+	// every (re)bind, so an INI hand-edit that reloads is covered as well as first load.
+	AMFLaunch::ApplyReservedKeyPolicy();
+
 	std::lock_guard lock(_lock);
 	bool skipLTBinding = false;
 	if (ShouldLogRebindDebug()) {

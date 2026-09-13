@@ -171,13 +171,13 @@
                                          "control":  {
                                                          "failAction":  "disable"
                                                      },
-                                         "default":  87,
+                                         "default":  68,
                                          "ini":  {
                                                      "id":  "SettingsPageKey",
                                                      "section":  "Control.Wheel"
                                                  },
                                          "text":  {
-                                                      "desc":  "Opens and closes this settings page. DirectInput scan code; 87 (F11) by default, 0 to unbind. Wheeler binds no other F-key and F12 is Steam's screenshot key, but any default binding can clash with another mod.",
+                                                      "desc":  "Opens and closes this settings page. DirectInput scan code; 68 (F10) by default, 0 to unbind. F11 is the Apocrypha Menu Framework's menu key, Wheeler binds no other F-key and F12 is Steam's screenshot key. A key the menu framework reserves is refused.",
                                                       "name":  "Settings Page Key"
                                                   },
                                          "translation":  {
@@ -539,7 +539,7 @@
                                                                                  "control":  {
                                                                                                  "failAction":  "disable"
                                                                                              },
-                                                                                 "default":  278,
+                                                                                 "default":  267,
                                                                                  "ini":  {
                                                                                              "id":  "toggleWheel",
                                                                                              "section":  "InputBindings.GamePad"
@@ -596,7 +596,7 @@
                                                                                  "control":  {
                                                                                                  "failAction":  "disable"
                                                                                              },
-                                                                                 "default":  274,
+                                                                                 "default":  0,
                                                                                  "ini":  {
                                                                                              "id":  "toggleWheelModifier",
                                                                                              "section":  "InputBindings.GamePad"

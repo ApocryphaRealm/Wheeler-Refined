@@ -1,5 +1,6 @@
 #include "bin/AMF/AMFLaunch.h"
 
+#include "bin/Config.h"
 #include "bin/SettingsPage/Page.h"
 #include "bin/Texts.h"
 
@@ -7,6 +8,8 @@
 
 #include <atomic>
 #include <cstdarg>
+#include <mutex>
+#include <vector>
 
 namespace AMFLaunch
 {
@@ -66,6 +69,9 @@ namespace AMFLaunch
 		};
 
 		Api g_api{};
+		using ReservedKeysFn = std::uint32_t (*)(std::int32_t*, std::uint32_t);   // SMF_GetReservedKeyCodes
+		std::mutex g_reservedLock;
+		std::vector<std::int32_t> g_reserved;   // keyboard DIK codes the framework reported last refresh
 		const char* g_registeredWith = nullptr;
 		std::atomic<bool> g_pending{ false };
 		std::atomic<float> g_rect[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -189,5 +195,71 @@ namespace AMFLaunch
 	const char* RegisteredWith()
 	{
 		return g_registeredWith ? g_registeredWith : "";
+	}
+
+	void RefreshReservedKeys()
+	{
+		std::vector<std::int32_t> fresh;
+		const wchar_t* moduleName = nullptr;
+		if (HMODULE module = ResolveModule(moduleName)) {
+			// Resolved on every refresh rather than cached: the answer must follow the module that is
+			// loaded NOW, and a cached null from an early call would hide a framework that loaded later.
+			const auto func = reinterpret_cast<ReservedKeysFn>(GetProcAddress(module, "SMF_GetReservedKeyCodes"));
+			if (func) {
+				const std::uint32_t needed = func(nullptr, 0);   // null buffer = "how many" (the DEM probe)
+				if (needed > 0 && needed < 256) {
+					fresh.resize(needed);
+					const std::uint32_t written = func(fresh.data(), needed);
+					fresh.resize(written < needed ? written : needed);
+				}
+			}
+		}
+		std::lock_guard lock(g_reservedLock);
+		g_reserved.swap(fresh);
+	}
+
+	bool IsKeyReservedByFramework(std::uint32_t a_code)
+	{
+		if (a_code == 0u || a_code >= 256u) {
+			return false;   // unbound, mouse (+256) or gamepad (+266): the framework reserves keyboard keys only
+		}
+		std::lock_guard lock(g_reservedLock);
+		for (const std::int32_t code : g_reserved) {
+			if (code >= 0 && static_cast<std::uint32_t>(code) == a_code) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void ApplyReservedKeyPolicy()
+	{
+		RefreshReservedKeys();
+		if (ReservedKeyCount() == 0) {
+			return;
+		}
+		struct Opener
+		{
+			const char* name;
+			std::uint32_t* value;
+		};
+		const Opener openers[] = {
+			{ "Control.Wheel/SettingsPageKey", &Config::Control::Wheel::SettingsPageKey },
+			{ "InputBindings.MKB/toggleWheel", &Config::InputBindings::MKB::toggleWheel },
+			{ "InputBindings.MKB/toggleWheelModifier", &Config::InputBindings::MKB::toggleWheelModifier },
+		};
+		for (const Opener& opener : openers) {
+			if (IsKeyReservedByFramework(*opener.value)) {
+				logger::warn("[AMFLaunch] {} = {} is a key the menu framework reserves (its menu or navigation key); left UNBOUND - rebind it on the Wheeler settings page",
+					opener.name, *opener.value);
+				*opener.value = 0u;
+			}
+		}
+	}
+
+	std::size_t ReservedKeyCount()
+	{
+		std::lock_guard lock(g_reservedLock);
+		return g_reserved.size();
 	}
 }

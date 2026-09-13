@@ -354,7 +354,7 @@ namespace Config
 		{                                       // right thumb
 			inline uint32_t nextWheel = 281;          // right trigger
 			inline uint32_t prevWheel = 0;    // unmapped
-			inline uint32_t toggleWheel = 280;        // left trigger
+			inline uint32_t toggleWheel = 267;        // D-pad down (the owner, 2026-09-12; DEFAULT-KEYS.md)
 			inline uint32_t toggleEditHints = 272;    // left stick click
 			inline uint32_t toggleWheelModifier = 0;  // optional toggle modifier
 			inline uint32_t nextItem = 269;           // DPAD right
@@ -378,7 +378,7 @@ namespace Config
 		{
 			inline uint32_t nextWheel = 0x12;  // e
 			inline uint32_t prevWheel = 0x10;  // q
-			inline uint32_t toggleWheel = 58;  // capslock
+			inline uint32_t toggleWheel = 34;  // G - matches Controls.defaults.ini (was 58/capslock, which the shipped INI never used)
 			inline uint32_t toggleEditHints = 35;  // h
 			inline uint32_t closeWheel = 15;  // tab
 			inline uint32_t closeWheelAlt = 1;  // esc
@@ -531,9 +531,10 @@ namespace Config
 			inline bool HideGameUIInEditMode = true;
 
 			// DIK scan code that opens/closes the settings page. 0 = unbound.
-			// Default 0x57 (F11): Wheeler binds no F-keys, and F12 is Steam's screenshot key.
+			// Default 0x44 (F10): F11 is the Apocrypha Menu Framework's menu key, Wheeler binds no other
+			// F-key, and F12 is Steam's screenshot key (DEFAULT-KEYS.md).
 			// A uint32 rather than a float because it is a scan code, like every InputBindings key.
-			inline std::uint32_t SettingsPageKey = 0x57;
+			inline std::uint32_t SettingsPageKey = 0x44;   // F10 - F11 is AMF's menu key (DEFAULT-KEYS.md, 2026-09-12)
 
 			// Suppress the game's own Favorites menu entirely (owner request, 2026-09-12).
 			//
