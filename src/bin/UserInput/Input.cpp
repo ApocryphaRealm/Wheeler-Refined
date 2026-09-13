@@ -187,6 +187,33 @@ static bool IsAmmoToggleKey(std::uint32_t input, bool isGamePad, bool isMouse)
 	       input == Config::AmmoWheel::MKB::toggleAmmoWheel;
 }
 
+// The owner, 2026-09-12: the toggle key keeps its game function in GAMEPLAY only. Inside a menu the
+// same button navigates a list (the D-pad in the inventory), and a press that opened the wheel AND
+// moved the list would not be "properly functioning" - there the press belongs to Wheeler whole.
+static bool IsGameplayContextForPassThrough()
+{
+	auto* ui = RE::UI::GetSingleton();
+	if (!ui) {
+		return false;
+	}
+	if (ui->GameIsPaused()) {
+		return false;   // every pausing menu (inventory, magic, map, journal, system, crafting ...)
+	}
+	static constexpr std::string_view kListMenus[] = {
+		RE::InventoryMenu::MENU_NAME, RE::MagicMenu::MENU_NAME, RE::ContainerMenu::MENU_NAME,
+		RE::BarterMenu::MENU_NAME, RE::FavoritesMenu::MENU_NAME, RE::CraftingMenu::MENU_NAME,
+		RE::GiftMenu::MENU_NAME, RE::JournalMenu::MENU_NAME, RE::MapMenu::MENU_NAME,
+		RE::TweenMenu::MENU_NAME, RE::Console::MENU_NAME, RE::MainMenu::MENU_NAME,
+		"LootMenu", "LootMenuCF"
+	};
+	for (std::string_view name : kListMenus) {
+		if (ui->IsMenuOpen(name)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool IsMainWheelToggleKey(std::uint32_t input, bool isGamePad, bool isMouse)
 {
 	// The main wheel's toggle bindings (Controls.ini [InputBindings.*] toggleWheel and its two
@@ -973,7 +1000,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 						if (!consumeEvent) {
 							if (isKeyBound || isAmmoToggleKey) {
 								runControlsDispatch();
-								if (Config::Control::Wheel::ToggleKeyPassThrough &&
+								if (Config::Control::Wheel::ToggleKeyPassThrough && IsGameplayContextForPassThrough() &&
 								    spyDispatchResult == Controls::DispatchResult::HandledPassThrough &&
 								    IsMainWheelToggleKey(input, isGamePad, isMouse)) {
 									// M5: an unchorded toggle press (closing the wheel) or its release stays visible
@@ -1109,7 +1136,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 						} else {
 							runControlsDispatch();
 						}
-						if (Config::Control::Wheel::ToggleKeyPassThrough &&
+						if (Config::Control::Wheel::ToggleKeyPassThrough && IsGameplayContextForPassThrough() &&
 						    spyDispatchResult == Controls::DispatchResult::HandledPassThrough &&
 						    IsMainWheelToggleKey(input, isGamePad, isMouse)) {
 							// M5: the very press that opened the wheel. Without this the MainWheelInputLock
