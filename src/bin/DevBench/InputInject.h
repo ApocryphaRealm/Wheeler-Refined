@@ -21,7 +21,14 @@ namespace InputInject
 	// device: 0 keyboard, 1 mouse, 2 gamepad (RE::INPUT_DEVICE values). code: DirectInput scan code /
 	// XInput mask / mouse button. holdFrames clamped 1..600. Thread-safe (called from devbench's
 	// listener thread); consumed on the game's input thread.
-	void QueuePress(std::uint32_t a_device, std::uint32_t a_code, int a_holdFrames);
+	// a_replay = true marks the press as a REPLAY (M8): a tap Wheeler swallowed while deciding
+	// hold-or-tap, now handed to the game. Wheeler's own filter skips replay events (IsReplay) so the
+	// replayed D-pad press cannot arm a second hold.
+	void QueuePress(std::uint32_t a_device, std::uint32_t a_code, int a_holdFrames, bool a_replay = false);
+
+	// True for an event this module spliced as a replay during the CURRENT dispatch. Valid only
+	// between Service() and the end of the same Input::ProcessAndFilter call.
+	bool IsReplay(const RE::InputEvent* a_event);
 
 	// Called by Hooks::OnInputEventDispatch BEFORE Input::ProcessAndFilter.
 	void Service(RE::InputEvent** a_events);

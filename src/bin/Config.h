@@ -549,6 +549,13 @@ namespace Config
 			// an UNCHORDED toggle press/release is never eaten by Wheeler - the game sees the same button
 			// event that opened or closed the wheel. A chorded toggle (modifier held) is still consumed.
 			inline bool ToggleKeyPassThrough = true;
+			// M8 (the owner, 2026-09-12): "make the wheeler key in the event of it being a d-pad button hold
+			// to toggle and press to use the d-pad normally". When true and the UNCHORDED gamepad toggle is a
+			// D-pad direction, the press is decided by duration: held past ToggleHoldThreshold it opens the
+			// wheel; released before that it is replayed to the game as an ordinary D-pad tap (late by at
+			// most the threshold). Other buttons keep press-to-toggle. Overrides ToggleKeyPassThrough for
+			// D-pad bindings: the press is never shared, it is either the wheel's or the game's.
+			inline bool DpadHoldToToggle = true;
 		}
 
 	}

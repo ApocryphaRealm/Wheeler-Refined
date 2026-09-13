@@ -71,6 +71,14 @@ public:
 	static DispatchResult Dispatch(KeyId key, bool isDown = true, bool isGamePad = false);
 	static Action ResolveAction(KeyId key, bool isDown = true, bool isGamePad = false);
 
+	// M8 - D-pad hold-to-toggle. Called once per input dispatch (every frame, input thread) from
+	// Input::ProcessAndFilter: a D-pad press that has been held past ToggleHoldThreshold opens the
+	// wheel here, because the engine reports a held button as ONE down edge, not repeats.
+	static void TickDpadHolds();
+	// What the last Dispatch/Tick decided for a D-pad hold (for the input spy); null when nothing.
+	static const char* TakeDpadNote();
+	static bool IsDpadKey(KeyId key);
+
 	static bool IsKeyBound(KeyId key);
 	static bool IsKeyExclusivelyBound(KeyId key);
 	static bool HasBridgeWheelBinding(KeyId key, bool isGamePad = false);
@@ -173,6 +181,18 @@ private:
 	static inline std::unordered_map<KeyId, std::vector<BridgeWheelBindingCandidate>> _bridgeWheelBindingsMkb;
 	static inline std::unordered_map<KeyId, std::vector<BridgeWheelBindingCandidate>> _bridgeWheelBindingsGamepad;
 	static inline std::unordered_map<ArmedToggleKey, ArmedToggleState, ArmedToggleKeyHash> _armedToggleBindings;
+
+	// M8: a D-pad toggle press whose meaning (hold = wheel, tap = the game's D-pad) is not known yet.
+	struct PendingDpadHold
+	{
+		std::chrono::steady_clock::time_point start{};
+		bool fired{ false };     // the threshold passed and the toggle ran
+		bool replayed{ false };  // the toggle could not open anything, so the tap went to the game instead
+	};
+	static inline std::unordered_map<KeyId, PendingDpadHold> _pendingDpadHolds;   // gamepad keys only
+	static inline const char* _dpadNote{ nullptr };
+	static const ToggleBindingCandidate* FindUnchordedMainToggle(KeyId key);
+	static void ReplayDpadTap(KeyId key);
 
 	static inline std::mutex _lock;
 };

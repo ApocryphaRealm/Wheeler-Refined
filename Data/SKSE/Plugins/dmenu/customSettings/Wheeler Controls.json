@@ -158,8 +158,27 @@
                                                      "section":  "Control.Wheel"
                                                  },
                                          "text":  {
-                                                      "desc":  "Let the wheel's toggle button keep its normal game function: the same press that opens or closes the wheel is also handed to the game, so a D-pad direction or a key bound in the game's controls still does what it always did. A toggle that uses a modifier is not affected. On by default.",
+                                                      "desc":  "Let the wheel's toggle button keep its normal game function: the same press that opens or closes the wheel is also handed to the game, so a D-pad direction or a key bound in the game's controls still does what it always did. A toggle that uses a modifier is not affected. On by default. A D-pad direction with 'D-Pad Toggle: Hold To Open' on is not shared: it is decided by duration instead.",
                                                       "name":  "Toggle Key Keeps Its Game Function"
+                                                  },
+                                         "translation":  {
+                                                             "desc":  "",
+                                                             "name":  ""
+                                                         },
+                                         "type":  "checkbox"
+                                     },
+                                     {
+                                         "control":  {
+                                                         "failAction":  "disable"
+                                                     },
+                                         "default":  true,
+                                         "ini":  {
+                                                     "id":  "DpadHoldToToggle",
+                                                     "section":  "Control.Wheel"
+                                                 },
+                                         "text":  {
+                                                      "desc":  "When the gamepad toggle is a D-pad direction with no modifier, HOLD it to open the wheel and TAP it to use the D-pad normally - the tap goes to the game or to the open menu as if Wheeler were not there. The hold length is Toggle Hold Threshold. Other buttons keep press-to-toggle. On by default.",
+                                                      "name":  "D-Pad Toggle: Hold To Open, Tap For The Game"
                                                   },
                                          "translation":  {
                                                              "desc":  "",

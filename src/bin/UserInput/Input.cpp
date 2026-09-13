@@ -17,6 +17,7 @@
 #include <string_view>
 
 #include "bin/Config.h"
+#include "bin/DevBench/InputInject.h"
 #include "bin/InputBroker.h"
 #include "bin/InitState.h"
 #include "bin/Rendering/ResolutionScaleContext.h"
@@ -609,6 +610,12 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 	resolutionContext.Update();
 	Controls::UpdateRebindTimeout();
 	Controls::PollRebindInput();
+	Controls::TickDpadHolds();   // M8: a held D-pad toggle opens the wheel from here, once per frame
+	if (const char* tickNote = Controls::TakeDpadNote()) {
+		if (IsInputSpyEnabled()) {
+			logger::info("[InputSpy] tick: {}", tickNote);
+		}
+	}
 	InputBroker::RefreshConfigFromSettings();
 	InputBroker::RefreshWheelerReservations();
 
@@ -691,6 +698,18 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 		const bool brokerOwnerBlocked = InputBroker::IsBlockedByActiveOwner(InputBroker::kWheelerRefinedPluginId);
 		const bool mainWheelOpenBeforeEvent = Wheeler::IsWheelerOpen();
 		bool passthroughThisEvent = false;
+		const char* dpadNote = nullptr;
+
+		// M8: a tap Wheeler replayed for the game (InputInject, replay-marked) goes straight through.
+		// Looking at it again would arm a second hold from our own replay.
+		if (InputInject::IsReplay(event)) {
+			if (IsInputSpyEnabled()) {
+				logger::info("[InputSpy] replay event passed through untouched");
+			}
+			prev = event;
+			event = event->next;
+			continue;
+		}
 
 		if (event->eventType == RE::INPUT_EVENT_TYPE::kMouseMove) {
 			const bool wheelerOpen = Wheeler::IsWheelerOpen();
@@ -990,6 +1009,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 						const bool beforeAmmo = Wheeler::IsAmmoWheelOpen();
 						spyDispatchResult = Controls::Dispatch(input, dispatchDown, isGamePad);
 						controlsDispatched = true;
+						dpadNote = Controls::TakeDpadNote();
 						const bool afterMain = Wheeler::IsWheelerOpen();
 						const bool afterAmmo = Wheeler::IsAmmoWheelOpen();
 						stateChangedByDispatch = (beforeMain != afterMain) || (beforeAmmo != afterAmmo);
@@ -1014,7 +1034,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 								    stateChangedByDispatch) {
 									consumeEvent = true;
 									spyWinner = "MainWheel";
-									spyResult = controlsDispatched ? "MainWheelOwnedBound" : "MainWheelOwned";
+									spyResult = dpadNote ? dpadNote : (controlsDispatched ? "MainWheelOwnedBound" : "MainWheelOwned");
 								} else {
 									spyWinner = "Vanilla";
 									spyResult = "PassThroughUnclaimed";
@@ -1148,7 +1168,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 						} else if (spyDispatchResult == Controls::DispatchResult::Consumed) {
 							consumeEvent = true;
 							spyWinner = "Controls";
-							spyResult = "ConsumedByChordOrPolicy";
+							spyResult = dpadNote ? dpadNote : "ConsumedByChordOrPolicy";
 						} else if (isAmmoToggleKey && stateChangedByDispatch) {
 							consumeEvent = true;
 							spyWinner = "AmmoWheel";

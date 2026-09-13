@@ -5187,6 +5187,7 @@ void Config::ReadControlConfig()
 	GetUInt32Value(ini, "Control.Wheel", "SettingsPageKey", Config::Control::Wheel::SettingsPageKey);
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
 	GetBoolValue(ini, "Control.Wheel", "ToggleKeyPassThrough", Config::Control::Wheel::ToggleKeyPassThrough);
+	GetBoolValue(ini, "Control.Wheel", "DpadHoldToToggle", Config::Control::Wheel::DpadHoldToToggle);
 
 	// Hand indicator assets are intentionally fixed to the default icons folder.
 	ApplyMainWheelIndicatorAssetPathHardcoded();

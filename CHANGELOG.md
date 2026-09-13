@@ -8,6 +8,15 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.0.6 - 2026-09-13 - untested
+
+### Added
+- D-pad toggle: hold to open, tap for the game. When the gamepad toggle is a D-pad direction with no modifier, holding it past Toggle Hold Threshold opens the wheel and a shorter tap is replayed to the game or to the open menu as an ordinary D-pad press, so the D-pad keeps its normal function in gameplay AND in the inventory. Setting `Control.Wheel/DpadHoldToToggle` (on by default) on the Wheeler Controls page; other buttons keep press-to-toggle. With the wheel open the toggle press closes it and is consumed.
+
+### Changed
+- The Toggle Key Keeps Its Game Function description says that a D-pad direction is decided by duration instead of being shared.
+- The shipped INI's comment for SettingsPageKey now describes F10.
+
 ## 1.0.5 - 2026-09-12 - untested
 
 ### Changed

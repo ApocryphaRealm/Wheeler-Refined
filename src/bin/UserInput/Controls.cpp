@@ -1,5 +1,6 @@
 #include "Controls.h"
 #include "bin/AMF/AMFLaunch.h"
+#include "bin/DevBench/InputInject.h"
 #include "bin/SettingsPage/Page.h"
 #include "bin/Wheeler/Wheeler.h"
 #include "bin/Config.h"
@@ -800,6 +801,43 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 	const std::size_t debugToggleCandidateCount =
 		debugToggleIt != toggleMap.end() ? debugToggleIt->second.size() : 0;
 
+	// M8 (the owner, 2026-09-12): a D-pad direction bound as the UNCHORDED main-wheel toggle is decided
+	// by DURATION. The down edge is swallowed and remembered; TickDpadHolds opens the wheel once the
+	// hold passes ToggleHoldThreshold; a release before that replays the press to the game as an
+	// ordinary D-pad tap (InputInject, replay-marked so this filter does not see it again). With the
+	// wheel already open the press closes it and is consumed - the game never gets half a gesture.
+	bool dpadHold = false;
+	if (isGamePad && Config::Control::Wheel::DpadHoldToToggle && IsDpadKey(key) && FindUnchordedMainToggle(key)) {
+		dpadHold = true;
+		if (isDown) {
+			if (!Wheeler::IsWheelerOpen()) {
+				auto [it, inserted] = _pendingDpadHolds.try_emplace(key);
+				if (inserted) {
+					it->second.start = std::chrono::steady_clock::now();
+				}
+				_dpadNote = "DpadHoldArmed";
+				return DispatchResult::Consumed;
+			}
+			_dpadNote = "DpadCloseConsumed";
+		} else {
+			auto it = _pendingDpadHolds.find(key);
+			if (it != _pendingDpadHolds.end()) {
+				const PendingDpadHold done = it->second;
+				_pendingDpadHolds.erase(it);
+				if (!done.fired) {
+					ReplayDpadTap(key);
+					_dpadNote = "DpadTapReplayed";
+					return DispatchResult::Consumed;
+				}
+				if (done.replayed) {
+					_dpadNote = "DpadHoldNoOpenReleased";
+					return DispatchResult::Consumed;
+				}
+				_dpadNote = "DpadHoldReleased";   // the armed release below decides peek-close or stay-open
+			}
+		}
+	}
+
 	if (logGamepadDispatch) {
 		logger::info(
 			"[InputDebug] dispatch gamepad key={} down={} isGamePad={} toggleCandidates={} wheelerOpen={} ammoOpen={} dmenuOpen={} menuOpen={} hasToggleBinding={} armed={} hasDownBinding={} hasUpBinding={}",
@@ -951,7 +989,7 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 					continue;
 				}
 
-				const DispatchResult releaseResult = chorded ? DispatchResult::Consumed : DispatchResult::HandledPassThrough;
+				const DispatchResult releaseResult = (chorded || dpadHold) ? DispatchResult::Consumed : DispatchResult::HandledPassThrough;
 				// For gamepad chords, release callback is bound to the modifier key so base-key release
 				// does not immediately close the wheel.
 				const KeyId releaseTriggerKey =
@@ -1038,6 +1076,85 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 	}
 	it->second();
 	return DispatchResult::HandledPassThrough;
+}
+
+bool Controls::IsDpadKey(KeyId key)
+{
+	return key >= KEY_GAMEPAD_OFFSET && key <= KEY_GAMEPAD_OFFSET + 3;   // up, down, left, right (GetGamepadIndex order)
+}
+
+const Controls::ToggleBindingCandidate* Controls::FindUnchordedMainToggle(KeyId key)
+{
+	const auto it = _toggleBindingsGamepad.find(key);
+	if (it == _toggleBindingsGamepad.end()) {
+		return nullptr;
+	}
+	for (const auto& candidate : it->second) {
+		if (candidate.requiredModifier == 0 && candidate.onDown &&
+		    (candidate.action == Action::Toggle || candidate.action == Action::ToggleIfInInventory || candidate.action == Action::ToggleIfNotInInventory)) {
+			return &candidate;
+		}
+	}
+	return nullptr;
+}
+
+void Controls::ReplayDpadTap(KeyId key)
+{
+	// XInput mask for a D-pad direction: GetGamepadIndex numbers up/down/left/right 0..3, which are
+	// the low four bits of the XInput word in the same order. A short hold so menus register it.
+	InputInject::QueuePress(2, 1u << (key - KEY_GAMEPAD_OFFSET), 3, true);
+}
+
+void Controls::TickDpadHolds()
+{
+	if (!Config::Control::Wheel::DpadHoldToToggle) {
+		return;
+	}
+	std::lock_guard lock(_lock);
+	if (_pendingDpadHolds.empty()) {
+		return;
+	}
+	const auto now = std::chrono::steady_clock::now();
+	const float threshold = Config::Control::Wheel::ToggleHoldThreshold;
+	for (auto& [key, pending] : _pendingDpadHolds) {
+		if (pending.fired) {
+			continue;
+		}
+		const float held = std::chrono::duration<float>(now - pending.start).count();
+		if (held < threshold) {
+			continue;
+		}
+		pending.fired = true;
+		const ToggleBindingCandidate* candidate = FindUnchordedMainToggle(key);
+		const bool before = Wheeler::IsWheelerOpen();
+		if (candidate) {
+			candidate->onDown();
+		}
+		if (!candidate || Wheeler::IsWheelerOpen() == before) {
+			// Nothing opened (a context Wheeler refuses, or the binding vanished mid-press): the press
+			// is not lost, it becomes the game's tap - late by the threshold, but delivered.
+			pending.replayed = true;
+			ReplayDpadTap(key);
+			_dpadNote = "DpadHoldNoOpenReplayed";
+			logger::info("[Controls] D-pad hold {:.2f}s on key {} could not open the wheel; tap replayed to the game", held, key);
+			continue;
+		}
+		const ArmedToggleKey releaseKey{ key, true };
+		if (candidate->onUp) {
+			_armedToggleBindings[releaseKey] = ArmedToggleState{ candidate->onUp, DispatchResult::Consumed, candidate->action, key, 0 };
+		} else {
+			_armedToggleBindings.erase(releaseKey);
+		}
+		_dpadNote = "DpadHoldOpened";
+		logger::info("[Controls] D-pad hold {:.2f}s on key {} opened the wheel", held, key);
+	}
+}
+
+const char* Controls::TakeDpadNote()
+{
+	const char* note = _dpadNote;
+	_dpadNote = nullptr;
+	return note;
 }
 
 Controls::Action Controls::ResolveAction(KeyId key, bool isDown, bool isGamePad)
