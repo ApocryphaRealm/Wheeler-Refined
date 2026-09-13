@@ -1,4 +1,5 @@
 #include "Hooks.h"
+#include "bin/DevBench/InputInject.h"
 #include "Utilities/UniqueIDHandler.h"
 #include "bin/UserInput/Input.h"
 #include "bin/Config.h"
@@ -249,6 +250,9 @@ namespace Hooks
 				return;
 			}
 
+			// Driving-tool presses go in HERE, ahead of the filter - see InputInject.h for why an
+			// InputBench press never reaches this hook (same call site, later load, outer wrapper).
+			InputInject::Service(a_evns);
 			Input::GetSingleton()->ProcessAndFilter(a_evns);
 			
 			_DispatchInputEvent(a_dispatcher, a_evns);

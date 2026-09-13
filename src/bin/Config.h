@@ -544,6 +544,10 @@ namespace Config
 			// Default OFF: taking away a vanilla menu is not something to do to someone who did not
 			// ask for it.
 			inline bool DisableVanillaFavoritesMenu = false;
+			// M5 (the owner, 2026-08-27): the wheel's toggle key keeps its normal game function. When true,
+			// an UNCHORDED toggle press/release is never eaten by Wheeler - the game sees the same button
+			// event that opened or closed the wheel. A chorded toggle (modifier held) is still consumed.
+			inline bool ToggleKeyPassThrough = true;
 		}
 
 	}

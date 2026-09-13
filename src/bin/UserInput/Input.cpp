@@ -187,6 +187,22 @@ static bool IsAmmoToggleKey(std::uint32_t input, bool isGamePad, bool isMouse)
 	       input == Config::AmmoWheel::MKB::toggleAmmoWheel;
 }
 
+static bool IsMainWheelToggleKey(std::uint32_t input, bool isGamePad, bool isMouse)
+{
+	// The main wheel's toggle bindings (Controls.ini [InputBindings.*] toggleWheel and its two
+	// inventory-context variants). Mouse buttons never toggle the main wheel.
+	if (isMouse) {
+		return false;
+	}
+	if (isGamePad) {
+		return (Config::InputBindings::GamePad::toggleWheel != 0 && input == Config::InputBindings::GamePad::toggleWheel) ||
+		       (Config::InputBindings::GamePad::toggleWheelIfInInventory != 0 && input == Config::InputBindings::GamePad::toggleWheelIfInInventory) ||
+		       (Config::InputBindings::GamePad::toggleWheelIfNotInInventory != 0 && input == Config::InputBindings::GamePad::toggleWheelIfNotInInventory);
+	}
+	// The keyboard has only the one toggle binding; the inventory-context variants are gamepad-only.
+	return Config::InputBindings::MKB::toggleWheel != 0 && input == Config::InputBindings::MKB::toggleWheel;
+}
+
 static bool IsMovementUserEventName(std::string_view userEventName)
 {
 	return userEventName == "Forward" ||
@@ -626,6 +642,13 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 
 	RE::InputEvent* event = *a_event;
 	RE::InputEvent* prev = nullptr;
+	// Spy trace of the list itself (2026-09-12): events spliced directly in front of this function
+	// produced no spy entry at all, so the list as this function sees it is logged when the spy is on.
+	if (IsInputSpyEnabled()) {
+		int n = 0; for (auto* e = event; e; e = e->next) { ++n; }
+		logger::info("[InputSpy] enter: {} event(s); first type={} device={}", n,
+			event ? static_cast<int>(event->eventType.get()) : -1, event ? static_cast<int>(event->device.get()) : -1);
+	}
 	while (event != nullptr) {
 		bool consumeEvent = false;
 		RE::INPUT_DEVICE spyDevice = RE::INPUT_DEVICE::kKeyboard;
@@ -950,7 +973,16 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 						if (!consumeEvent) {
 							if (isKeyBound || isAmmoToggleKey) {
 								runControlsDispatch();
-								if (spyDispatchResult == Controls::DispatchResult::Consumed ||
+								if (Config::Control::Wheel::ToggleKeyPassThrough &&
+								    spyDispatchResult == Controls::DispatchResult::HandledPassThrough &&
+								    IsMainWheelToggleKey(input, isGamePad, isMouse)) {
+									// M5: an unchorded toggle press (closing the wheel) or its release stays visible
+									// to the game. Dispatch already returned HandledPassThrough for it; only the
+									// consume below and the hard lock further down would have eaten it.
+									passthroughThisEvent = true;
+									spyWinner = "Vanilla";
+									spyResult = "ToggleKeyPassThrough";
+								} else if (spyDispatchResult == Controls::DispatchResult::Consumed ||
 								    spyDispatchResult == Controls::DispatchResult::HandledPassThrough ||
 								    stateChangedByDispatch) {
 									consumeEvent = true;
@@ -1077,7 +1109,16 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 						} else {
 							runControlsDispatch();
 						}
-						if (spyDispatchResult == Controls::DispatchResult::Consumed) {
+						if (Config::Control::Wheel::ToggleKeyPassThrough &&
+						    spyDispatchResult == Controls::DispatchResult::HandledPassThrough &&
+						    IsMainWheelToggleKey(input, isGamePad, isMouse)) {
+							// M5: the very press that opened the wheel. Without this the MainWheelInputLock
+							// below consumes it, because the wheel is already open by the time it runs - the
+							// mechanism the controller-integration analysis traced (section 4, layer B).
+							passthroughThisEvent = true;
+							spyWinner = "Vanilla";
+							spyResult = "ToggleKeyPassThrough";
+						} else if (spyDispatchResult == Controls::DispatchResult::Consumed) {
 							consumeEvent = true;
 							spyWinner = "Controls";
 							spyResult = "ConsumedByChordOrPolicy";

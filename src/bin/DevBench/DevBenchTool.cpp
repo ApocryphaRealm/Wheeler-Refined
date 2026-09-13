@@ -1,5 +1,7 @@
 #include "bin/DevBench/DevBenchTool.h"
 
+#include "bin/DevBench/InputInject.h"
+#include "bin/Config.h"
 #include "bin/AMF/AMFLaunch.h"
 #include "bin/DevBench/DevBenchAPI.h"
 #include "bin/SettingsPage/Page.h"
@@ -139,6 +141,27 @@ namespace DevBenchTool
 				SettingsPage::Page::DriveRebind(JsonStr(args, "key"), code, JsonBool(args, "cancel"), result);
 			} else if (op == "selecttab") {
 				SettingsPage::Page::DriveSelectTab(JsonStr(args, "panel"), JsonStr(args, "tab"), result);
+			} else if (op == "inject") {
+				// A press spliced ahead of Wheeler's own filter: device keyboard|gamepad|mouse, code, hold (frames).
+				const std::string dev = JsonStr(args, "device");
+				const std::uint32_t d = dev == "gamepad" ? 2u : (dev == "mouse" ? 1u : 0u);
+				const auto code = static_cast<std::uint32_t>(JsonNum(args, "code", 0.0));
+				const int hold = static_cast<int>(JsonNum(args, "hold", 4.0));
+				if (code == 0) {
+					result = R"({"ok":false,"error":"inject needs a non-zero code"})";
+				} else {
+					InputInject::QueuePress(d, code, hold);
+					result = "{\"ok\":true,\"op\":\"inject\",\"device\":\"" + dev + "\",\"code\":" + std::to_string(code) + ",\"hold\":" + std::to_string(hold) + ",\"queued\":" + std::to_string(InputInject::Pending()) + "}";
+				}
+			} else if (op == "spy") {
+				// Runtime switch for the input spy and the menu-block reasons, so a proof can read every
+				// event's verdict from wheeler.log without depending on INI layering. sub=on|off|status.
+				const std::string sub = JsonStr(args, "sub");
+				if (sub == "on") { Config::Debug::InputSpy = true; Config::Debug::LogMenuBlockReasons = true; }
+				else if (sub == "off") { Config::Debug::InputSpy = false; Config::Debug::LogMenuBlockReasons = false; }
+				result = std::string("{\"ok\":true,\"op\":\"spy\",\"inputSpy\":") + (Config::Debug::InputSpy ? "true" : "false") +
+					",\"logMenuBlockReasons\":" + (Config::Debug::LogMenuBlockReasons ? "true" : "false") +
+					",\"rateLimitMs\":" + std::to_string(Config::Debug::InputSpyRateLimitMs) + "}";
 			} else if (op == "amf") {
 				// M3 observability: is the page registered with a menu framework, is a launch armed, and
 				// where did AMF last draw the button (so amf.menu click can press the real one).
@@ -154,7 +177,7 @@ namespace DevBenchTool
 					",\"buttonRect\":[" + std::to_string(r.x0) + "," + std::to_string(r.y0) + "," + std::to_string(r.x1) + "," + std::to_string(r.y1) + "]}";
 			} else {
 				result =
-					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf"]})";
+					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf","spy","inject"]})";
 			}
 
 			a_write(a_sink, result.c_str());

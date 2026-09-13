@@ -152,6 +152,25 @@
                                          "control":  {
                                                          "failAction":  "disable"
                                                      },
+                                         "default":  true,
+                                         "ini":  {
+                                                     "id":  "ToggleKeyPassThrough",
+                                                     "section":  "Control.Wheel"
+                                                 },
+                                         "text":  {
+                                                      "desc":  "Let the wheel's toggle button keep its normal game function: the same press that opens or closes the wheel is also handed to the game, so a D-pad direction or a key bound in the game's controls still does what it always did. A toggle that uses a modifier is not affected. On by default.",
+                                                      "name":  "Toggle Key Keeps Its Game Function"
+                                                  },
+                                         "translation":  {
+                                                             "desc":  "",
+                                                             "name":  ""
+                                                         },
+                                         "type":  "checkbox"
+                                     },
+                                     {
+                                         "control":  {
+                                                         "failAction":  "disable"
+                                                     },
                                          "default":  87,
                                          "ini":  {
                                                      "id":  "SettingsPageKey",

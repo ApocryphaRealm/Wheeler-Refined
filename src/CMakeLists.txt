@@ -20,6 +20,8 @@ list(APPEND SOURCE_FILES
 	# M3: registration with Apocrypha Menu Framework through GetProcAddress only (no header vendored)
 	"${SOURCE_DIR}/bin/AMF/AMFLaunch.cpp"
 	"${SOURCE_DIR}/bin/AMF/AMFLaunch.h"
+	"${SOURCE_DIR}/bin/DevBench/InputInject.cpp"
+	"${SOURCE_DIR}/bin/DevBench/InputInject.h"
 	"${SOURCE_DIR}/bin/Utilities/ItemCapabilities.cpp"
 	"${SOURCE_DIR}/bin/Utilities/ItemCapabilities.h"
 	"${SOURCE_DIR}/bin/Integrations/ExternalFavWheelState.cpp"
