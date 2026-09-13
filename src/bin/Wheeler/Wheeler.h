@@ -72,7 +72,7 @@ public:
 		None,
 		MainWheel,
 		AmmoWheel,
-		DMenu,
+		SettingsPage,
 		Other
 	};
 

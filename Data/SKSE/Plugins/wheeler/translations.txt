@@ -26,7 +26,7 @@ EditHintActionMoveSlotForward = Move Slot Forward
 EditHintActionMoveSlotBack = Move Slot Back
 EditHintActionMoveWheelForward = Move Wheel Forward
 EditHintActionMoveWheelBack = Move Wheel Back
-EditHintActionSettingsDMenu = Settings (dMenu)
+EditHintActionSettingsDMenu = Settings
 EditHintActionExitWheel = Exit Wheel
 EditHintNavToggleMkb = H for keybind hints
 EditHintNavToggleGamepad = Left Stick Button for keybind hints
@@ -53,3 +53,6 @@ AmmoWheelFactoryDefaultsFailed = Wheeler: Failed to restore Ammo Wheel factory d
 ; Utils::NotificationMessage from Wheeler.cpp when a slot-count change is refused.
 SlotCountBlockedByFilledSlot = Wheeler: stopped - the next slot still holds an item. Empty it first.
 SlotCountAtMaximum = Wheeler: 64 slots is the most a wheel can be saved with.
+AmfLaunchExplain = Wheeler draws its settings page in its own overlay, not inside this menu. Press the button, then close this menu: the Wheeler page opens as soon as it is gone.
+AmfLaunchButton = Open the Wheeler settings page
+AmfLaunchPending = Ready - close this menu and the Wheeler page will open.

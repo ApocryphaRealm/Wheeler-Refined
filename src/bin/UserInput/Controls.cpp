@@ -1,4 +1,5 @@
 #include "Controls.h"
+#include "bin/SettingsPage/Page.h"
 #include "bin/Wheeler/Wheeler.h"
 #include "bin/Config.h"
 #include "bin/Integrations/ActionHotkeysBridge.h"
@@ -127,10 +128,7 @@ static void GetInputDebugMenuFlags(bool& dmenuOpen, bool& trackedMenuOpen)
 		return;
 	}
 
-	dmenuOpen = ui->IsMenuOpen("dmenu") ||
-	            ui->IsMenuOpen("dmenu_Main") ||
-	            ui->IsMenuOpen("dMenu") ||
-	            ui->IsMenuOpen("dMenu_Main");
+	dmenuOpen = SettingsPage::Page::IsOpen();  // Wheeler's own settings page took dMenu's place (M4)
 	trackedMenuOpen = ui->IsMenuOpen(RE::MainMenu::MENU_NAME) ||
 	                  ui->IsMenuOpen(RE::TweenMenu::MENU_NAME) ||
 	                  ui->IsMenuOpen(RE::Console::MENU_NAME) ||
@@ -1140,10 +1138,7 @@ static void GetRebindMenuFlags(bool& menuMode, bool& dmenuOpen)
 		ui->IsMenuOpen(RE::Console::MENU_NAME)) {
 		menuMode = true;
 	}
-	if (ui->IsMenuOpen("dmenu") ||
-		ui->IsMenuOpen("dmenu_Main") ||
-		ui->IsMenuOpen("dMenu") ||
-		ui->IsMenuOpen("dMenu_Main")) {
+	if (SettingsPage::Page::IsOpen()) {  // Wheeler's own settings page took dMenu's place (M4)
 		dmenuOpen = true;
 	}
 }

@@ -321,10 +321,6 @@ static std::string GetMenuContextTag()
 	appendMenu(RE::FavoritesMenu::MENU_NAME, "Favorites");
 	appendMenu("LootMenu", "LootMenu");
 	appendMenu("LootMenuCF", "LootMenuCF");
-	appendMenu("dmenu", "dmenu");
-	appendMenu("dmenu_Main", "dmenu_Main");
-	appendMenu("dMenu", "dMenu");
-	appendMenu("dMenu_Main", "dMenu_Main");
 
 	const std::string tags = oss.str();
 	if (tags.empty()) {
@@ -860,11 +856,11 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 					if (consumedRebind) {
 						if (mainWheelAction != Wheeler::InputAction::None) {
 							Wheeler::LogMainWheelInputDecision(Wheeler::InputDecision::DeniedConsumed,
-								Wheeler::InputConsumer::DMenu);
+								Wheeler::InputConsumer::SettingsPage);
 						}
 						consumeEvent = true;
-						spyCandidates = "DMenuRebind";
-						spyWinner = "DMenuRebind";
+						spyCandidates = "SettingsPageRebind";
+						spyWinner = "SettingsPageRebind";
 						spyResult = "Consumed";
 					}
 				}

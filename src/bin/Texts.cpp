@@ -57,6 +57,12 @@ namespace
 			return "EditHintActionMoveWheelBack";
 		case Texts::TextType::EditHintActionSettingsDMenu:
 			return "EditHintActionSettingsDMenu";
+		case Texts::TextType::AmfLaunchExplain:
+			return "AmfLaunchExplain";
+		case Texts::TextType::AmfLaunchButton:
+			return "AmfLaunchButton";
+		case Texts::TextType::AmfLaunchPending:
+			return "AmfLaunchPending";
 		case Texts::TextType::EditHintActionExitWheel:
 			return "EditHintActionExitWheel";
 		case Texts::TextType::EditHintNavToggleMkb:

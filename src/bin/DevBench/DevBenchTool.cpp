@@ -1,5 +1,6 @@
 #include "bin/DevBench/DevBenchTool.h"
 
+#include "bin/AMF/AMFLaunch.h"
 #include "bin/DevBench/DevBenchAPI.h"
 #include "bin/SettingsPage/Page.h"
 
@@ -138,9 +139,22 @@ namespace DevBenchTool
 				SettingsPage::Page::DriveRebind(JsonStr(args, "key"), code, JsonBool(args, "cancel"), result);
 			} else if (op == "selecttab") {
 				SettingsPage::Page::DriveSelectTab(JsonStr(args, "panel"), JsonStr(args, "tab"), result);
+			} else if (op == "amf") {
+				// M3 observability: is the page registered with a menu framework, is a launch armed, and
+				// where did AMF last draw the button (so amf.menu click can press the real one).
+				// sub=arm does what the button does, for a rig with no framework menu open.
+				const std::string sub = JsonStr(args, "sub");
+				if (sub == "arm") {
+					AMFLaunch::ArmLaunch();
+				}
+				const auto r = AMFLaunch::GetButtonRect();
+				result = std::string("{\"ok\":true,\"op\":\"amf\",\"registeredWith\":\"") + AMFLaunch::RegisteredWith() +
+					"\",\"launchPending\":" + (AMFLaunch::IsLaunchPending() ? "true" : "false") +
+					",\"pageOpen\":" + (SettingsPage::Page::IsOpen() ? "true" : "false") +
+					",\"buttonRect\":[" + std::to_string(r.x0) + "," + std::to_string(r.y0) + "," + std::to_string(r.x1) + "," + std::to_string(r.y1) + "]}";
 			} else {
 				result =
-					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab"]})";
+					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf"]})";
 			}
 
 			a_write(a_sink, result.c_str());

@@ -1,5 +1,6 @@
 #include "RenderManager.h"
 
+#include "bin/AMF/AMFLaunch.h"
 #include <d3d11.h>
 
 #include <imgui_impl_dx11.h>
@@ -571,6 +572,7 @@ void RenderManager::draw()
 	// Costs one boolean test per frame while closed, and it is closed until something opens it:
 	// the page is not interactive yet, because this context receives no mouse buttons or keyboard
 	// until the input translation step lands.
+	AMFLaunch::Tick();  // opens the page once the framework's menu has gone (M3)
 	SettingsPage::Page::Draw();
 }
 

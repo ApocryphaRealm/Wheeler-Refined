@@ -15,6 +15,7 @@
 #include <thread>
 
 #include "Wheel.h"
+#include "bin/SettingsPage/Page.h"
 #include "Wheeler.h"
 #include "TransformWheelManager.h"
 #include <RE/B/BookMenu.h>
@@ -377,7 +378,10 @@ namespace
 		float width = 0.0f;
 	};
 
-	struct DMenuToggleBindings
+	// The edit-mode hint row for "Settings": which key opens Wheeler's own settings page. Before
+	// M4 this read dMenu's INI for dMenu's toggle key; the page is Wheeler's now and its key is
+	// Control.Wheel/SettingsPageKey (one code, keyboard or gamepad by range).
+	struct SettingsPageBindings
 	{
 		EditHintActionBinding::Binding mkb{};
 		EditHintActionBinding::Binding gamepad{};
@@ -386,9 +390,6 @@ namespace
 	constexpr std::size_t kEditHintActionCount = 12;
 	constexpr std::uint32_t kGamepadOffset = 266;
 	constexpr std::uint32_t kGamepadMax = kGamepadOffset + 15;
-	constexpr std::uint32_t kDefaultDMenuToggleMkb = 199;  // DIK_HOME
-	constexpr std::uint32_t kDefaultDMenuToggleGamepad = kGamepadOffset + 4;  // Start
-	constexpr const char* kDMenuIniPath = R"(Data\SKSE\Plugins\dmenu\dmenu.ini)";
 
 	bool IsGamepadInputCode(std::uint32_t key)
 	{
@@ -419,108 +420,23 @@ namespace
 		return true;
 	}
 
-	DMenuToggleBindings GetDMenuToggleBindings()
+	SettingsPageBindings GetSettingsPageBindings()
 	{
-		struct Cache
-		{
-			bool initialized = false;
-			double nextPollTime = 0.0;
-			std::filesystem::file_time_type lastWriteTime{};
-			DMenuToggleBindings bindings{};
-		};
-
-		static Cache cache;
-
-		auto resetDefaults = [&]() {
-			cache.bindings.mkb = { kDefaultDMenuToggleMkb, 0 };
-			cache.bindings.gamepad = { kDefaultDMenuToggleGamepad, 0 };
-		};
-
-		const double now = ImGui::GetTime();
-		if (cache.initialized && now < cache.nextPollTime) {
-			return cache.bindings;
-		}
-		cache.nextPollTime = now + 0.5;
-
-		std::error_code ec;
-		std::filesystem::file_time_type currentWriteTime{};
-		if (std::filesystem::exists(kDMenuIniPath, ec)) {
-			currentWriteTime = std::filesystem::last_write_time(kDMenuIniPath, ec);
-			if (ec) {
-				currentWriteTime = {};
+		SettingsPageBindings bindings{};
+		const std::uint32_t key = Config::Control::Wheel::SettingsPageKey;
+		if (key != 0) {
+			if (IsGamepadInputCode(key)) {
+				bindings.gamepad = { key, 0 };
+			} else {
+				bindings.mkb = { key, 0 };
 			}
 		}
-
-		if (cache.initialized && cache.lastWriteTime == currentWriteTime) {
-			return cache.bindings;
-		}
-
-		cache.initialized = true;
-		cache.lastWriteTime = currentWriteTime;
-		resetDefaults();
-
-		if (currentWriteTime == std::filesystem::file_time_type{}) {
-			return cache.bindings;
-		}
-
-		CSimpleIniA ini;
-		ini.SetUnicode();
-		if (ini.LoadFile(kDMenuIniPath) < 0) {
-			return cache.bindings;
-		}
-
-		std::uint32_t legacyToggle = 0;
-		std::uint32_t legacyModifier = 0;
-		std::uint32_t mkbToggle = 0;
-		std::uint32_t mkbModifier = 0;
-		std::uint32_t gamepadToggle = 0;
-		std::uint32_t gamepadModifier = 0;
-
-		const bool hasLegacyToggle = TryReadIniUInt32(ini, "UI", "key_toggle_dmenu", legacyToggle);
-		const bool hasLegacyModifier = TryReadIniUInt32(ini, "UI", "key_toggle_modifier", legacyModifier);
-		const bool hasMkbToggle = TryReadIniUInt32(ini, "UI", "key_toggle_dmenu_mkb", mkbToggle);
-		const bool hasMkbModifier = TryReadIniUInt32(ini, "UI", "key_toggle_modifier_mkb", mkbModifier);
-		const bool hasGamepadToggle = TryReadIniUInt32(ini, "UI", "key_toggle_dmenu_gamepad", gamepadToggle);
-		const bool hasGamepadModifier = TryReadIniUInt32(ini, "UI", "key_toggle_modifier_gamepad", gamepadModifier);
-
-		if (hasMkbToggle) {
-			cache.bindings.mkb.key = mkbToggle;
-		}
-		if (hasMkbModifier) {
-			cache.bindings.mkb.modifier = mkbModifier;
-		}
-		if (hasGamepadToggle) {
-			cache.bindings.gamepad.key = gamepadToggle;
-		}
-		if (hasGamepadModifier) {
-			cache.bindings.gamepad.modifier = gamepadModifier;
-		}
-
-		if (hasLegacyToggle) {
-			if (IsGamepadInputCode(legacyToggle)) {
-				if (!hasGamepadToggle) {
-					cache.bindings.gamepad.key = legacyToggle;
-				}
-			} else if (!hasMkbToggle) {
-				cache.bindings.mkb.key = legacyToggle;
-			}
-		}
-		if (hasLegacyModifier) {
-			if (IsGamepadInputCode(legacyModifier)) {
-				if (!hasGamepadModifier) {
-					cache.bindings.gamepad.modifier = legacyModifier;
-				}
-			} else if (!hasMkbModifier) {
-				cache.bindings.mkb.modifier = legacyModifier;
-			}
-		}
-
-		return cache.bindings;
+		return bindings;
 	}
 
 	std::array<EditHintActionBinding, kEditHintActionCount> BuildEditHintActions()
 	{
-		const auto dmenuBindings = GetDMenuToggleBindings();
+		const auto pageBindings = GetSettingsPageBindings();
 		return {
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionUsePlaceItem), { Config::InputBindings::MKB::activatePrimary }, { Config::InputBindings::GamePad::activatePrimary } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionRemoveItemWheel), { Config::InputBindings::MKB::activateSecondary }, { Config::InputBindings::GamePad::activateSecondary } },
@@ -532,7 +448,7 @@ namespace
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveSlotBack), { Config::InputBindings::MKB::moveEntryBack }, { Config::InputBindings::GamePad::moveEntryBack } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveWheelForward), { Config::InputBindings::MKB::moveWheelForward }, { Config::InputBindings::GamePad::moveWheelForward } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveWheelBack), { Config::InputBindings::MKB::moveWheelBack }, { Config::InputBindings::GamePad::moveWheelBack } },
-			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionSettingsDMenu), dmenuBindings.mkb, dmenuBindings.gamepad },
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionSettingsDMenu), pageBindings.mkb, pageBindings.gamepad },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionExitWheel), { Config::InputBindings::MKB::closeWheel }, { Config::InputBindings::GamePad::exitWheel } }
 		};
 	}
@@ -1819,19 +1735,12 @@ namespace
 	}
 
 	/// <summary>
-	/// Check if dMenu (settings overlay) is currently open.
-	/// Used to prevent Wheeler from closing when user interacts with dMenu for real-time editing.
+	/// Is Wheeler's own settings page open. Used to keep the wheel up (modal popup) while the
+	/// player edits settings live - the role dMenu's overlay had before M4 dropped dMenu.
 	/// </summary>
-	bool IsDMenuOpen()
+	bool IsSettingsPageOpen()
 	{
-		RE::UI* ui = RE::UI::GetSingleton();
-		if (!ui) {
-			return false;
-		}
-		return ui->IsMenuOpen("dmenu") ||
-			ui->IsMenuOpen("dmenu_Main") ||
-			ui->IsMenuOpen("dMenu") ||
-			ui->IsMenuOpen("dMenu_Main");
+		return SettingsPage::Page::IsOpen();
 	}
 
 	struct InventorySelection
@@ -2421,8 +2330,8 @@ namespace
 			return "MainWheel";
 		case Wheeler::InputConsumer::AmmoWheel:
 			return "AmmoWheel";
-		case Wheeler::InputConsumer::DMenu:
-			return "dMenu";
+		case Wheeler::InputConsumer::SettingsPage:
+			return "SettingsPage";
 		case Wheeler::InputConsumer::Other:
 			return "Other";
 		case Wheeler::InputConsumer::None:
@@ -7711,10 +7620,10 @@ void Wheeler::Update(float a_deltaTime)
 		DisableEditModeGameplayInputBlock();
 	}
 
-	// Use modal popup when in edit mode OR when dMenu is open for real-time editing.
-	// Modal popups don't close on click-outside, allowing users to interact with dMenu settings
+	// Use modal popup when in edit mode OR when the settings page is open for real-time editing.
+	// Modal popups don't close on click-outside, allowing users to interact with the page
 	// while keeping Wheeler visible for real-time visual feedback.
-	const bool useModalPopup = _editMode || IsDMenuOpen();
+	const bool useModalPopup = _editMode || IsSettingsPageOpen();
 	bool poppedUp = useModalPopup ? ImGui::BeginPopupModal(_wheelWindowID) : ImGui::BeginPopup(_wheelWindowID);
 	if (poppedUp) {
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -8983,8 +8892,8 @@ void Wheeler::OpenWheeler()
 		RE::DialogueMenu::MENU_NAME,
 		RE::GiftMenu::MENU_NAME,
 		RE::ModManagerMenu::MENU_NAME
-		// NOTE: dMenu variants intentionally NOT in blocking list to allow real-time editing.
-		// When dMenu is open, Wheeler uses modal popup to prevent click-outside closing.
+		// NOTE: the settings page is not an RE::UI menu and is deliberately NOT blocking, to allow
+		// real-time editing. While it is open, Wheeler uses a modal popup to prevent click-outside closing.
 		// ContainerMenu and LootMenu are handled separately - Wheeler closes them instead of being blocked
 	});
 	const bool inventoryOpen = ui->IsMenuOpen(RE::InventoryMenu::MENU_NAME);

@@ -1,4 +1,5 @@
 #include "AmmoWheel.h"
+#include "bin/SettingsPage/Page.h"
 #include "AmmoWheelReskin.h"
 #include "AmmoWheelReskinUnified.h"
 #include "bin/API/WheelerAPI.h"
@@ -304,9 +305,13 @@ namespace
 			RE::TweenMenu::MENU_NAME,
 			RE::JournalMenu::MENU_NAME,
 			"LootMenu",
-			"LootMenuCF",
-			"dmenu"
+			"LootMenuCF"
 		};
+
+		// Wheeler's own settings page is not an RE::UI menu; it blocks the ammo wheel the way dMenu did.
+		if (SettingsPage::Page::IsOpen()) {
+			return false;
+		}
 
 		for (std::string_view menuName : blockingMenus) {
 			if (ui->IsMenuOpen(menuName)) {
@@ -1695,12 +1700,14 @@ bool AmmoWheel::CanOpen() const
 		"BestiaryMenu",
 		"CustomMenu",
 		"RaceMenu",
-		"ShowStats",
-		"dmenu",
-		"dmenu_Main",
-		"dMenu",
-		"dMenu_Main"
+		"ShowStats"
 	});
+
+	// Wheeler's own settings page is not an RE::UI menu; it blocks the ammo wheel the way dMenu did.
+	if (SettingsPage::Page::IsOpen()) {
+		logger::debug("AmmoWheel::CanOpen rejected: the settings page is open");
+		return false;
+	}
 
 	for (std::string_view menuName : conflictingMenus) {
 		if (ui->IsMenuOpen(menuName)) {

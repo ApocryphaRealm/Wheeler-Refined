@@ -1,4 +1,5 @@
 #include "UserInput/Input.h"
+#include "bin/AMF/AMFLaunch.h"
 #include "UserInput/Controls.h"
 
 #include "Rendering/RenderManager.h"
@@ -274,8 +275,8 @@ namespace
 		ActionHotkeysBridge::Init();
 		OStimIntegration::Init();
 
-		// Parse the dMenu descriptors that will drive our own settings page. Read-only for now:
-		// nothing draws from this yet, and the census written to the log is what proves the parse
+		// Parse the descriptor files (dMenu's JSON format, kept as the source of truth) that drive
+		// Wheeler's own settings page; the census written to the log is what proves the parse
 		// against the independent measurement in plans/wheeler-refined/descriptor-census.py.
 		if (SettingsPage::Catalog::GetSingleton().LoadAll()) {
 			SettingsPage::Catalog::GetSingleton().LogCensus();
@@ -287,6 +288,9 @@ namespace
 		} else {
 			logger::warn("[SettingsPage] No descriptors parsed; the settings page would be empty");
 		}
+
+		// M3: the page is reachable from the menu framework's Mod Control Panel when one is loaded.
+		AMFLaunch::Register();
 
 		ModCallbackEventHandler::Register();
 		LogEnvironmentCompatibilityProbe();
