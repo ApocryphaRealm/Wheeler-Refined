@@ -133,6 +133,16 @@ namespace SettingsPresets
 		if (!IsValidName(a_name, reason)) {
 			return false;
 		}
+		// The listing, not a stat on the path: under MO2's virtual file system a folder that was just
+		// renamed shows up in the directory listing while is_directory on its path still answers no
+		// (measured 2026-09-13, wheeler-111-proof.log: "No such preset: ProofRenamed" with the folder
+		// listed and on disk). Everything the presets do goes through the listing for the same reason.
+		const std::string wanted = Lower(Trim(a_name));
+		for (const auto& n : List()) {
+			if (Lower(n) == wanted) {
+				return true;
+			}
+		}
 		std::error_code ec;
 		return fs::is_directory(PresetDir(a_name), ec) && !ec;
 	}
@@ -247,12 +257,29 @@ namespace SettingsPresets
 			a_err = std::string(Texts::GetText(Texts::TextType::PresetAlreadyExists)) + " " + to;
 			return false;
 		}
+		// Copy the files into the new folder and remove the old one, rather than fs::rename on the
+		// directory: MO2's virtual file system does not follow a directory rename (the listing showed
+		// the new name, every path check on it failed), while per-file copies and deletes it handles.
+		const fs::path src = PresetDir(from);
+		const fs::path dst = PresetDir(to);
 		std::error_code ec;
-		fs::rename(PresetDir(from), PresetDir(to), ec);
+		fs::create_directories(dst, ec);
 		if (ec) {
-			a_err = "rename failed (" + ec.message() + ")";
+			a_err = "cannot create " + dst.string() + " (" + ec.message() + ")";
 			logger::error("[SettingsPresets] {}", a_err);
 			return false;
+		}
+		for (const auto& entry : fs::directory_iterator(src, ec)) {
+			if (entry.is_regular_file(ec)) {
+				if (!CopyOver(entry.path(), dst / entry.path().filename(), a_err)) {
+					return false;
+				}
+			}
+		}
+		ec.clear();
+		fs::remove_all(src, ec);
+		if (ec) {
+			logger::warn("[SettingsPresets] rename: the old folder '{}' could not be removed ({})", src.string(), ec.message());
 		}
 		{
 			std::scoped_lock l(g_lock);
