@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.4 - 2026-09-13 - untested
+
+### Changed
+- The log level is a setting: `[Log] uLogLevel` in `debug.ini`, 0 = trace (shipped) to 6 = off. Release builds were pinned to info, which left bug reports without the detail the log is for.
+
 ## 1.1.3 - 2026-09-13 - untested
 
 ### Fixed

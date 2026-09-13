@@ -12,6 +12,7 @@
 #include "Wheeler/Wheeler.h"
 #include "Utilities/UniqueIDHandler.h"
 #include "Serialization/SerializationEntry.h"
+#include <SimpleIni.h>
 
 #include "InitState.h"
 #include "Config.h"
@@ -314,8 +315,18 @@ namespace
 
 		*path /= fmt::format("{}.log"sv, Plugin::NAME);
 		auto baseSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-		// Trim log noise in release: keep info+ (warnings/errors still shown)
-		const auto level = spdlog::level::info;
+		// 1.1.4 (project rule: ship at trace): the level comes from Data\SKSE\Plugins\wheeler\debug.ini
+		// [Log] uLogLevel, 0 = trace ... 6 = off, default 0. Upstream pinned release builds to info.
+		auto level = spdlog::level::trace;
+		{
+			CSimpleIniA dbg;
+			dbg.SetUnicode();
+			if (dbg.LoadFile("Data\SKSE\Plugins\wheeler\debug.ini") >= 0) {
+				const long v = dbg.GetLongValue("Log", "uLogLevel", 0);
+				const long clamped = v < 0 ? 0 : (v > 6 ? 6 : v);
+				level = static_cast<spdlog::level::level_enum>(clamped);
+			}
+		}
 #endif
 
 		auto sink = std::make_shared<CoreStartupWhitelistSink>(std::move(baseSink));
