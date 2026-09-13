@@ -782,6 +782,22 @@ namespace SettingsPage
 				}
 				ImGui::TextDisabled("%s", Texts::GetText(Texts::TextType::SlotCountHelp));
 				ImGui::Separator();
+				static int s_pendingWheels = 0;
+				static bool s_draggingWheels = false;
+				const int liveWheels = Wheeler::GetWheelCount();
+				if (!s_draggingWheels) {
+					s_pendingWheels = liveWheels;
+				}
+				ImGui::SetNextItemWidth(220.0f);
+				ImGui::SliderInt(Texts::GetText(Texts::TextType::WheelCountLabel), &s_pendingWheels, 1, 100);
+				s_draggingWheels = ImGui::IsItemActive();
+				if (ImGui::IsItemDeactivatedAfterEdit() && s_pendingWheels != liveWheels) {
+					const int result = Wheeler::SetWheelCount(s_pendingWheels);
+					INFO("[SettingsPage] wheel count {} -> requested {} -> now {}", liveWheels, s_pendingWheels, result);
+					s_pendingWheels = result;
+				}
+				ImGui::TextDisabled("%s", Texts::GetText(Texts::TextType::WheelCountHelp));
+				ImGui::Separator();
 			}
 
 			void DrawTab(const Panel& a_panel, const Tab& a_tab)

@@ -55,6 +55,13 @@ public:
 		KeymapReservedByFramework,   // a rebind landed on a key the menu framework reserves
 		KeymapAlreadyBoundTo,        // a rebind landed on a key another Wheeler action holds; the action's name follows
 		SettingsLiveInFramework,     // the settings key was pressed while the framework hosts the page
+		EditHintActionToggleWheel,
+		EditHintActionNextItem,
+		EditHintActionPreviousItem,
+		EditHintActionToggleHints,
+		WheelCountLabel,
+		WheelCountHelp,
+		WheelCountBlockedByFilledWheel,
 
 		Total
 	};
@@ -113,6 +120,13 @@ private:
 		MAP_ENTRY(KeymapReservedByFramework, "not bound - the menu framework reserves that key"),
 		MAP_ENTRY(KeymapAlreadyBoundTo, "not bound - that key is already used by"),
 		MAP_ENTRY(SettingsLiveInFramework, "Wheeler: the settings are in the Apocrypha Menu Framework menu - open it and choose Wheeler - Refined."),
+		MAP_ENTRY(EditHintActionToggleWheel, "Open / Close Wheel"),
+		MAP_ENTRY(EditHintActionNextItem, "Next Item"),
+		MAP_ENTRY(EditHintActionPreviousItem, "Previous Item"),
+		MAP_ENTRY(EditHintActionToggleHints, "Show / Hide These Hints"),
+		MAP_ENTRY(WheelCountLabel, "Number of wheels"),
+		MAP_ENTRY(WheelCountHelp, "How many wheels you have (1 to 100). Growing adds empty wheels with the same number of slots; shrinking removes wheels from the end and stops at the first wheel that still holds an item."),
+		MAP_ENTRY(WheelCountBlockedByFilledWheel, "Wheeler: stopped - the last wheel still holds an item. Empty it first."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsRestored, "Wheeler: Ammo Wheel restored to factory defaults."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsFailed, "Wheeler: Failed to restore Ammo Wheel factory defaults."),
 		MAP_ENTRY(InsufficientMagickaForInstantCast, "Not enough magicka for instant cast.")

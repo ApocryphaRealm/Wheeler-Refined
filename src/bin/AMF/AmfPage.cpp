@@ -293,6 +293,22 @@ namespace AmfPage
 			}
 			MCP::TextDisabled("%s", Texts::GetText(Texts::TextType::SlotCountHelp));
 			MCP::Separator();
+			static int s_pendingWheels = 0;
+			static bool s_draggingWheels = false;
+			const int liveWheels = Wheeler::GetWheelCount();
+			if (!s_draggingWheels) {
+				s_pendingWheels = liveWheels;
+			}
+			MCP::SetNextItemWidth(220.0f);
+			MCP::SliderInt(Texts::GetText(Texts::TextType::WheelCountLabel), &s_pendingWheels, 1, 100);
+			s_draggingWheels = MCP::IsItemActive();
+			if (MCP::IsItemDeactivatedAfterEdit() && s_pendingWheels != liveWheels) {
+				const int result = Wheeler::SetWheelCount(s_pendingWheels);
+				logger::info("[AmfPage] wheel count {} -> requested {} -> now {}", liveWheels, s_pendingWheels, result);
+				s_pendingWheels = result;
+			}
+			MCP::TextDisabled("%s", Texts::GetText(Texts::TextType::WheelCountHelp));
+			MCP::Separator();
 		}
 
 		void DrawTab(const Panel& a_panel, const Tab& a_tab)

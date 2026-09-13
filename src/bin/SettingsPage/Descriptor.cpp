@@ -393,7 +393,7 @@ namespace SettingsPage
 		// "Action Hotkeys Bridge Layout" (a legacy helper) on the first tab. Unknown files keep their
 		// alphabetical place after the known ones.
 		const auto rank = [](const std::filesystem::path& a_path) {
-			static const char* kOrder[] = { "wheeler controls", "wheel behavior", "wheeler styles", "ammo wheel",
+			static const char* kOrder[] = { "wheeler controls", "wheel behavior", "ammo wheel", "wheeler styles",
 				"wheeler i4", "action hotkeys bridge", "ostim integration", "action hotkeys bridge layout" };
 			std::string stem = a_path.stem().string();
 			std::transform(stem.begin(), stem.end(), stem.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });

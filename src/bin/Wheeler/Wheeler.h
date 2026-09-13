@@ -392,6 +392,8 @@ public:
 	/// </summary>
 	/// <returns>the slot count actually reached, which may fall short of the request</returns>
 	static int SetCurrentWheelSlotCount(int a_desired);
+	/// The number of wheels, 1..100: grows with empty wheels, shrinks from the end and refuses to drop a wheel holding an item.
+	static int SetWheelCount(int a_desired);
 
 	/// Slots on the active wheel right now, or -1 when there is no valid active wheel.
 	static int GetCurrentWheelSlotCount();

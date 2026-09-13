@@ -8,6 +8,23 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.0.9 - 2026-09-13 - untested
+
+### Fixed
+- Inside the inventory a tap on the D-pad toggle now scrolls the list: the replayed press carries the user event of the menu's own input context (the game's context stack), not the gameplay one.
+- The gamepad edit-mode defaults for Move Slot Forward / Back sat on D-pad up / down, the same button as the wheel toggle; they now ship unbound (rebindable), one key one action.
+
+### Changed
+- The D-pad hold-to-open test now applies only inside menus. In gameplay a D-pad toggle press opens the wheel immediately and is the wheel's press, never passed to the game or another mod's hotkey.
+- Wheel labels use a clear system font (Segoe UI, then Arial) when no custom font is configured, instead of the 13-pixel ImGui bitmap font scaled up. A FontConfig.ini font still takes precedence.
+- Max Items Per Slot defaults to 1.
+- The edit-mode hint panel is anchored at 0/0 (the top-left corner) by default and lists more of the controls: Open / Close Wheel, Next Item, Previous Item, Show / Hide These Hints.
+- The Ammo Wheel panel is the third section, right after Wheel Behavior.
+
+### Added
+- A Number Of Wheels slider next to Slots On This Wheel, on both the framework page and the overlay: growing adds empty wheels with the same slot count; shrinking removes from the end and stops at a wheel that still holds an item. Driving op wheeler.page wheels.
+- The centre label's exact text is logged when it changes, to pin down the stray digit seen in a screenshot ("Iron War9Axe").
+
 ## 1.0.8 - 2026-09-13 - untested
 
 ### Changed

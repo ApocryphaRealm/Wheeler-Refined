@@ -164,6 +164,13 @@ namespace DevBenchTool
 				int after = before;
 				if (desired > 0 && before >= 0) { after = Wheeler::SetCurrentWheelSlotCount(desired); }   // a fresh wheel has 0 entries and is still a wheel
 				result = "{\"ok\":true,\"op\":\"slots\",\"before\":" + std::to_string(before) + ",\"requested\":" + std::to_string(desired) + ",\"after\":" + std::to_string(after) + "}";
+			} else if (op == "wheels") {
+				// The number-of-wheels slider's setter (the owner, 2026-09-13). value = desired count.
+				const int before = Wheeler::GetWheelCount();
+				const int desired = static_cast<int>(JsonNum(args, "value", -1.0));
+				int after = before;
+				if (desired > 0) { after = Wheeler::SetWheelCount(desired); }
+				result = "{\"ok\":true,\"op\":\"wheels\",\"before\":" + std::to_string(before) + ",\"requested\":" + std::to_string(desired) + ",\"after\":" + std::to_string(after) + "}";
 			} else if (op == "spy") {
 				// Runtime switch for the input spy and the menu-block reasons, so a proof can read every
 				// event's verdict from wheeler.log without depending on INI layering. sub=on|off|status.

@@ -78,6 +78,7 @@ public:
 	// What the last Dispatch/Tick decided for a D-pad hold (for the input spy); null when nothing.
 	static const char* TakeDpadNote();
 	static bool IsDpadKey(KeyId key);
+	static bool IsMenuContextOpen();
 
 	static bool IsKeyBound(KeyId key);
 	static bool IsKeyExclusivelyBound(KeyId key);

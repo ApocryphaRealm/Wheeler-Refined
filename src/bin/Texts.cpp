@@ -115,6 +115,20 @@ namespace
 			return "KeymapAlreadyBoundTo";
 		case Texts::TextType::SettingsLiveInFramework:
 			return "SettingsLiveInFramework";
+		case Texts::TextType::EditHintActionToggleWheel:
+			return "EditHintActionToggleWheel";
+		case Texts::TextType::EditHintActionNextItem:
+			return "EditHintActionNextItem";
+		case Texts::TextType::EditHintActionPreviousItem:
+			return "EditHintActionPreviousItem";
+		case Texts::TextType::EditHintActionToggleHints:
+			return "EditHintActionToggleHints";
+		case Texts::TextType::WheelCountLabel:
+			return "WheelCountLabel";
+		case Texts::TextType::WheelCountHelp:
+			return "WheelCountHelp";
+		case Texts::TextType::WheelCountBlockedByFilledWheel:
+			return "WheelCountBlockedByFilledWheel";
 		default:
 			return "";
 		}

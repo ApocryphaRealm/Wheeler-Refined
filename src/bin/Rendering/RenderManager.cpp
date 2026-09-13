@@ -410,6 +410,26 @@ void RenderManager::D3DInitHook::thunk()
 	
 	// If no language-specific font, still apply glyph preset for default font
 	if (!foundCustomFont && glyphPreset >= 0) {
+		// The owner, 2026-09-13: "a better looking font, something that's not as pixelated". With no
+		// custom face configured the wheel used Dear ImGui's 13 px bitmap font scaled up. Every Windows
+		// install carries Segoe UI; it is loaded at 64 px like a custom face and scaled down by the
+		// drawer, so the labels are hinted TrueType at any size. A FontConfig.ini `font =` still wins.
+		wchar_t winDir[MAX_PATH] = {};
+		if (GetWindowsDirectoryW(winDir, MAX_PATH) > 0) {
+			for (const wchar_t* face : { L"Fonts/segoeui.ttf", L"Fontsrial.ttf" }) {
+				std::filesystem::path candidate = std::filesystem::path(winDir) / face;
+				if (std::filesystem::exists(candidate)) {
+					fontPath = candidate;
+					foundCustomFont = true;
+					glyphRanges = GlyphRanges::GetGlyphRangesForPreset(glyphPreset, customRanges);
+					INFO("[Font] No custom font configured; using the system face {} with GlyphPreset {} ({})",
+						fontPath.string(), glyphPreset, GlyphRanges::GetPresetName(glyphPreset));
+					break;
+				}
+			}
+		}
+	}
+	if (!foundCustomFont && glyphPreset >= 0) {
 		INFO("[Font] No custom font, using default with GlyphPreset {} ({})", 
 			glyphPreset, GlyphRanges::GetPresetName(glyphPreset));
 		glyphRanges = GlyphRanges::GetGlyphRangesForPreset(glyphPreset, customRanges);

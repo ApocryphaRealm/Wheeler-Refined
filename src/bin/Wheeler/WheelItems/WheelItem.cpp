@@ -821,6 +821,15 @@ void WheelItem::drawHighlightTexture(ImVec2 a_center, DrawArgs a_drawArgs)
 void WheelItem::drawHighlightText(ImVec2 a_center, const char* a_text, DrawArgs a_drawArgs, float a_shiftY)
 {
 	using namespace Config::Styling::Item::Highlight;
+	// 2026-09-13: the owner's screenshot showed "Iron War9Axe" in the centre. Log the exact string
+	// once per change so the next report says whether the digit is in the name or drawn over it.
+	{
+		static std::string s_lastLogged;
+		if (a_text && s_lastLogged != a_text) {
+			s_lastLogged = a_text;
+			logger::info("[Highlight] centre label '{}' ({} bytes)", s_lastLogged, s_lastLogged.size());
+		}
+	}
 	const float drawX = a_center.x + Text::OffsetX;
 	const float drawY = a_center.y + Text::OffsetY - a_shiftY;
 

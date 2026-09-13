@@ -21,8 +21,23 @@ namespace InputInject
 
 		void Splice(RE::InputEvent** a_events, RE::INPUT_DEVICE a_device, std::uint32_t a_code, float a_value, float a_held, bool a_replay = false)
 		{
+			// The user event is looked up in the context the game is IN (the top of the control map's
+			// context stack), not the gameplay context: inside the inventory a D-pad press must arrive
+			// as the menu's own "Down", or the list never scrolls (the owner's 2026-09-13 test).
 			auto* controlMap = RE::ControlMap::GetSingleton();
-			const std::string_view name = controlMap ? controlMap->GetUserEventName(a_code, a_device) : std::string_view{};
+			// Walk the stack from the top down, the way the engine resolves a press: the inventory's
+			// own context maps no D-pad name and defers to the menu-mode context beneath it (measured
+			// 2026-09-13: the top context alone answered '').
+			std::string_view name{};
+			if (controlMap) {
+				const auto& stack = controlMap->contextPriorityStack;
+				for (std::uint32_t i = stack.size(); i > 0 && name.empty(); --i) {
+					name = controlMap->GetUserEventName(a_code, a_device, stack[i - 1]);
+				}
+				if (name.empty()) {
+					name = controlMap->GetUserEventName(a_code, a_device);
+				}
+			}
 			RE::BSFixedString userEvent(name.empty() ? "" : std::string(name).c_str());
 			auto* ev = RE::ButtonEvent::Create(a_device, userEvent, a_code, a_value, a_held);
 			if (!ev) {

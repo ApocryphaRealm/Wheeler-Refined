@@ -809,7 +809,12 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 	bool dpadHold = false;
 	if (isGamePad && Config::Control::Wheel::DpadHoldToToggle && IsDpadKey(key) && FindUnchordedMainToggle(key)) {
 		dpadHold = true;
-		if (isDown) {
+		// The owner, 2026-09-13: "the delay ... should only apply while in the menus". In gameplay the
+		// press opens the wheel at once and is the wheel's (Consumed - never shared with the game or
+		// another mod's hotkey); the duration test runs only where the D-pad has a second meaning.
+		if (isDown && !Wheeler::IsWheelerOpen() && !IsMenuContextOpen()) {
+			_dpadNote = "DpadGameplayOpen";
+		} else if (isDown) {
 			if (!Wheeler::IsWheelerOpen()) {
 				auto [it, inserted] = _pendingDpadHolds.try_emplace(key);
 				if (inserted) {
@@ -1076,6 +1081,32 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 	}
 	it->second();
 	return DispatchResult::HandledPassThrough;
+}
+
+// A menu in which the D-pad already means something (list navigation): the duration test applies
+// there and nowhere else. Mirrors Input.cpp's gameplay-context list.
+bool Controls::IsMenuContextOpen()
+{
+	auto* ui = RE::UI::GetSingleton();
+	if (!ui) {
+		return false;
+	}
+	if (ui->GameIsPaused()) {
+		return true;
+	}
+	static constexpr std::string_view kMenus[] = {
+		RE::InventoryMenu::MENU_NAME, RE::MagicMenu::MENU_NAME, RE::ContainerMenu::MENU_NAME,
+		RE::BarterMenu::MENU_NAME, RE::FavoritesMenu::MENU_NAME, RE::CraftingMenu::MENU_NAME,
+		RE::GiftMenu::MENU_NAME, RE::JournalMenu::MENU_NAME, RE::MapMenu::MENU_NAME,
+		RE::TweenMenu::MENU_NAME, RE::Console::MENU_NAME, RE::MainMenu::MENU_NAME,
+		"LootMenu", "LootMenuCF"
+	};
+	for (std::string_view name : kMenus) {
+		if (ui->IsMenuOpen(name)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool Controls::IsDpadKey(KeyId key)

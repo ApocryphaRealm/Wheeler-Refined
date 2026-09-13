@@ -192,8 +192,8 @@ namespace Config
 			inline std::uint32_t GamepadIconSet = 0;
 			inline bool ShowBackground = true;
 			inline bool ShowTitle = true;
-			inline float AnchorX = 36.0f;
-			inline float AnchorY = 140.0f;
+			inline float AnchorX = 0.0f;   // the owner, 2026-09-13: the hint list sits at the left edge, offsets 0/0
+			inline float AnchorY = 0.0f;
 			inline float LabelWidth = 210.0f;
 			inline float FontSize = 18.0f;
 			inline float HeaderFontSize = 20.0f;
@@ -1027,7 +1027,7 @@ namespace Config
 		// Maximum items allowed per slot during deserialization (load).
 		// Items beyond this limit are truncated on load. Lowering this may cause data loss.
 		// Range: 10 to 64
-		inline int MaxItemsPerSlot = 64;
+		inline int MaxItemsPerSlot = 1;   // the owner, 2026-09-13: one item per slot by default
 
 		// Auto-populate and switch to dedicated form wheels when transforming.
 		namespace TransformWheels

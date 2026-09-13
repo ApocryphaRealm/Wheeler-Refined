@@ -881,7 +881,7 @@
                                                                                  "control":  {
                                                                                                  "failAction":  "disable"
                                                                                              },
-                                                                                 "default":  266,
+                                                                                 "default":  0,
                                                                                  "ini":  {
                                                                                              "id":  "moveEntryForward",
                                                                                              "section":  "InputBindings.GamePad"
@@ -900,7 +900,7 @@
                                                                                  "control":  {
                                                                                                  "failAction":  "disable"
                                                                                              },
-                                                                                 "default":  267,
+                                                                                 "default":  0,
                                                                                  "ini":  {
                                                                                              "id":  "moveEntryBack",
                                                                                              "section":  "InputBindings.GamePad"

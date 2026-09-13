@@ -387,7 +387,7 @@ namespace
 		EditHintActionBinding::Binding gamepad{};
 	};
 
-	constexpr std::size_t kEditHintActionCount = 12;
+	constexpr std::size_t kEditHintActionCount = 16;   // the owner, 2026-09-13: more of the controls
 	constexpr std::uint32_t kGamepadOffset = 266;
 	constexpr std::uint32_t kGamepadMax = kGamepadOffset + 15;
 
@@ -443,6 +443,9 @@ namespace
 	{
 		const auto pageBindings = GetSettingsPageBindings();
 		return {
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionToggleWheel), { Config::InputBindings::MKB::toggleWheel, Config::InputBindings::MKB::toggleWheelModifier }, { Config::InputBindings::GamePad::toggleWheel, Config::InputBindings::GamePad::toggleWheelModifier } },
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionNextItem), { Config::InputBindings::MKB::nextItem }, { Config::InputBindings::GamePad::nextItem } },
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionPreviousItem), { Config::InputBindings::MKB::prevItem }, { Config::InputBindings::GamePad::prevItem } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionUsePlaceItem), { Config::InputBindings::MKB::activatePrimary }, { Config::InputBindings::GamePad::activatePrimary } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionRemoveItemWheel), { Config::InputBindings::MKB::activateSecondary }, { Config::InputBindings::GamePad::activateSecondary } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionAddEmptySlot), { Config::InputBindings::MKB::addEmptyEntry }, { Config::InputBindings::GamePad::addEmptyEntry } },
@@ -454,7 +457,8 @@ namespace
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveWheelForward), { Config::InputBindings::MKB::moveWheelForward }, { Config::InputBindings::GamePad::moveWheelForward } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveWheelBack), { Config::InputBindings::MKB::moveWheelBack }, { Config::InputBindings::GamePad::moveWheelBack } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionSettingsDMenu), pageBindings.mkb, pageBindings.gamepad },
-			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionExitWheel), { Config::InputBindings::MKB::closeWheel }, { Config::InputBindings::GamePad::exitWheel } }
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionExitWheel), { Config::InputBindings::MKB::closeWheel }, { Config::InputBindings::GamePad::exitWheel } },
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionToggleHints), { Config::InputBindings::MKB::toggleEditHints }, { Config::InputBindings::GamePad::toggleEditHints } }
 		};
 	}
 
@@ -11390,6 +11394,55 @@ int Wheeler::GetCurrentWheelSlotCount()
 		return -1;
 	}
 	return _wheels[_activeWheelIdx]->GetNumEntries();
+}
+
+// The owner, 2026-09-13: "Along with these slots on the wheel slider, I want a number of wheels
+// slider." Grows by adding wheels with as many empty slots as the active wheel has (eight when there
+// is none); shrinks from the END and stops at the first wheel that still holds an item, so nothing
+// placed is ever discarded. 1..MAX_WHEELS.
+int Wheeler::SetWheelCount(int a_desired)
+{
+	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+	const int desired = (std::max)(1, (std::min)(a_desired, 100));
+	int current = static_cast<int>(_wheels.size());
+	int slotsPerWheel = 8;
+	if (HasValidActiveWheel_NoLock() && _wheels[_activeWheelIdx]) {
+		slotsPerWheel = (std::max)(1, _wheels[_activeWheelIdx]->GetNumEntries());
+	}
+	while (current < desired) {
+		_wheels.push_back(std::make_unique<Wheel>());
+		for (int i = 0; i < slotsPerWheel; ++i) {
+			_wheels.back()->PushEmptyEntry();
+		}
+		current = static_cast<int>(_wheels.size());
+	}
+	while (current > desired) {
+		Wheel* last = _wheels.back().get();
+		bool holdsItem = false;
+		if (last) {
+			for (int i = 0; i < last->GetNumEntries(); ++i) {
+				WheelEntry* entry = last->GetEntry(i);
+				if (entry && !entry->IsEmpty()) {
+					holdsItem = true;
+					break;
+				}
+			}
+		}
+		if (holdsItem) {
+			Utils::NotificationMessage(Texts::GetText(Texts::TextType::WheelCountBlockedByFilledWheel));
+			break;
+		}
+		_wheels.pop_back();
+		current = static_cast<int>(_wheels.size());
+	}
+	if (_activeWheelIdx >= current) {
+		_activeWheelIdx = current - 1;
+	}
+	if (!HasValidActiveWheel_NoLock() && current > 0) {
+		_activeWheelIdx = 0;
+	}
+	_lastHoveredEntryByWheel.resize(_wheels.size(), -1);
+	return current;
 }
 
 int Wheeler::SetCurrentWheelSlotCount(int a_desired)
