@@ -9,6 +9,7 @@
 
 #include "bin/AMF/AMFLaunch.h"
 #include "bin/Config.h"
+#include "bin/SettingsPresets.h"
 #include "bin/UserInput/Controls.h"
 
 // For the descriptor buttons' actions. Each was confirmed to be declared in the header named, not
@@ -752,6 +753,98 @@ namespace SettingsPage
 				}
 			}
 
+			// Settings presets (the owner, 2026-09-13): the shipped defaults, named user presets, and
+			// the preset THIS SAVE uses. Drawn at the top of Wheeler Controls / General on both
+			// surfaces; the state (name box, notice, selection) lives in SettingsPresets so the two
+			// pages cannot disagree about what is selected or what just happened.
+			void DrawPresetsPanel()
+			{
+				ImGui::PushID("settings-presets");
+				ImGui::SeparatorText(Texts::GetText(Texts::TextType::PresetsHeader));
+				ImGui::TextWrapped("%s", Texts::GetText(Texts::TextType::PresetsHelp));
+				const auto names = SettingsPresets::List();
+				const std::string current = SettingsPresets::SavePreset();
+				std::vector<const char*> items;
+				items.push_back(Texts::GetText(Texts::TextType::PresetNone));
+				int index = 0;
+				for (std::size_t i = 0; i < names.size(); ++i) {
+					items.push_back(names[i].c_str());
+					if (names[i] == current) {
+						index = static_cast<int>(i) + 1;
+					}
+				}
+				ImGui::SetNextItemWidth(280.0f);
+				if (ImGui::Combo(Texts::GetText(Texts::TextType::PresetForSave), &index, items.data(), static_cast<int>(items.size()))) {
+					std::string err;
+					if (index <= 0) {
+						SettingsPresets::ClearSavePreset();
+						SettingsPresets::SetNotice(Texts::GetText(Texts::TextType::PresetClearedForSave));
+					} else if (SettingsPresets::Load(names[index - 1], err)) {
+						SettingsPresets::SetSavePreset(names[index - 1]);
+						SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetLoaded)) + " " + names[index - 1]);
+					} else {
+						SettingsPresets::SetNotice(err);
+					}
+				}
+				ImGui::SetNextItemWidth(280.0f);
+				ImGui::InputText(Texts::GetText(Texts::TextType::PresetNameLabel), SettingsPresets::NameBuffer(), SettingsPresets::NameBufferSize());
+				ImGui::SameLine();
+				if (ImGui::Button(Texts::GetText(Texts::TextType::PresetSaveAs))) {
+					std::string name = SettingsPresets::NameBuffer();
+					if (name.find_first_not_of(' ') == std::string::npos) {
+						name = current;   // nothing typed: overwrite the save's own preset
+					}
+					std::string err;
+					if (SettingsPresets::SaveAs(name, err)) {
+						SettingsPresets::SetSavePreset(name);
+						SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetSaved)) + " " + SettingsPresets::SavePreset());
+					} else {
+						SettingsPresets::SetNotice(err);
+					}
+				}
+				const bool none = current.empty();
+				if (none) {
+					ImGui::BeginDisabled(true);
+				}
+				if (ImGui::Button(Texts::GetText(Texts::TextType::PresetRename))) {
+					const std::string to = SettingsPresets::NameBuffer();
+					std::string err;
+					if (SettingsPresets::Rename(current, to, err)) {
+						SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetRenamed)) + " " + SettingsPresets::SavePreset());
+					} else {
+						SettingsPresets::SetNotice(err);
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(Texts::GetText(Texts::TextType::PresetDelete))) {
+					std::string err;
+					if (SettingsPresets::Delete(current, err)) {
+						SettingsPresets::SetNotice(std::string(Texts::GetText(Texts::TextType::PresetDeleted)) + " " + current);
+					} else {
+						SettingsPresets::SetNotice(err);
+					}
+				}
+				if (none) {
+					ImGui::EndDisabled();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(Texts::GetText(Texts::TextType::PresetResetDefaults))) {
+					std::string err;
+					SettingsPresets::SetNotice(SettingsPresets::ResetToDefaults(err) ? Texts::GetText(Texts::TextType::PresetDefaultsRestored) : err.c_str());
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(Texts::GetText(Texts::TextType::PresetReloadIni))) {
+					SettingsPresets::ReloadFromIni();
+					SettingsPresets::SetNotice(Texts::GetText(Texts::TextType::PresetReloaded));
+				}
+				const std::string notice = SettingsPresets::Notice();
+				if (!notice.empty()) {
+					ImGui::TextWrapped("%s", notice.c_str());
+				}
+				ImGui::Separator();
+				ImGui::PopID();
+			}
+
 			void DrawLiveSlotCount()
 			{
 				const int live = Wheeler::GetCurrentWheelSlotCount();
@@ -1294,6 +1387,9 @@ namespace SettingsPage
 									}
 									if (ImGui::BeginTabItem(tab.label.c_str(), nullptr, tabFlags)) {
 										ImGui::BeginChild("body", ImVec2(0, 0), false);
+										if (panelTab.label.find("Wheeler Controls") != std::string::npos && &tab == &panelTab.tabs.front()) {
+											DrawPresetsPanel();   // General tab, above the descriptor's own controls
+										}
 										DrawTab(*panelTab.panel, tab);
 										ImGui::EndChild();
 										ImGui::EndTabItem();

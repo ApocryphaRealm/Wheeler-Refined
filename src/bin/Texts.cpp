@@ -115,6 +115,48 @@ namespace
 			return "KeymapAlreadyBoundTo";
 		case Texts::TextType::SettingsLiveInFramework:
 			return "SettingsLiveInFramework";
+		case Texts::TextType::PresetsHeader:
+			return "PresetsHeader";
+		case Texts::TextType::PresetsHelp:
+			return "PresetsHelp";
+		case Texts::TextType::PresetForSave:
+			return "PresetForSave";
+		case Texts::TextType::PresetNone:
+			return "PresetNone";
+		case Texts::TextType::PresetNameLabel:
+			return "PresetNameLabel";
+		case Texts::TextType::PresetSaveAs:
+			return "PresetSaveAs";
+		case Texts::TextType::PresetRename:
+			return "PresetRename";
+		case Texts::TextType::PresetDelete:
+			return "PresetDelete";
+		case Texts::TextType::PresetResetDefaults:
+			return "PresetResetDefaults";
+		case Texts::TextType::PresetReloadIni:
+			return "PresetReloadIni";
+		case Texts::TextType::PresetSaved:
+			return "PresetSaved";
+		case Texts::TextType::PresetLoaded:
+			return "PresetLoaded";
+		case Texts::TextType::PresetRenamed:
+			return "PresetRenamed";
+		case Texts::TextType::PresetDeleted:
+			return "PresetDeleted";
+		case Texts::TextType::PresetClearedForSave:
+			return "PresetClearedForSave";
+		case Texts::TextType::PresetDefaultsRestored:
+			return "PresetDefaultsRestored";
+		case Texts::TextType::PresetReloaded:
+			return "PresetReloaded";
+		case Texts::TextType::PresetInvalidName:
+			return "PresetInvalidName";
+		case Texts::TextType::PresetNotFound:
+			return "PresetNotFound";
+		case Texts::TextType::PresetAlreadyExists:
+			return "PresetAlreadyExists";
+		case Texts::TextType::PresetAppliedForSave:
+			return "PresetAppliedForSave";
 		case Texts::TextType::EditHintActionToggleWheel:
 			return "EditHintActionToggleWheel";
 		case Texts::TextType::EditHintActionNextItem:

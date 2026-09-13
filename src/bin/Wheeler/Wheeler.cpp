@@ -1,4 +1,5 @@
 #include <imgui_impl_dx11.h>
+#include "bin/SettingsPresets.h"
 #include <imgui_impl_win32.h>
 
 #include <algorithm>
@@ -11651,6 +11652,9 @@ bool Wheeler::IsInEditMode() { return _editMode; }
 
 void Wheeler::SerializeFromJsonObj(const nlohmann::json& j_wheeler, SKSE::SerializationInterface* a_intfc)
 {
+	// The settings preset this save uses (the owner, 2026-09-13). Read before the wheel checks so a
+	// save whose wheels fail to parse still keeps its preset.
+	SettingsPresets::SetSavePreset(j_wheeler.value("settingsPreset", std::string()));
 	if (!j_wheeler.contains("wheels") || !j_wheeler["wheels"].is_array()) {
 		logger::warn("Deserialize: missing or invalid 'wheels' array; leaving wheels empty");
 		_wheels.clear();
@@ -11752,6 +11756,7 @@ void Wheeler::SerializeIntoJsonObj(nlohmann::json& j_wheeler)
 	}
 
 	j_wheeler["activewheel"] = activeSaveIdx;
+	j_wheeler["settingsPreset"] = SettingsPresets::SavePreset();
 }
 
 // The owner, 2026-09-13: "ship it with a presetting of eight slots on the first wheel already
