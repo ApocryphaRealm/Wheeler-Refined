@@ -5186,6 +5186,7 @@ void Config::ReadControlConfig()
 	GetUInt32Value(ini, "Control.Wheel", "SettingsPageKey", Config::Control::Wheel::SettingsPageKey);
 	GetUInt32Value(ini, "Control.Wheel", "SettingsPageGamepadButton", Config::Control::Wheel::SettingsPageGamepadButton);
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
+	GetBoolValue(ini, "Control.Wheel", "ShowAdvancedSettings", Config::Control::Wheel::ShowAdvancedSettings);
 	GetBoolValue(ini, "Control.Wheel", "ToggleKeyPassThrough", Config::Control::Wheel::ToggleKeyPassThrough);
 	GetBoolValue(ini, "Control.Wheel", "DpadHoldToToggle", Config::Control::Wheel::DpadHoldToToggle);
 

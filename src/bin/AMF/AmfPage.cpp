@@ -471,6 +471,12 @@ namespace AmfPage
 				return;
 			}
 			const PanelTab& panelTab = *g_panels[a_index];
+			// Advanced settings off (the owner, 2026-09-13): the framework lists every section it was given
+			// at registration and cannot unlist one, so sections after the first three collapse to a line.
+			if (a_index >= 3 && !Config::Control::Wheel::ShowAdvancedSettings) {
+				MCP::TextWrapped("%s", Texts::GetText(Texts::TextType::AdvancedSettingsHidden));
+				return;
+			}
 			MCP::PushID(a_index);
 			ConsumeArmedRowAnywhere();
 			if (panelTab.label.find("Wheel Behavior") != std::string::npos) {

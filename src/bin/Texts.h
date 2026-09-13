@@ -82,11 +82,21 @@ public:
 		PresetInvalidName,
 		PresetNotFound,
 		PresetAlreadyExists,
+		AdvancedSettingsHidden,
 
 		Total
 	};
 
 	static void LoadTranslations();
+	// 1.1.2 (rule 66, the eleven languages): after Texts.ini and translations.txt (English), the file
+	// Data\Interface\Translations\Wheeler_<language>.txt for the game's language (sLanguage:General)
+	// overrides every key it carries. Same layout and format as the menu framework's own files
+	// (UTF-16LE, "$Key<TAB>text"), so the framework's font atlas already holds the glyphs.
+	// a_forceLanguage (a driving op) reloads with that language instead of the game's.
+	static void LoadLanguageFile(const std::string& a_forceLanguage = std::string());
+	static const std::string& Language();
+	static const std::string& LanguageFile();
+	static int LanguageEntries();
 	static const char* GetText(TextType a_textType);
 
 private:
@@ -95,6 +105,11 @@ private:
 		TextType::textTypeName, defaultText\
 	}
 
+	static inline std::string _language = "english";
+	static inline std::string _languageFile;
+	static inline int _languageEntries = 0;
+	// The English texts as loaded from Texts.ini + translations.txt, so a language reload starts clean.
+	static inline std::unordered_map<TextType, std::string> _englishData;
 	static inline std::unordered_map<TextType, std::string> _textData = {
 		MAP_ENTRY(AlchemyDynamicIDConsumptionWarning, ""),
 		MAP_ENTRY(NoWheelPresent, ""),
@@ -167,6 +182,7 @@ private:
 		MAP_ENTRY(PresetInvalidName, "Use a name of 1 to 40 letters, digits, spaces, - _ ( ) or ."),
 		MAP_ENTRY(PresetNotFound, "No such preset:"),
 		MAP_ENTRY(PresetAlreadyExists, "A preset already has that name:"),
+		MAP_ENTRY(AdvancedSettingsHidden, "Advanced settings are off. Turn them on under Wheeler Controls / General to show this section."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsRestored, "Wheeler: Ammo Wheel restored to factory defaults."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsFailed, "Wheeler: Failed to restore Ammo Wheel factory defaults."),
 		MAP_ENTRY(InsufficientMagickaForInstantCast, "Not enough magicka for instant cast.")

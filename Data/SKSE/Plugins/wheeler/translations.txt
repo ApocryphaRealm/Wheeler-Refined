@@ -90,3 +90,4 @@ PresetReloaded = Settings reloaded from the INI files.
 PresetInvalidName = Use a name of 1 to 40 letters, digits, spaces, - _ ( ) or .
 PresetNotFound = No such preset:
 PresetAlreadyExists = A preset already has that name:
+AdvancedSettingsHidden = Advanced settings are off. Turn them on under Wheeler Controls / General to show this section.

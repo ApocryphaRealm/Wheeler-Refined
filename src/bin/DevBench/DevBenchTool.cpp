@@ -1,4 +1,5 @@
 #include "bin/DevBench/DevBenchTool.h"
+#include "bin/Texts.h"
 #include "bin/SettingsPresets.h"
 
 #include "bin/Wheeler/Wheeler.h"
@@ -191,6 +192,15 @@ namespace DevBenchTool
 				else if (!sub.empty() && sub != "list" && sub != "status") { ok = false; err = "unknown sub '" + sub + "'"; }
 				std::string escErr; for (char c : err) { if (c == '"' || c == '\\') { escErr += '\\'; } escErr += c; }
 				result = std::string("{\"ok\":") + (ok ? "true" : "false") + ",\"op\":\"presets\",\"sub\":\"" + sub + "\",\"error\":\"" + escErr + "\"," + SettingsPresets::StatusJson() + "}";
+			} else if (op == "texts") {
+				// 1.1.2: which language is in force and from which file; lang=<name> reloads the strings
+				// with that language (a proof reads a translated key back through 'sample').
+				const std::string lang = JsonStr(args, "lang");
+				if (!lang.empty()) { Texts::LoadLanguageFile(lang); }
+				std::string esc; for (char c : Texts::LanguageFile()) { if (c == '\\' || c == '"') { esc += '\\'; } esc += c; }
+				std::string sample; for (char c : std::string(Texts::GetText(Texts::TextType::PresetsHeader))) { if (c == '\\' || c == '"') { sample += '\\'; } sample += c; }
+				result = "{\"ok\":true,\"op\":\"texts\",\"language\":\"" + Texts::Language() + "\",\"file\":\"" + esc +
+					"\",\"applied\":" + std::to_string(Texts::LanguageEntries()) + ",\"sample\":\"" + sample + "\"}";
 			} else if (op == "spy") {
 				// Runtime switch for the input spy and the menu-block reasons, so a proof can read every
 				// event's verdict from wheeler.log without depending on INI layering. sub=on|off|status.

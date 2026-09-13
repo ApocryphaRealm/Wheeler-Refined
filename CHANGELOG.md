@@ -8,6 +8,13 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.2 - 2026-09-13 - untested
+
+### Added
+- The eleven languages. Every string Wheeler shows - the edit-mode hints, the notifications, the settings-page strings including the presets panel - has a translation file per language at `Data\Interface\Translations\Wheeler_<language>.txt` (English, German, French, Spanish, Italian, Russian, Polish, Czech, Japanese, Chinese, Korean), the same UTF-16 `$Key<TAB>text` layout the menu framework uses, so the framework's font atlas already holds the glyphs. The game's own language setting picks the file; a missing or malformed file leaves English in force and says so in the log. `Texts.ini` and `translations.txt` still work as before (English base and overrides).
+- An Advanced settings toggle on Wheeler Controls / General (on by default). Off keeps only the first three sections - Wheeler Controls, Wheel Behavior, Ammo Wheel - and hides the rest: the overlay drops their tabs, the framework-hosted page collapses them to a one-line notice, since the framework lists every section it was given at registration.
+- DevBench op `wheeler.page texts` reports the language in force, its file and how many keys it applied, and `lang=<name>` reloads with another language for a proof.
+
 ## 1.1.1 - 2026-09-13 - untested
 
 ### Added

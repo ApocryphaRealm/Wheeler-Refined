@@ -988,6 +988,25 @@
                                          "type":  "checkbox"
                                      },
 {
+                                         "control":  {
+                                                         "failAction":  "disable"
+                                                     },
+                                         "default":  true,
+                                         "ini":  {
+                                                     "id":  "ShowAdvancedSettings",
+                                                     "section":  "Control.Wheel"
+                                                 },
+                                         "text":  {
+                                                      "desc":  "On shows every section of this page. Off keeps only the first three - Wheeler Controls, Wheel Behavior and Ammo Wheel - and hides the rest until you turn it back on. On by default.",
+                                                      "name":  "Advanced settings"
+                                                  },
+                                         "translation":  {
+                                                             "desc":  "",
+                                                             "name":  ""
+                                                         },
+                                         "type":  "checkbox"
+                                     },
+{
                      "control":  {
                                      "failAction":  "disable"
                                  },

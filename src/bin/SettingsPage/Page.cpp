@@ -1237,9 +1237,14 @@ namespace SettingsPage
 
 			std::string out = R"({"ok":true,"op":"tabs","panels":[)";
 			bool firstPanel = true;
+			int panelIndex = -1;
 			for (const auto& panelTab : model.Panels()) {
+				++panelIndex;
 				if (!panelTab.panel) {
 					continue;
+				}
+				if (panelIndex >= 3 && !Config::Control::Wheel::ShowAdvancedSettings) {
+					continue;   // the same rule the drawn tab bar applies, so the op measures what is shown
 				}
 				if (!firstPanel) {
 					out += ",";
@@ -1354,8 +1359,14 @@ namespace SettingsPage
 				// default shrink-to-fit.
 				if (ImGui::BeginTabBar("panels",
 						ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_TabListPopupButton)) {
+					int panelIndex = -1;
 					for (const auto& panelTab : PageModel::GetSingleton().Panels()) {
+						++panelIndex;
 						if (!panelTab.panel) {
+							continue;
+						}
+						// Advanced settings off (the owner, 2026-09-13): only the first three sections show.
+						if (panelIndex >= 3 && !Config::Control::Wheel::ShowAdvancedSettings) {
 							continue;
 						}
 						// A pending selection is consumed the frame it is honoured, so a driven

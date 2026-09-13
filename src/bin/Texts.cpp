@@ -1,6 +1,8 @@
 #include "Texts.h"
 
 #include <fstream>
+#include <algorithm>
+#include <Windows.h>
 
 namespace
 {
@@ -155,6 +157,8 @@ namespace
 			return "PresetNotFound";
 		case Texts::TextType::PresetAlreadyExists:
 			return "PresetAlreadyExists";
+		case Texts::TextType::AdvancedSettingsHidden:
+			return "AdvancedSettingsHidden";
 		case Texts::TextType::EditHintActionToggleWheel:
 			return "EditHintActionToggleWheel";
 		case Texts::TextType::EditHintActionNextItem:
@@ -271,7 +275,112 @@ void Texts::LoadTranslations()
 	}
 
 	INFO("Loaded {} translation entries from {}", entryCount, path);
+	_englishData = _textData;
+	LoadLanguageFile();
 }
+
+namespace
+{
+	std::string LowerAscii(std::string a_s)
+	{
+		std::transform(a_s.begin(), a_s.end(), a_s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		return a_s;
+	}
+
+	std::string GameLanguage()
+	{
+		std::string lang = "english";
+		if (auto* ini = RE::INISettingCollection::GetSingleton()) {
+			if (auto* setting = ini->GetSetting("sLanguage:General"); setting && setting->GetString() && setting->GetString()[0]) {
+				lang = setting->GetString();
+			}
+		}
+		return LowerAscii(lang);
+	}
+
+	std::string Utf16ToUtf8(const std::wstring& a_w)
+	{
+		if (a_w.empty()) { return {}; }
+		const int n = WideCharToMultiByte(CP_UTF8, 0, a_w.data(), static_cast<int>(a_w.size()), nullptr, 0, nullptr, nullptr);
+		std::string out(static_cast<std::size_t>(n), '\0');
+		WideCharToMultiByte(CP_UTF8, 0, a_w.data(), static_cast<int>(a_w.size()), out.data(), n, nullptr, nullptr);
+		return out;
+	}
+
+	// The SkyUI/SKSE translation file: UTF-16LE with BOM, "$Key<TAB>text" per line; "\n" in a text is a
+	// line break. Returns -1 when the file is missing, -2 when it is not UTF-16LE.
+	int ReadTranslationFile(const std::string& a_path, std::unordered_map<std::string, std::string>& a_out)
+	{
+		std::ifstream in(a_path, std::ios::binary);
+		if (!in) { return -1; }
+		std::string bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+		if (bytes.size() < 2 || static_cast<unsigned char>(bytes[0]) != 0xFF || static_cast<unsigned char>(bytes[1]) != 0xFE) { return -2; }
+		std::wstring text(reinterpret_cast<const wchar_t*>(bytes.data() + 2), (bytes.size() - 2) / 2);
+		int added = 0;
+		std::size_t pos = 0;
+		while (pos < text.size()) {
+			auto eol = text.find(L'\n', pos);
+			if (eol == std::wstring::npos) { eol = text.size(); }
+			std::wstring line = text.substr(pos, eol - pos);
+			pos = eol + 1;
+			if (!line.empty() && line.back() == L'\r') { line.pop_back(); }
+			if (line.empty() || line[0] != L'$') { continue; }
+			const auto tab = line.find(L'\t');
+			if (tab == std::wstring::npos) { continue; }
+			std::string key = Utf16ToUtf8(line.substr(1, tab - 1));
+			std::wstring value = line.substr(tab + 1);
+			for (std::size_t i = 0; i + 1 < value.size(); ++i) {
+				if (value[i] == L'\\' && value[i + 1] == L'n') { value.replace(i, 2, L"\n"); }
+			}
+			if (value.empty()) { continue; }
+			a_out[key] = Utf16ToUtf8(value);
+			++added;
+		}
+		return added;
+	}
+}
+
+void Texts::LoadLanguageFile(const std::string& a_forceLanguage)
+{
+	const std::string lang = a_forceLanguage.empty() ? GameLanguage() : LowerAscii(a_forceLanguage);
+	_language = lang;
+	_languageEntries = 0;
+	_languageFile.clear();
+	if (!_englishData.empty()) {
+		_textData = _englishData;   // start from English so a switch never keeps the previous language's leftovers
+	}
+	if (lang == "english") {
+		INFO("Texts: language 'english' - the shipped English strings are in force");
+		return;
+	}
+	const std::string path = "Data\\Interface\\Translations\\Wheeler_" + lang + ".txt";
+	std::unordered_map<std::string, std::string> texts;
+	const int n = ReadTranslationFile(path, texts);
+	if (n == -1) {
+		WARN("Texts: no translation file for '{}' ({}); English stays in force", lang, path);
+		return;
+	}
+	if (n == -2) {
+		WARN("Texts: '{}' is not UTF-16LE with a BOM; English stays in force", path);
+		return;
+	}
+	int applied = 0;
+	for (auto& [textType, text] : _textData) {
+		const char* id = GetKeyForTextType(textType);
+		if (!id || *id == '\0') { continue; }
+		if (auto it = texts.find(id); it != texts.end()) {
+			text = it->second;
+			++applied;
+		}
+	}
+	_languageFile = path;
+	_languageEntries = applied;
+	INFO("Texts: language '{}' - {} of {} keys applied from {}", lang, applied, n, path);
+}
+
+const std::string& Texts::Language() { return _language; }
+const std::string& Texts::LanguageFile() { return _languageFile; }
+int Texts::LanguageEntries() { return _languageEntries; }
 
 const char* Texts::GetText(TextType a_textType)
 {
