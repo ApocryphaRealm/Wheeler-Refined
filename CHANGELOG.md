@@ -8,6 +8,14 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.0 - 2026-09-13 - untested
+
+### Changed
+- Wheeler's own settings key is retired as a default: the settings live in the Apocrypha Menu Framework, whose own key (F1 by default) opens them. The keyboard and gamepad rows remain as optional shortcuts that open the framework on the Wheeler - Refined page (framework 1.7.7 or newer), unbound unless you set them. The edit-mode hint list shows the framework's key on its Settings row.
+- The ammo wheel's gamepad default is D-pad right everywhere (the compiled default and the two reset buttons now agree with the INI). Next Item and Previous Item stay on the D-pad: they act only while the wheel is open, the ammo toggle only while it is closed.
+- Disable Vanilla Favorites Menu is on the General tab of Wheeler Controls.
+- The ammo wheel does not open while a menu is open; closing it still works from anywhere.
+
 ## 1.0.9 - 2026-09-13 - untested
 
 ### Fixed

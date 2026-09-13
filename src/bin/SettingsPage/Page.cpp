@@ -274,7 +274,7 @@ namespace SettingsPage
 					Utils::NotificationMessage(Texts::GetText(Texts::TextType::KeybindCaptureCancelled));
 				} else if (id == "wheeler_ammowheel_rebind_reset") {
 					Config::AmmoWheel::MKB::toggleAmmoWheel = 42;
-					Config::AmmoWheel::GamePad::toggleAmmoWheel = 0;
+					Config::AmmoWheel::GamePad::toggleAmmoWheel = 269;   // D-pad right, the shipped default
 					Config::AmmoWheel::MKB::modifierKey = 0;
 					Config::AmmoWheel::GamePad::modifierButton = 0;
 					Config::AmmoWheel::MKB::toggleAmmoWheelMouse = 0;

@@ -34,6 +34,8 @@
 #include "bin/Utilities/Utils.h"
 #include "bin/Utilities/EquipEventDispatcher.h"
 #include "bin/Utilities/HandMemory.h"
+#include "bin/AMF/AMFLaunch.h"
+#include "bin/AMF/AmfPage.h"
 #include "bin/Texts.h"
 #include "bin/LogGate.h"
 #include "bin/InputBroker.h"
@@ -435,6 +437,11 @@ namespace
 		const std::uint32_t button = Config::Control::Wheel::SettingsPageGamepadButton;
 		if (button != 0 && IsGamepadInputCode(button)) {
 			bindings.gamepad = { button, 0 };
+		}
+		// 1.1.0: the settings live in the menu framework; with no shortcut of our own bound, the hint
+		// shows the framework's own key (F1 by default), which is what actually opens them.
+		if (bindings.mkb.key == 0 && AmfPage::IsHosted()) {
+			bindings.mkb = { AMFLaunch::FrameworkMenuKey(), 0 };
 		}
 		return bindings;
 	}
@@ -8363,6 +8370,12 @@ void Wheeler::ToggleAmmoWheel()
 {
 	// Don't allow ammo wheel if main wheel is open
 	if (_state != WheelState::KClosed) {
+		return;
+	}
+	// The owner, 2026-09-13: "ammo wheel shouldnt be able to activate while still in a menu". Closing
+	// an open ammo wheel is still allowed from anywhere.
+	if (!IsAmmoWheelOpen() && Controls::IsMenuContextOpen()) {
+		logger::info("[AmmoWheel] toggle ignored: a menu is open");
 		return;
 	}
 

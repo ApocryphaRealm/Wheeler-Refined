@@ -73,4 +73,11 @@ namespace AMFLaunch
 
 	// For the devbench tool and the log.
 	std::size_t ReservedKeyCount();
+
+	// 1.0.10: opens the framework's menu on "Wheeler - Refined" through AMF_OpenMenu (AMF 1.7.7+),
+	// resolved by name with a null check. False when no framework is loaded or it predates the export.
+	bool OpenFrameworkMenuOnUs();
+
+	// The framework's own menu key (the first code it reports as reserved), 0 when none is loaded.
+	std::uint32_t FrameworkMenuKey();
 }

@@ -18,6 +18,7 @@
 
 #include "bin/Config.h"
 #include "bin/Texts.h"
+#include "bin/AMF/AMFLaunch.h"
 #include "bin/AMF/AmfPage.h"
 #include "bin/DevBench/InputInject.h"
 #include "bin/InputBroker.h"
@@ -1242,9 +1243,11 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 			    spyMappedInput == Config::Control::Wheel::SettingsPageGamepadButton;
 			if ((pageKeyboardHit || pageGamepadHit) && pageKeyEvent->IsDown()) {
 				if (AmfPage::IsHosted()) {
-					// M9: the settings live in the framework's menu. Until the framework exports an
-					// "open on this mod" call, the key tells the player where they are.
-					Utils::NotificationMessage(Texts::GetText(Texts::TextType::SettingsLiveInFramework));
+					// M9: the settings live in the framework's menu; 1.0.10 opens it there (AMF 1.7.7's
+					// AMF_OpenMenu). An older framework gets the notification instead.
+					if (!AMFLaunch::OpenFrameworkMenuOnUs()) {
+						Utils::NotificationMessage(Texts::GetText(Texts::TextType::SettingsLiveInFramework));
+					}
 				} else {
 					SettingsPage::Page::Toggle();
 				}

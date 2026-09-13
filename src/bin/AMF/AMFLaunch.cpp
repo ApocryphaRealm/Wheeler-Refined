@@ -257,6 +257,29 @@ namespace AMFLaunch
 		}
 	}
 
+	bool OpenFrameworkMenuOnUs()
+	{
+		const wchar_t* moduleName = nullptr;
+		HMODULE module = ResolveModule(moduleName);
+		if (!module) {
+			return false;
+		}
+		using OpenFn = bool (*)(const char*);
+		const auto open = reinterpret_cast<OpenFn>(GetProcAddress(module, "AMF_OpenMenu"));
+		if (!open) {
+			logger::info("[AMFLaunch] the loaded framework has no AMF_OpenMenu export (needs Apocrypha Menu Framework 1.7.7)");
+			return false;
+		}
+		open("Wheeler - Refined");
+		return true;
+	}
+
+	std::uint32_t FrameworkMenuKey()
+	{
+		std::lock_guard lock(g_reservedLock);
+		return g_reserved.empty() || g_reserved.front() <= 0 ? 0u : static_cast<std::uint32_t>(g_reserved.front());
+	}
+
 	std::size_t ReservedKeyCount()
 	{
 		std::lock_guard lock(g_reservedLock);

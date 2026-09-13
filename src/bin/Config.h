@@ -357,7 +357,7 @@ namespace Config
 			inline uint32_t toggleWheel = 267;        // D-pad down (the owner, 2026-09-12; DEFAULT-KEYS.md)
 			inline uint32_t toggleEditHints = 272;    // left stick click
 			inline uint32_t toggleWheelModifier = 0;  // optional toggle modifier
-			inline uint32_t nextItem = 269;           // DPAD right
+			inline uint32_t nextItem = 269;           // DPAD right (wheel open only; the ammo toggle uses it with the wheel closed - no overlap)
 			inline uint32_t prevItem = 268;      // DPAD left
 			inline uint32_t activatePrimary = 275;  // right shoulder
 			inline uint32_t activateSecondary = 274;  // left shoulder
@@ -534,7 +534,7 @@ namespace Config
 			// Default 0x44 (F10): F11 is the Apocrypha Menu Framework's menu key, Wheeler binds no other
 			// F-key, and F12 is Steam's screenshot key (DEFAULT-KEYS.md).
 			// A uint32 rather than a float because it is a scan code, like every InputBindings key.
-			inline std::uint32_t SettingsPageKey = 0x44;   // F10 - F11 is AMF's menu key (DEFAULT-KEYS.md, 2026-09-12)
+			inline std::uint32_t SettingsPageKey = 0;   // unbound (1.1.0): the settings live in the menu framework, whose own key opens them; this is an optional shortcut
 			// The gamepad row for the same page (the owner, 2026-09-12: a rebindable KEY and a rebindable
 			// BUTTON for every activation). Wheeler gamepad code (266 + button index); 0 = unbound. Ships
 			// unbound: every controller button has a vanilla gameplay meaning and the page is also reachable
@@ -1722,7 +1722,7 @@ namespace Config
 		}
 		namespace GamePad
 		{
-			inline uint32_t toggleAmmoWheel = 0;  // Unmapped by default
+			inline uint32_t toggleAmmoWheel = 269;  // D-pad right (the owner, 2026-09-13; DEFAULT-KEYS.md)
 			inline uint32_t modifierButton = 0;  // Optional modifier button (0 = no modifier required)
 		}
 		// Human-readable key names for UI display (read/write from AmmoWheel.ini)
