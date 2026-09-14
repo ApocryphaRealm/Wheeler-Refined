@@ -252,6 +252,29 @@ static bool IsPauseUserEventName(std::string_view userEventName)
 	return userEventName == "Pause" || userEventName == "Journal";
 }
 
+// The Gameplay user event the game itself resolves for a button, looked up with the button's OWN code
+// (keyboard scan code, mouse button, XInput mask such as 0x0001 for D-pad Up) - the values the control
+// map stores. The `input` code this file dispatches with is Wheeler's remapped number (mouse +256,
+// gamepad 266 + GetGamepadIndex), which the control map does not know, so a lookup with it finds
+// nothing on the mouse or the controller.
+static std::string_view GameUserEventName(const RE::ButtonEvent* a_button)
+{
+	auto* controlMap = RE::ControlMap::GetSingleton();
+	if (!a_button || !controlMap) {
+		return {};
+	}
+	return controlMap->GetUserEventName(a_button->GetIDCode(), a_button->GetDevice());
+}
+
+// Disable Vanilla Favorites Menu: a button the game would turn into "Favorites" while the player is in
+// gameplay. Menus are excluded - there the same button is the menu's own (D-pad Up scrolls a list).
+static bool OpensVanillaFavoritesMenu(const RE::ButtonEvent* a_button)
+{
+	return Config::Control::Wheel::DisableVanillaFavoritesMenu &&
+	       IsGameplayContextForPassThrough() &&
+	       GameUserEventName(a_button) == "Favorites";
+}
+
 static bool IsTweenMenuOpen()
 {
 	auto* ui = RE::UI::GetSingleton();
@@ -706,6 +729,21 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 		// M8: a tap Wheeler replayed for the game (InputInject, replay-marked) goes straight through.
 		// Looking at it again would arm a second hold from our own replay.
 		if (InputInject::IsReplay(event)) {
+			// ...unless the replayed tap would open the vanilla Favorites menu the player turned off
+			// (a D-pad hold-to-toggle on the Favorites direction replays its tap here, past the check below).
+			if (OpensVanillaFavoritesMenu(event->AsButtonEvent())) {
+				if (IsInputSpyEnabled()) {
+					logger::info("[InputSpy] replayed tap dropped: it would open the vanilla Favorites menu (DisableVanillaFavoritesMenu)");
+				}
+				RE::InputEvent* nextEvent = event->next;
+				if (prev != nullptr) {
+					prev->next = nextEvent;
+				} else {
+					*a_event = nextEvent;
+				}
+				event = nextEvent;
+				continue;
+			}
 			if (IsInputSpyEnabled()) {
 				logger::info("[InputSpy] replay event passed through untouched");
 			}
@@ -835,9 +873,16 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 				// down-edge there is no held state for a release to complete, and ObserveOutcome
 				// only records a button as held when the game actually saw it - so passing the
 				// release would hand the game an up-edge for a press it never got.
+				// 1.1.5 (the owner: "the toggle didnt disable the favorites menu"): the check used `userEventName`,
+				// looked up with Wheeler's remapped `input`, which only matches on the keyboard - on the controller
+				// (D-pad Up) and the mouse it was always empty, so the menu still opened. It now asks the game with
+				// the button's own code, only in gameplay, and never takes a wheel toggle or a Wheeler-bound key
+				// (those keep their hold/tap and bound behaviour; a replayed tap is checked where replays pass).
 				if (!consumeEvent &&
-				    Config::Control::Wheel::DisableVanillaFavoritesMenu &&
-				    userEventName == "Favorites") {
+				    input != kInvalid &&
+				    !IsMainWheelToggleKey(input, isGamePad, isMouse) &&
+				    !Controls::IsKeyBound(input) &&
+				    OpensVanillaFavoritesMenu(button)) {
 					consumeEvent = true;
 					spyCandidates = "DisableVanillaFavorites";
 					spyWinner = "DisableVanillaFavorites";

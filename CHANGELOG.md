@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.5 - 2026-09-14 - working
+
+### Fixed
+- Disable Vanilla Favorites Menu did nothing on the controller (the owner: 'the toggle didnt disable the favorites menu'). The check compared the user event looked up with Wheeler's remapped input code (mouse +256, gamepad 266 + GetGamepadIndex) - a code the game's control map does not store, so on the controller (D-pad Up is XInput 0x0001) and the mouse the lookup was always empty and the menu still opened; only the keyboard matched. It now asks ControlMap::GetUserEventName with the button's own code, only in gameplay (IsGameplayContextForPassThrough, so D-pad Up still scrolls lists in menus), never for a wheel toggle or a Wheeler-bound key, and a replayed D-pad tap that would open Favorites is dropped too. The shared userEventName lookup used by movement/pause passthrough is unchanged. Falsification episode 40.
+
 ## 1.1.4 - 2026-09-13 - untested
 
 ### Changed
