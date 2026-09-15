@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.7 - 2026-09-14 - working
+
+### Fixed
+- The wheel no longer opens while the Apocrypha Menu Framework's menu (or another mod's input-taking framework window) is open (the owner: 'I don't like that you can activate wheeler with d-pad down while AMF is running'). OpenWheeler refuses while the framework reports a blocking window, which covers every way in (keyboard toggle, controller press, D-pad hold), and a D-pad toggle direction is not armed as a hold there, so no delayed tap is replayed into the framework's navigation. Keys captured for rebinding on the framework-hosted page are unaffected.
+
 ## 1.1.6 - 2026-09-14 - working
 
 ### Fixed

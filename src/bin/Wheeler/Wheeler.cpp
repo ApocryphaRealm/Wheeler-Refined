@@ -8878,6 +8878,18 @@ void Wheeler::OpenWheeler()
 		_lastOpenConsumer = InputConsumer::AmmoWheel;
 		return;
 	}
+
+	// The framework's menu owns the keys and the D-pad while it is open (1.1.7; the owner: "I don't like that you can
+	// activate wheeler with d-pad down while AMF is running"). Covers every way in: keyboard, controller, D-pad hold.
+	if (AMFLaunch::IsFrameworkMenuOpen()) {
+		_lastOpenDecision = InputDecision::DeniedMenuBlocked;
+		_lastOpenConsumer = InputConsumer::Other;
+		if (Config::Debug::LogMenuBlockReasons) {
+			logger::info("DeniedMenuBlocked consumer={} menu=ApocryphaMenuFramework reason=FrameworkMenuOpen",
+				GetMainWheelInputConsumerName(_lastOpenConsumer));
+		}
+		return;
+	}
 	
 	auto ui = RE::UI::GetSingleton();
 	if (!ui) {

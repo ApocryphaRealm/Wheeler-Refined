@@ -285,4 +285,18 @@ namespace AMFLaunch
 		std::lock_guard lock(g_reservedLock);
 		return g_reserved.size();
 	}
+	bool IsFrameworkMenuOpen()
+	{
+		// The owner, 2026-09-14: "I don't like that you can activate wheeler with d-pad down while AMF is running".
+		// Resolved here rather than through the registration block, so it answers whether or not registration completed.
+		using BlockingFn = bool (*)();
+		static BlockingFn blocking = nullptr;
+		if (!blocking) {
+			const wchar_t* moduleName = nullptr;
+			if (HMODULE module = ResolveModule(moduleName)) {
+				blocking = reinterpret_cast<BlockingFn>(GetProcAddress(module, "IsAnyBlockingWindowOpened"));
+			}
+		}
+		return blocking && blocking();
+	}
 }

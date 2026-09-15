@@ -807,7 +807,10 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 	// ordinary D-pad tap (InputInject, replay-marked so this filter does not see it again). With the
 	// wheel already open the press closes it and is consumed - the game never gets half a gesture.
 	bool dpadHold = false;
-	if (isGamePad && Config::Control::Wheel::DpadHoldToToggle && IsDpadKey(key) && FindUnchordedMainToggle(key)) {
+	// 1.1.7: not while the framework's menu is open - the D-pad is its navigation there, so no hold is armed and
+	// no tap is replayed into it (the wheel's open gate refuses as well).
+	if (isGamePad && Config::Control::Wheel::DpadHoldToToggle && IsDpadKey(key) && FindUnchordedMainToggle(key) &&
+	    !AMFLaunch::IsFrameworkMenuOpen()) {
 		dpadHold = true;
 		// The owner, 2026-09-13: "the delay ... should only apply while in the menus". In gameplay the
 		// press opens the wheel at once and is the wheel's (Consumed - never shared with the game or

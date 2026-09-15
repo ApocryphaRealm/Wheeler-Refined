@@ -80,4 +80,9 @@ namespace AMFLaunch
 
 	// The framework's own menu key (the first code it reports as reserved), 0 when none is loaded.
 	std::uint32_t FrameworkMenuKey();
+
+	// 1.1.7: true while the framework's menu - or another mod's input-taking framework window - is open
+	// (IsAnyBlockingWindowOpened, resolved on its own and null-checked). The wheel does not open then and a D-pad
+	// toggle is not armed as a hold. False when no framework is loaded.
+	bool IsFrameworkMenuOpen();
 }
