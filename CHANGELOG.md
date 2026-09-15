@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.8 - 2026-09-14 - working
+
+### Fixed
+- Every new wheel has slots, and the first wheel is always there (the owner: 'can you make it so that wheeler starts with an 8 slot wheel already made', 'i want every new wheel made to have the same number of slots as the slots slider dictates'). PushWheel and AddWheel - behind the settings page's create-first-wheel button, edit mode's add wheel and the reset - made wheels with no slots; a new wheel now gets the slots slider's count (the active wheel's), eight when there is none. A save holding a wheel with no slots (the owner's test save: a 43-byte record, one wheel with an empty entries list) gets it filled on load. A game started with coc from the main menu sends neither kNewGame nor kPostLoadGame, so the first-wheel check also runs about once a second in a running game (never on the main menu or a loading screen). Falsification episode 41.
+
 ## 1.1.7 - 2026-09-14 - working
 
 ### Fixed

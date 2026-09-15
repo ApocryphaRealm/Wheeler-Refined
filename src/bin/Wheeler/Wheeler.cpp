@@ -7402,6 +7402,22 @@ void Wheeler::Update(float a_deltaTime)
 	InputBroker::RefreshWheelerReservations();
 	InputBroker::SyncWheelerActiveOwner(IsWheelerOpen(), IsAmmoWheelOpen());
 
+	// 1.1.8: a game started with coc from the main menu sends neither kNewGame nor kPostLoadGame, so the first wheel
+	// (EnsureFirstWheel) is also checked here about once a second while a game is running. Never on the main menu or
+	// a loading screen: a save's co-save record is read during loading, and the check must not race it.
+	{
+		static int s_firstWheelCheckFrames = 0;
+		if (++s_firstWheelCheckFrames >= 60) {
+			s_firstWheelCheckFrames = 0;
+			RE::UI* ui = RE::UI::GetSingleton();
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			if (ui && player && player->Is3DLoaded() && !ui->IsMenuOpen(RE::MainMenu::MENU_NAME) &&
+			    !ui->IsMenuOpen(RE::LoadingMenu::MENU_NAME)) {
+				EnsureFirstWheel();
+			}
+		}
+	}
+
 	// BookMenu open probe: verify if BookMenu actually opened after book read
 	if (_bookMenuProbeFrames > 0) {
 		_bookMenuProbeFrames--;
@@ -11362,7 +11378,15 @@ void Wheeler::AddWheel()
 		return;
 	}
 	const bool hadValidActive = HasValidActiveWheel_NoLock();
+	// 1.1.8 (the owner: "i want every new wheel made to have the same number of slots as the slots slider dictates"):
+	// a new wheel gets as many empty slots as the slots slider shows - the active wheel's count - and eight when
+	// there is no wheel yet, so no wheel is ever created with zero slots.
+	const int newWheelSlots = (hadValidActive && _wheels[_activeWheelIdx] && _wheels[_activeWheelIdx]->GetNumEntries() > 0) ?
+	                              _wheels[_activeWheelIdx]->GetNumEntries() : 8;
 	_wheels.push_back(std::make_unique<Wheel>());
+	for (int i = 0; i < newWheelSlots; ++i) {
+		_wheels.back()->PushEmptyEntry();
+	}
 	if (!hadValidActive) {
 		_activeWheelIdx = static_cast<int>(_wheels.size()) - 1;
 		_wheels[_activeWheelIdx]->SetHoveredEntryIndex(-1);
@@ -11374,7 +11398,15 @@ void Wheeler::PushWheel()
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
 	const bool hadValidActive = HasValidActiveWheel_NoLock();
+	// 1.1.8 (the owner: "i want every new wheel made to have the same number of slots as the slots slider dictates"):
+	// a new wheel gets as many empty slots as the slots slider shows - the active wheel's count - and eight when
+	// there is no wheel yet, so no wheel is ever created with zero slots.
+	const int newWheelSlots = (hadValidActive && _wheels[_activeWheelIdx] && _wheels[_activeWheelIdx]->GetNumEntries() > 0) ?
+	                              _wheels[_activeWheelIdx]->GetNumEntries() : 8;
 	_wheels.push_back(std::make_unique<Wheel>());
+	for (int i = 0; i < newWheelSlots; ++i) {
+		_wheels.back()->PushEmptyEntry();
+	}
 	if (!hadValidActive) {
 		_activeWheelIdx = static_cast<int>(_wheels.size()) - 1;
 		_wheels[_activeWheelIdx]->SetHoveredEntryIndex(-1);
@@ -11774,8 +11806,29 @@ void Wheeler::SerializeIntoJsonObj(nlohmann::json& j_wheeler)
 void Wheeler::EnsureFirstWheel()
 {
 	{
-		std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+		std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
 		if (!_wheels.empty()) {
+			// 1.1.8: a wheel saved with ZERO slots (older builds' create-first-wheel button made those, and the
+			// owner's test save held one) gets the slots a new wheel would: the first wheel with slots, else eight.
+			int slots = 8;
+			for (const auto& wheel : _wheels) {
+				if (wheel && wheel->GetNumEntries() > 0) {
+					slots = wheel->GetNumEntries();
+					break;
+				}
+			}
+			int filled = 0;
+			for (const auto& wheel : _wheels) {
+				if (wheel && wheel->GetNumEntries() == 0) {
+					for (int i = 0; i < slots; ++i) {
+						wheel->PushEmptyEntry();
+					}
+					++filled;
+				}
+			}
+			if (filled > 0) {
+				logger::info("[Wheeler] {} wheel(s) in this save had no slots - gave each {} empty slots", filled, slots);
+			}
 			return;
 		}
 	}
@@ -11786,16 +11839,10 @@ void Wheeler::EnsureFirstWheel()
 void Wheeler::SetupDefaultWheels()
 {
 	const int defaultWheelNum = 1;
-	const int defaultEntryNum = 8;
 	Wheeler::Clear();
 	int wheelIdx = 0;
 	while (wheelIdx < defaultWheelNum) {
-		Wheeler::PushWheel();
-		int entryIdx = 0;
-		while (entryIdx < defaultEntryNum) {
-			_wheels[wheelIdx]->PushEmptyEntry();
-			entryIdx++;
-		}
+		Wheeler::PushWheel();   // 1.1.8: PushWheel gives it its slots - eight, as Clear left no wheel
 		wheelIdx++;
 	}
 	Wheeler::SetActiveWheelIndex(0);
