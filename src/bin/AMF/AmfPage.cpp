@@ -206,7 +206,7 @@ namespace AmfPage
 			// One row armed at a time: a second capture would steal the first one's press.
 			MCP::BeginDisabled(Shared::IsAnyCapturing());
 			if (MCP::SmallButton("Rebind")) {
-				Shared::BeginCapture(a_entry.iniKey);
+				Shared::BeginCapture(Shared::CaptureId(a_entry));
 			}
 			MCP::EndDisabled();
 
@@ -219,7 +219,7 @@ namespace AmfPage
 			}
 			MCP::EndDisabled();
 
-			const std::string notice = Shared::RowNotice(a_entry.iniKey);
+			const std::string notice = Shared::RowNotice(Shared::CaptureId(a_entry));
 			if (!notice.empty()) {
 				MCP::SameLine();
 				MCP::TextDisabled("%s", notice.c_str());
@@ -457,7 +457,7 @@ namespace AmfPage
 							return true;
 						}
 					}
-					if (entry.type == EntryType::Keymap && entry.HasIniTarget() && Shared::IsCapturing(entry.iniKey)) {
+					if (entry.type == EntryType::Keymap && entry.HasIniTarget() && Shared::IsCapturing(Shared::CaptureId(entry))) {
 						std::uint32_t bound = 0;
 						const auto current = ValueStore::GetSingleton().Get(*panelTab->panel, entry);
 						Shared::ConsumeCapture(*panelTab->panel, entry, current, bound);

@@ -505,6 +505,20 @@ namespace SettingsPage
 			std::string g_rowNoticeKey;
 			std::string g_rowNotice;
 
+			// WHICH ROW, EXACTLY. The INI key alone does NOT identify a row: "toggleWheel" exists in BOTH
+			// InputBindings.MKB and InputBindings.GamePad, as do nextItem, prevItem, activatePrimary and
+			// most of the rest. Keying capture by the key alone armed BOTH rows at once, and whichever
+			// drew first swallowed the press - so arming the gamepad Toggle Wheel row and pressing D-pad
+			// down had the KEYBOARD row consume the code and refuse it (the owner, 2026-09-15: "when I
+			// unbound it and then press rebind and then D-pad, it remains unbound"; the log shows
+			// "code 267 is a controller button, but this row binds a key or mouse button"). Rebinding a row
+			// to the value it already held LOOKED like it worked, because nothing changed either way.
+			// Section + key is unique, and is what both surfaces now arm and compare against.
+			std::string CaptureId(const Entry& a_entry)
+			{
+				return a_entry.iniSection + "/" + a_entry.iniKey;
+			}
+
 			enum class CaptureOutcome
 			{
 				NotPending,   // this row never armed
@@ -568,7 +582,7 @@ namespace SettingsPage
 			CaptureOutcome ConsumeCapture(const Panel& a_panel, const Entry& a_entry,
 				const ResolvedValue& a_current, std::uint32_t& a_boundCode)
 			{
-				if (a_entry.iniKey.empty() || g_capturingKey != a_entry.iniKey) {
+				if (a_entry.iniKey.empty() || g_capturingKey != CaptureId(a_entry)) {
 					return CaptureOutcome::NotPending;
 				}
 
@@ -604,7 +618,7 @@ namespace SettingsPage
 						a_entry.iniKey, captured,
 						codeIsGamepad ? "a controller button" : "a key or mouse button",
 						rowWantsGamepad ? "a controller button" : "a key or mouse button");
-					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNoticeKey = CaptureId(a_entry);
 					g_rowNotice = Texts::GetText(Texts::TextType::KeymapWrongDevice);
 					return CaptureOutcome::WrongDevice;
 				}
@@ -616,7 +630,7 @@ namespace SettingsPage
 				AMFLaunch::RefreshReservedKeys();
 				if (AMFLaunch::IsKeyReservedByFramework(captured)) {
 					logger::info("[SettingsPage] rebind of {} refused: code {} is reserved by the menu framework", a_entry.iniKey, captured);
-					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNoticeKey = CaptureId(a_entry);
 					g_rowNotice = Texts::GetText(Texts::TextType::KeymapReservedByFramework);
 					return CaptureOutcome::Reserved;
 				}
@@ -625,7 +639,7 @@ namespace SettingsPage
 				const std::string holder = FindOtherActionOnCode(a_entry, LooksLikeGamepad(a_entry), captured);
 				if (!holder.empty()) {
 					logger::info("[SettingsPage] rebind of {} refused: code {} is already bound to '{}'", a_entry.iniKey, captured, holder);
-					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNoticeKey = CaptureId(a_entry);
 					g_rowNotice = std::string(Texts::GetText(Texts::TextType::KeymapAlreadyBoundTo)) + " " + holder;
 					return CaptureOutcome::InUse;
 				}
@@ -634,11 +648,11 @@ namespace SettingsPage
 
 				if (!ValueStore::GetSingleton().Set(a_panel, a_entry,
 						FormatIndexLike(static_cast<int>(captured), a_current))) {
-					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNoticeKey = CaptureId(a_entry);
 					g_rowNotice = "(write failed)";
 					return CaptureOutcome::WriteFailed;
 				}
-				if (g_rowNoticeKey == a_entry.iniKey) {
+				if (g_rowNoticeKey == CaptureId(a_entry)) {
 					g_rowNoticeKey.clear();
 					g_rowNotice.clear();
 				}
@@ -668,11 +682,11 @@ namespace SettingsPage
 			bool UnbindRow(const Panel& a_panel, const Entry& a_entry, const ResolvedValue& a_current)
 			{
 				if (!ValueStore::GetSingleton().Set(a_panel, a_entry, FormatIndexLike(0, a_current))) {
-					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNoticeKey = CaptureId(a_entry);
 					g_rowNotice = "(write failed)";
 					return false;
 				}
-				if (g_rowNoticeKey == a_entry.iniKey) {
+				if (g_rowNoticeKey == CaptureId(a_entry)) {
 					g_rowNoticeKey.clear();
 					g_rowNotice.clear();
 				}
@@ -717,8 +731,8 @@ namespace SettingsPage
 				ImGui::BeginDisabled(!g_capturingKey.empty());
 				if (ImGui::SmallButton("Rebind")) {
 					PageInput::BeginKeymapCapture();
-					g_capturingKey = a_entry.iniKey;
-					if (g_rowNoticeKey == a_entry.iniKey) {
+					g_capturingKey = CaptureId(a_entry);
+					if (g_rowNoticeKey == CaptureId(a_entry)) {
 						g_rowNoticeKey.clear();
 						g_rowNotice.clear();
 					}
@@ -734,7 +748,7 @@ namespace SettingsPage
 				}
 				ImGui::EndDisabled();
 
-				if (g_rowNoticeKey == a_entry.iniKey && !g_rowNotice.empty()) {
+				if (g_rowNoticeKey == CaptureId(a_entry) && !g_rowNotice.empty()) {
 					ImGui::SameLine();
 					ImGui::TextDisabled("%s", g_rowNotice.c_str());
 				} else if (!LooksLikeGamepad(a_entry) && AMFLaunch::IsKeyReservedByFramework(current)) {
@@ -1116,7 +1130,7 @@ namespace SettingsPage
 						// runs - so a driven rebind proves the path a clicked one takes, rather than
 						// a parallel copy of it that can drift.
 						PageInput::BeginKeymapCapture();
-						g_capturingKey = entry->iniKey;
+						g_capturingKey = CaptureId(*entry);
 						const bool injected =
 							PageInput::InjectCapturedKey(a_command.code, a_command.cancel);
 
@@ -1548,6 +1562,11 @@ namespace SettingsPage
 			bool IsAnyCapturing()
 			{
 				return !g_capturingKey.empty();
+			}
+
+			std::string CaptureId(const Entry& a_entry)
+			{
+				return SettingsPage::Page::CaptureId(a_entry);
 			}
 
 			bool Unbind(const Panel& a_panel, const Entry& a_entry, const ResolvedValue& a_current)

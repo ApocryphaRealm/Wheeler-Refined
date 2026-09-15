@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.2 - 2026-09-15 - untested
+
+### Fixed
+- arming a keymap row armed EVERY row sharing its INI key, so the wrong row swallowed the press (the owner, 2026-09-15: 'when I unbound it and then press rebind and then D-pad, it remains unbound'). Capture was keyed by the INI key alone, but the key is not unique - toggleWheel, nextItem, prevItem and most others exist in BOTH InputBindings.MKB and InputBindings.GamePad - so arming the gamepad Toggle Wheel row also armed the keyboard one, and whichever drew first consumed the code: the keyboard row took the D-pad press and refused it as a controller button. Rebinding a row to the value it already held looked like it worked because nothing changed either way, which is what made this so hard to see. Capture and the row notices are now keyed by section and key together, on both the framework-hosted page and Wheeler's own overlay.
+
 ## 1.2.1 - 2026-09-15 - untested
 
 ### Fixed

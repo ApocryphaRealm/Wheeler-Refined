@@ -28,6 +28,11 @@ namespace SettingsPage::Page::Shared
 		WriteFailed
 	};
 
+	// Identifies a row for capture and notices: section + "/" + key. The key alone is NOT unique -
+	// "toggleWheel" is in both InputBindings.MKB and InputBindings.GamePad - and keying by it armed
+	// both rows at once (the owner, 2026-09-15).
+	std::string CaptureId(const Entry& a_entry);
+
 	// Arms the row (PageInput capture + the row bookkeeping), exactly as the overlay's Rebind button does.
 	void BeginCapture(const std::string& a_iniKey);
 	void CancelCapture();
