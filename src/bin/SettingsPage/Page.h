@@ -69,6 +69,9 @@ namespace SettingsPage
 		bool DriveRebind(const std::string& a_iniKey, std::uint32_t a_dispatchCode, bool a_cancel,
 			std::string& a_resultJson, int a_timeoutMs = 2000);
 
+		// Clears one keymap control, through the same UnbindRow the Unbind button calls.
+		bool DriveUnbind(const std::string& a_iniKey, std::string& a_resultJson, int a_timeoutMs = 2000);
+
 		// The tab tree and the controls on a tab. Answered directly on the calling thread: the
 		// Catalog and PageModel are never mutated after load, so no queue is needed.
 		std::string DriveTabsJson();

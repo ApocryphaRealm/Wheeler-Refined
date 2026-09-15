@@ -38,6 +38,10 @@ namespace SettingsPage::Page::Shared
 	CaptureOutcome ConsumeCapture(const Panel& a_panel, const Entry& a_entry,
 		const ResolvedValue& a_current, std::uint32_t& a_boundCode);
 
+	// Clears a keymap row to 0 ("Unbound"), through the same write and dispatcher rebuild a capture
+	// uses - what the Unbind button beside Rebind does (the owner, 2026-09-15).
+	bool Unbind(const Panel& a_panel, const Entry& a_entry, const ResolvedValue& a_current);
+
 	// The sticky notice for a row ("not bound - ..."), empty when none.
 	std::string RowNotice(const std::string& a_iniKey);
 	void ClearRowNotice(const std::string& a_iniKey);

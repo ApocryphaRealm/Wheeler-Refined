@@ -54,6 +54,7 @@ public:
 		SlotCountAtMaximum,
 		KeymapReservedByFramework,   // a rebind landed on a key the menu framework reserves
 		KeymapAlreadyBoundTo,        // a rebind landed on a key another Wheeler action holds; the action's name follows
+		KeymapUnbindButton,          // the Unbind button beside Rebind on every keymap row
 		SettingsLiveInFramework,     // the settings key was pressed while the framework hosts the page
 		EditHintActionToggleWheel,
 		EditHintActionNextItem,
@@ -154,6 +155,7 @@ private:
 		MAP_ENTRY(SlotCountAtMaximum, "Wheeler: 64 slots is the most a wheel can be saved with."),
 		MAP_ENTRY(KeymapReservedByFramework, "not bound - the menu framework reserves that key"),
 		MAP_ENTRY(KeymapAlreadyBoundTo, "not bound - that key is already used by"),
+		MAP_ENTRY(KeymapUnbindButton, "Unbind"),
 		MAP_ENTRY(SettingsLiveInFramework, "Wheeler: the settings are in the Apocrypha Menu Framework menu - open it and choose Wheeler - Refined."),
 		MAP_ENTRY(EditHintActionToggleWheel, "Open / Close Wheel"),
 		MAP_ENTRY(EditHintActionNextItem, "Next Item"),

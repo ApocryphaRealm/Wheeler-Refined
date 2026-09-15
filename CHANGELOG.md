@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.0 - 2026-09-15 - untested
+
+### Added
+- an Unbind button beside Rebind on every keymap row, in both the framework-hosted page and Wheeler's own overlay (the owner: 'wheeler needs to have an unbind button/key button next to each button bind site'). It writes 0 - the value the readers already treat as not bound and the one the row prints as 'Unbound' - through the same ValueStore write and dispatcher rebuild a rebind uses, and is disabled while the row is already unbound or another row is capturing. Until now a key could only be swapped for another, because a capture that produces 0 is rejected as unbindable, so giving a key back meant editing the INI by hand. The button's label is translated in all eleven languages, and DevBench op wheeler.settings unbind drives the same path.
+
 ## 1.1.9 - 2026-09-14 - working
 
 ### Fixed

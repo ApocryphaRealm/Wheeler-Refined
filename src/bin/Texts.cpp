@@ -115,6 +115,8 @@ namespace
 			return "KeymapReservedByFramework";
 		case Texts::TextType::KeymapAlreadyBoundTo:
 			return "KeymapAlreadyBoundTo";
+		case Texts::TextType::KeymapUnbindButton:
+			return "KeymapUnbindButton";
 		case Texts::TextType::SettingsLiveInFramework:
 			return "SettingsLiveInFramework";
 		case Texts::TextType::PresetsHeader:

@@ -144,6 +144,8 @@ namespace DevBenchTool
 			} else if (op == "rebind") {
 				const auto code = static_cast<std::uint32_t>(JsonNum(args, "code", 0.0));
 				SettingsPage::Page::DriveRebind(JsonStr(args, "key"), code, JsonBool(args, "cancel"), result);
+			} else if (op == "unbind") {
+				SettingsPage::Page::DriveUnbind(JsonStr(args, "key"), result);
 			} else if (op == "selecttab") {
 				SettingsPage::Page::DriveSelectTab(JsonStr(args, "panel"), JsonStr(args, "tab"), result);
 			} else if (op == "inject") {

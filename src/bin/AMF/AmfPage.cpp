@@ -210,6 +210,15 @@ namespace AmfPage
 			}
 			MCP::EndDisabled();
 
+			// Unbind beside Rebind, the same as the overlay's row (the owner, 2026-09-15). Disabled when
+			// the row is already unbound.
+			MCP::SameLine();
+			MCP::BeginDisabled(Shared::IsAnyCapturing() || current == 0u);
+			if (MCP::SmallButton(Texts::GetText(Texts::TextType::KeymapUnbindButton))) {
+				Shared::Unbind(a_panel, a_entry, a_current);
+			}
+			MCP::EndDisabled();
+
 			const std::string notice = Shared::RowNotice(a_entry.iniKey);
 			if (!notice.empty()) {
 				MCP::SameLine();

@@ -68,7 +68,8 @@ namespace SettingsPage
 					SelectTab,
 					Get,
 					Set,
-					Rebind
+					Rebind,
+					Unbind
 				};
 
 				Kind kind{ Kind::Get };
@@ -628,6 +629,31 @@ namespace SettingsPage
 				return CaptureOutcome::Bound;
 			}
 
+			// Clears a keymap row: writes 0 - the value every reader already treats as not bound, and the
+			// one Controls::GetKeyNameFor* prints as "Unbound" - through the same ValueStore::Set and the
+			// same dispatcher rebuild a capture uses, so an unbind and a rebind take one code path.
+			//
+			// The owner, 2026-09-15: "wheeler needs to have an unbind button/key button next to each button
+			// bind site". Until now there was no way to give a key back from the page at all: Rebind can only
+			// swap one key for another, because a capture that produces 0 is rejected as unbindable, so a
+			// player who wanted an action to stop responding had to edit the INI by hand.
+			bool UnbindRow(const Panel& a_panel, const Entry& a_entry, const ResolvedValue& a_current)
+			{
+				if (!ValueStore::GetSingleton().Set(a_panel, a_entry, FormatIndexLike(0, a_current))) {
+					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNotice = "(write failed)";
+					return false;
+				}
+				if (g_rowNoticeKey == a_entry.iniKey) {
+					g_rowNoticeKey.clear();
+					g_rowNotice.clear();
+				}
+				logger::info("[SettingsPage] {} unbound", a_entry.iniKey);
+				Controls::BindAllInputsFromConfig();
+				ApplyChangedSettings();
+				return true;
+			}
+
 			void DrawKeymap(const Panel& a_panel, const Entry& a_entry, const ResolvedValue& a_current)
 			{
 				std::uint32_t bound = 0;
@@ -668,6 +694,15 @@ namespace SettingsPage
 						g_rowNoticeKey.clear();
 						g_rowNotice.clear();
 					}
+				}
+				ImGui::EndDisabled();
+
+				// Unbind sits beside Rebind on every keymap row (the owner, 2026-09-15). Disabled while the
+				// row is already unbound, so the button can never write a value the row is showing.
+				ImGui::SameLine();
+				ImGui::BeginDisabled(!g_capturingKey.empty() || current == 0u);
+				if (ImGui::SmallButton(Texts::GetText(Texts::TextType::KeymapUnbindButton))) {
+					UnbindRow(a_panel, a_entry, a_current);
 				}
 				ImGui::EndDisabled();
 
@@ -1098,6 +1133,26 @@ namespace SettingsPage
 					}
 					break;
 
+				case DriveCommand::Kind::Unbind:
+					{
+						// Rule 64: the Unbind button is driven through the SAME UnbindRow the widget calls,
+						// so a driven unbind proves the player's path rather than a parallel copy of it.
+						if (entry->type != EntryType::Keymap) {
+							a_command.result =
+								R"({"ok":false,"error":"not a keymap control","key":")" +
+								JsonEscape(entry->iniKey) + R"("})";
+							break;
+						}
+						const bool ok = UnbindRow(*panel, *entry, current);
+						const auto after = store.Get(*panel, *entry);
+						a_command.result =
+							std::string(R"({"ok":)") + (ok ? "true" : "false") +
+							R"(,"op":"unbind","key":")" + JsonEscape(entry->iniKey) +
+							R"(","raw":")" + JsonEscape(after.raw) +
+							R"(","source":")" + ValueSourceName(after.source) + R"("})";
+					}
+					break;
+
 				default:
 					a_command.result = R"({"ok":false,"error":"unhandled command"})";
 					break;
@@ -1331,6 +1386,14 @@ namespace SettingsPage
 			return SubmitDriveCommand(command, a_resultJson, a_timeoutMs);
 		}
 
+		bool DriveUnbind(const std::string& a_iniKey, std::string& a_resultJson, int a_timeoutMs)
+		{
+			auto command = std::make_shared<DriveCommand>();
+			command->kind = DriveCommand::Kind::Unbind;
+			command->key = a_iniKey;
+			return SubmitDriveCommand(command, a_resultJson, a_timeoutMs);
+		}
+
 		void Draw()
 		{
 			// Above the early-out on purpose - see DrainDriveQueue.
@@ -1456,6 +1519,11 @@ namespace SettingsPage
 			bool IsAnyCapturing()
 			{
 				return !g_capturingKey.empty();
+			}
+
+			bool Unbind(const Panel& a_panel, const Entry& a_entry, const ResolvedValue& a_current)
+			{
+				return SettingsPage::Page::UnbindRow(a_panel, a_entry, a_current);
 			}
 
 			CaptureOutcome ConsumeCapture(const Panel& a_panel, const Entry& a_entry,
