@@ -536,7 +536,7 @@ namespace Config
 			// Default 0x44 (F10): F11 is the Apocrypha Menu Framework's menu key, Wheeler binds no other
 			// F-key, and F12 is Steam's screenshot key (DEFAULT-KEYS.md).
 			// A uint32 rather than a float because it is a scan code, like every InputBindings key.
-			inline std::uint32_t SettingsPageKey = 0;   // unbound (1.1.0): the settings live in the menu framework, whose own key opens them; this is an optional shortcut
+			inline std::uint32_t SettingsPageKey = 0;   // 1.1.9: not a setting any more - the settings are reached through the menu framework only; always 0
 			// The gamepad row for the same page (the owner, 2026-09-12: a rebindable KEY and a rebindable
 			// BUTTON for every activation). Wheeler gamepad code (266 + button index); 0 = unbound. Ships
 			// unbound: every controller button has a vanilla gameplay meaning and the page is also reachable
@@ -1033,7 +1033,7 @@ namespace Config
 		// Maximum items allowed per slot during deserialization (load).
 		// Items beyond this limit are truncated on load. Lowering this may cause data loss.
 		// Range: 10 to 64
-		inline int MaxItemsPerSlot = 1;   // the owner, 2026-09-13: one item per slot by default
+		inline int MaxItemsPerSlot = 5;   // the owner, 2026-09-14: "i want the default set to 5 per slot" (was 1)
 
 		// Auto-populate and switch to dedicated form wheels when transforming.
 		namespace TransformWheels

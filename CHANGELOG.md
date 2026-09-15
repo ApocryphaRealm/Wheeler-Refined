@@ -8,6 +8,17 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.9 - 2026-09-14 - working
+
+### Fixed
+- Max Items Per Slot steps one at a time from 1 (the owner: 'as soon as you move it off of one it goes to 10 ... it's one two three four five and so on'). The slider's minimum was 10 in Wheel Behavior's descriptor and the INI reader clamped the value to 10-64, so the shipped 1 jumped to 10 on the first move and a saved 1 read back as 10; both ranges are now 1-64.
+
+### Removed
+- Settings Page Key and Settings Page Button (Gamepad) are gone from Wheeler Controls (the owner: 'we don't need a settings page bound button or a settings page bound key either since it's just through AMF'). They are no longer read from Controls.ini and stay unbound; the settings are reached through the Apocrypha Menu Framework.
+
+### Changed
+- Max Items Per Slot ships at 5 (the owner: 'i want the default set to 5 per slot'; was 1). Compiled default, the descriptor's default and wheelBehavior.factory.ini match; a saved value is kept until Reset to defaults.
+
 ## 1.1.8 - 2026-09-14 - working
 
 ### Fixed

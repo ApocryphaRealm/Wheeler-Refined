@@ -3635,7 +3635,7 @@ static void ReadWheelBehaviorConfigFromIni(const CSimpleIniA& ini)
 					tmpMax = static_cast<std::uint32_t>((std::max)(0.0f, std::round(tmpFloat)));
 				}
 			}
-			Config::WheelBehavior::MaxItemsPerSlot = static_cast<int>(std::clamp(tmpMax, 10u, 64u));
+			Config::WheelBehavior::MaxItemsPerSlot = static_cast<int>(std::clamp(tmpMax, 1u, 64u));   // 1.1.9: was 10..64, which turned the shipped 1 into 10 (the owner: "it's one two three four five")
 		}
 	};
 
@@ -5183,8 +5183,8 @@ void Config::ReadControlConfig()
 	// EnableOpenInFavoritesMenu and EnableEditModeInFavoritesMenu are no longer read (1.1.6: Wheeler takes the place of the
 	// Favorites menu); both keep their compiled defaults (on), upstream's behaviour.
 	GetBoolValue(ini, "Control.Wheel", "HideGameUIInEditMode", Config::Control::Wheel::HideGameUIInEditMode);
-	GetUInt32Value(ini, "Control.Wheel", "SettingsPageKey", Config::Control::Wheel::SettingsPageKey);
-	GetUInt32Value(ini, "Control.Wheel", "SettingsPageGamepadButton", Config::Control::Wheel::SettingsPageGamepadButton);
+	// SettingsPageKey and SettingsPageGamepadButton are no longer read (1.1.9; the owner: "we don't need a settings page bound
+	// button or a settings page bound key either since it's just through AMF"); both stay 0, unbound.
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
 	GetBoolValue(ini, "Control.Wheel", "ShowAdvancedSettings", Config::Control::Wheel::ShowAdvancedSettings);
 	GetBoolValue(ini, "Control.Wheel", "ToggleKeyPassThrough", Config::Control::Wheel::ToggleKeyPassThrough);

@@ -134,44 +134,6 @@
                                          "control":  {
                                                          "failAction":  "disable"
                                                      },
-                                         "default":  0,
-                                         "ini":  {
-                                                     "id":  "SettingsPageKey",
-                                                     "section":  "Control.Wheel"
-                                                 },
-                                         "text":  {
-                                                      "desc":  "Optional shortcut that opens the Apocrypha Menu Framework on Wheeler's page (framework 1.7.7 or newer). The framework's own key (F1 by default) opens these settings, so this ships unbound (0). DirectInput scan code; a key the framework reserves is refused.",
-                                                      "name":  "Settings Page Key"
-                                                  },
-                                         "translation":  {
-                                                             "desc":  "",
-                                                             "name":  ""
-                                                         },
-                                         "type":  "keymap"
-                                     },
-                                     {
-                                         "control":  {
-                                                         "failAction":  "disable"
-                                                     },
-                                         "default":  0,
-                                         "ini":  {
-                                                     "id":  "SettingsPageGamepadButton",
-                                                     "section":  "Control.Wheel"
-                                                 },
-                                         "text":  {
-                                                      "desc":  "Optional controller shortcut that opens the Apocrypha Menu Framework on Wheeler's page. Ships unbound: every controller button already has a vanilla meaning, and the framework's menu is reachable with a controller on its own. 0 = unbound.",
-                                                      "name":  "Settings Page Button (Gamepad)"
-                                                  },
-                                         "translation":  {
-                                                             "desc":  "",
-                                                             "name":  ""
-                                                         },
-                                         "type":  "keymap"
-                                     },
-                                     {
-                                         "control":  {
-                                                         "failAction":  "disable"
-                                                     },
                                          "entries":  [
                                                          {
                                                              "control":  {
