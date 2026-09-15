@@ -8,6 +8,14 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.1.6 - 2026-09-14 - working
+
+### Fixed
+- The Advanced settings toggle now hides the advanced sections' tabs (the owner: 'the advanced settings toggle doesnt hide the advanced settings tabs'). With it off, the sections after Wheeler Controls, Wheel Behavior and Ammo Wheel were still listed in the framework's tabs and only showed a one-line notice, because the framework listed every section it was given at registration. Apocrypha Menu Framework 1.8.3 adds AMF_SetPageVisible; Wheeler calls it at registration and from whichever section is drawing, so turning the toggle off (or loading a preset) removes those tabs on the next frame and turning it on brings them back. With an older framework or SKSE Menu Framework the notice stays as before.
+
+### Removed
+- Open In Favorites Menu and Edit Mode In Favorites Menu are gone from Wheeler Controls (the owner: 'wheeloer takes the place of the favorites menu so we dont need the settings to allow wheeler to activate in the favorites menu either'). They are no longer read from Controls.ini and keep upstream's behaviour (both on); Controls.defaults.ini drops them, and Disable Vanilla Favorites Menu's description now says Wheeler takes the menu's place.
+
 ## 1.1.5 - 2026-09-14 - working
 
 ### Fixed

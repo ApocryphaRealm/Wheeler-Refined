@@ -5180,8 +5180,8 @@ void Config::ReadControlConfig()
 	GetBoolValue(ini, "Control.Wheel", "DoubleActivateDisable", Config::Control::Wheel::DoubleActivateDisable);
 	GetFloatValue(ini, "Control.Wheel", "ToggleHoldThreshold", Config::Control::Wheel::ToggleHoldThreshold);
 	GetBoolValue(ini, "Control.Wheel", "BlockGameInputInEditMode", Config::Control::Wheel::BlockGameInputInEditMode);
-	GetBoolValue(ini, "Control.Wheel", "EnableOpenInFavoritesMenu", Config::Control::Wheel::EnableOpenInFavoritesMenu);
-	GetBoolValue(ini, "Control.Wheel", "EnableEditModeInFavoritesMenu", Config::Control::Wheel::EnableEditModeInFavoritesMenu);
+	// EnableOpenInFavoritesMenu and EnableEditModeInFavoritesMenu are no longer read (1.1.6: Wheeler takes the place of the
+	// Favorites menu); both keep their compiled defaults (on), upstream's behaviour.
 	GetBoolValue(ini, "Control.Wheel", "HideGameUIInEditMode", Config::Control::Wheel::HideGameUIInEditMode);
 	GetUInt32Value(ini, "Control.Wheel", "SettingsPageKey", Config::Control::Wheel::SettingsPageKey);
 	GetUInt32Value(ini, "Control.Wheel", "SettingsPageGamepadButton", Config::Control::Wheel::SettingsPageGamepadButton);

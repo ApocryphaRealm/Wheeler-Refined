@@ -464,15 +464,45 @@ namespace AmfPage
 			}
 		}
 
+		// Advanced settings off hides the sections after the first three from the framework's tabs (1.1.6; the
+		// owner: "the advanced settings toggle doesnt hide the advanced settings tabs"). Apocrypha Menu Framework
+		// 1.8.3+ exports AMF_SetPageVisible; the page names are the labels given to AddSectionItem under
+		// kSectionName. Applied at registration and from whichever section is drawing, so a change made on
+		// Wheeler Controls / General (or a preset load) takes effect on the next frame. A framework without the
+		// export keeps the one-line notice RenderPanelIndex draws in each advanced section.
+		void SyncAdvancedVisibility()
+		{
+			using SetPageVisibleFn = bool (*)(const char*, const char*, bool);
+			static const SetPageVisibleFn setVisible = GetMenuFrameworkFunction<SetPageVisibleFn>("AMF_SetPageVisible");
+			if (!setVisible) {
+				return;
+			}
+			static int applied = -1;
+			const int want = Config::Control::Wheel::ShowAdvancedSettings ? 1 : 0;
+			if (applied == want) {
+				return;
+			}
+			int changed = 0;
+			for (std::size_t i = 3; i < g_panels.size(); ++i) {
+				if (g_panels[i] && setVisible(kSectionName, g_panels[i]->label.c_str(), want == 1)) {
+					++changed;
+				}
+			}
+			applied = want;
+			logger::info("[AmfPage] advanced settings {}: {} section(s) {} in the framework's tabs", want ? "on" : "off", changed, want ? "shown" : "hidden");
+		}
+
 		void RenderPanelIndex(int a_index)
 		{
+			SyncAdvancedVisibility();
 			if (a_index < 0 || a_index >= static_cast<int>(g_panels.size()) || !g_panels[a_index] || !g_panels[a_index]->panel) {
 				MCP::TextDisabled("This panel is not available.");
 				return;
 			}
 			const PanelTab& panelTab = *g_panels[a_index];
-			// Advanced settings off (the owner, 2026-09-13): the framework lists every section it was given
-			// at registration and cannot unlist one, so sections after the first three collapse to a line.
+			// Advanced settings off (the owner, 2026-09-13): sections after the first three. With Apocrypha Menu
+			// Framework 1.8.3+ they are hidden from the tabs (SyncAdvancedVisibility above) and never drawn; an older
+			// framework or SKSE Menu Framework lists every section it was given, so they collapse to a line.
 			if (a_index >= 3 && !Config::Control::Wheel::ShowAdvancedSettings) {
 				MCP::TextWrapped("%s", Texts::GetText(Texts::TextType::AdvancedSettingsHidden));
 				return;
@@ -573,6 +603,7 @@ namespace AmfPage
 		             (GetModuleHandleW(L"ApocryphaMenuFramework") ? "ApocryphaMenuFramework" : "SKSEMenuFramework");
 		g_hosted = registered > 0;
 		logger::info("[AmfPage] registered {} section(s) under '{}' with {}", registered, kSectionName, g_hostedBy);
+		SyncAdvancedVisibility();   // the INI's Advanced settings state, before the menu is first drawn
 	}
 
 	bool IsHosted()

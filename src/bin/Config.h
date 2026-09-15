@@ -526,6 +526,8 @@ namespace Config
 			inline float ToggleHoldThreshold = 0.25f;  
 
 			inline bool BlockGameInputInEditMode = true;
+			// Not settings since 1.1.6 (the owner: "wheeler takes the place of the favorites menu so we dont need the settings to
+			// allow wheeler to activate in the favorites menu either"): off the page, not read from the INI; both stay on.
 			inline bool EnableOpenInFavoritesMenu = true;
 			inline bool EnableEditModeInFavoritesMenu = true;
 			inline bool HideGameUIInEditMode = true;
@@ -543,9 +545,8 @@ namespace Config
 
 			// Suppress the game's own Favorites menu entirely (owner request, 2026-09-12).
 			//
-			// Distinct from EnableOpenInFavoritesMenu above, which decides whether WHEELER may open
-			// while that menu is up. This stops the menu being opened at all, by consuming its user
-			// event before the game sees it.
+			// It stops the menu being opened at all, by consuming its user event before the game sees it,
+			// so Wheeler takes its place.
 			//
 			// Default OFF: taking away a vanilla menu is not something to do to someone who did not
 			// ask for it.

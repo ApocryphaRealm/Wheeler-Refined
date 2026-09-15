@@ -78,44 +78,6 @@
                                                      },
                                          "default":  true,
                                          "ini":  {
-                                                     "id":  "EnableOpenInFavoritesMenu",
-                                                     "section":  "Control.Wheel"
-                                                 },
-                                         "text":  {
-                                                      "desc":  "When ON, Wheeler can open while the Favorites menu is open. Turn OFF to let Favorites menu inputs pass through without opening Wheeler.",
-                                                      "name":  "Open In Favorites Menu"
-                                                  },
-                                         "translation":  {
-                                                             "desc":  "",
-                                                             "name":  ""
-                                                         },
-                                         "type":  "checkbox"
-                                     },
-                                     {
-                                         "control":  {
-                                                         "failAction":  "disable"
-                                                     },
-                                         "default":  true,
-                                         "ini":  {
-                                                     "id":  "EnableEditModeInFavoritesMenu",
-                                                     "section":  "Control.Wheel"
-                                                 },
-                                         "text":  {
-                                                      "desc":  "When ON, opening Wheeler while the Favorites menu is open enters edit mode. Turn OFF to keep the Favorites menu from triggering Wheeler edit mode.",
-                                                      "name":  "Edit Mode In Favorites Menu"
-                                                  },
-                                         "translation":  {
-                                                             "desc":  "",
-                                                             "name":  ""
-                                                         },
-                                         "type":  "checkbox"
-                                     },
-                                     {
-                                         "control":  {
-                                                         "failAction":  "disable"
-                                                     },
-                                         "default":  true,
-                                         "ini":  {
                                                      "id":  "HideGameUIInEditMode",
                                                      "section":  "Control.Wheel"
                                                  },
@@ -978,7 +940,7 @@
                                                      "section":  "Control.Wheel"
                                                  },
                                          "text":  {
-                                                      "desc":  "Turn the game's own Favorites menu off completely. Not the same as the two options above, which decide whether Wheeler may open while that menu is showing - this stops it opening at all. Off by default.",
+                                                      "desc":  "Turn the game's own Favorites menu off completely, so Wheeler takes its place. Off by default.",
                                                       "name":  "Disable Vanilla Favorites Menu"
                                                   },
                                          "translation":  {
