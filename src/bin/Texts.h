@@ -55,6 +55,7 @@ public:
 		KeymapReservedByFramework,   // a rebind landed on a key the menu framework reserves
 		KeymapAlreadyBoundTo,        // a rebind landed on a key another Wheeler action holds; the action's name follows
 		KeymapUnbindButton,          // the Unbind button beside Rebind on every keymap row
+		KeymapWrongDevice,           // a rebind captured a code from the wrong device for that row
 		SettingsLiveInFramework,     // the settings key was pressed while the framework hosts the page
 		EditHintActionToggleWheel,
 		EditHintActionNextItem,
@@ -156,6 +157,7 @@ private:
 		MAP_ENTRY(KeymapReservedByFramework, "not bound - the menu framework reserves that key"),
 		MAP_ENTRY(KeymapAlreadyBoundTo, "not bound - that key is already used by"),
 		MAP_ENTRY(KeymapUnbindButton, "Unbind"),
+		MAP_ENTRY(KeymapWrongDevice, "not bound - press a control on this row's own device"),
 		MAP_ENTRY(SettingsLiveInFramework, "Wheeler: the settings are in the Apocrypha Menu Framework menu - open it and choose Wheeler - Refined."),
 		MAP_ENTRY(EditHintActionToggleWheel, "Open / Close Wheel"),
 		MAP_ENTRY(EditHintActionNextItem, "Next Item"),

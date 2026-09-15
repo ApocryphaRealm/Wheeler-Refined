@@ -24,6 +24,7 @@ namespace SettingsPage::Page::Shared
 		Bound,
 		Reserved,
 		InUse,
+		WrongDevice,
 		WriteFailed
 	};
 

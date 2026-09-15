@@ -495,6 +495,11 @@ namespace SettingsPage
 			// catalogue and survives a reload, whereas the model (and every Entry in it) is rebuilt.
 			std::string g_capturingKey;
 
+			// Device ranges, mirroring UserInput/Controls.cpp's KEY_MOUSE_OFFSET / KEY_GAMEPAD_OFFSET
+			// (256 / 266), which are file-local there. A code at or above the gamepad offset is a
+			// controller button; anything below it is a keyboard key or a mouse button.
+			constexpr std::uint32_t kGamepadCodeOffset = 266u;
+
 			// A notice that stays on its row until that row is armed again or binds: a one-frame
 			// TextDisabled after a refused capture is invisible at 120 FPS.
 			std::string g_rowNoticeKey;
@@ -508,6 +513,7 @@ namespace SettingsPage
 				Bound,        // a code was captured and written
 				Reserved,     // captured, but the menu framework reserves that key (the owner, 2026-09-12)
 				InUse,        // captured, but another Wheeler action on the same device already holds it (the owner, same day)
+				WrongDevice,  // captured, but from the wrong device for this row (the owner, 2026-09-15)
 				WriteFailed   // captured, but ValueStore::Set refused (see its read-back check)
 			};
 
@@ -580,6 +586,28 @@ namespace SettingsPage
 				}
 
 				g_capturingKey.clear();
+
+				// THE CODE'S DEVICE MUST MATCH THE ROW'S DEVICE.
+				//
+				// Capture takes whatever the input thread hands it, from any device, and nothing downstream
+				// checked that it belonged on this row. That is how the gamepad Toggle Wheel row became
+				// impossible to fill after it was cleared (the owner, 2026-09-15: "Wheeler wont let me rebind
+				// the dpad after unbinding it"): the capture took mouse-left (256), and the duplicate-binding
+				// check then refused it because Activate Primary holds 256 on the keyboard side - so every
+				// attempt was rejected for a reason that had nothing to do with the button being pressed.
+				// Refusing the mismatch here says what is actually wrong, and keeps a controller button out
+				// of a keyboard row (and the reverse), which nothing else prevents.
+				const bool rowWantsGamepad = LooksLikeGamepad(a_entry);
+				const bool codeIsGamepad = captured >= kGamepadCodeOffset;
+				if (rowWantsGamepad != codeIsGamepad) {
+					logger::info("[SettingsPage] rebind of {} refused: code {} is {}, but this row binds {}",
+						a_entry.iniKey, captured,
+						codeIsGamepad ? "a controller button" : "a key or mouse button",
+						rowWantsGamepad ? "a controller button" : "a key or mouse button");
+					g_rowNoticeKey = a_entry.iniKey;
+					g_rowNotice = Texts::GetText(Texts::TextType::KeymapWrongDevice);
+					return CaptureOutcome::WrongDevice;
+				}
 
 				// The framework's keys are off limits (the owner, 2026-09-12: our mods never take AMF's
 				// menu key or the others it reserves). Asked fresh at every capture so the answer is
@@ -1103,6 +1131,7 @@ namespace SettingsPage
 						case CaptureOutcome::Bound:       outcomeName = "bound"; break;
 						case CaptureOutcome::Reserved:    outcomeName = "reserved"; break;
 						case CaptureOutcome::InUse:       outcomeName = "inUse"; break;
+						case CaptureOutcome::WrongDevice: outcomeName = "wrongDevice"; break;
 						case CaptureOutcome::WriteFailed: outcomeName = "writeFailed"; break;
 						}
 
@@ -1536,6 +1565,7 @@ namespace SettingsPage
 				case SettingsPage::Page::CaptureOutcome::Bound:       return CaptureOutcome::Bound;
 				case SettingsPage::Page::CaptureOutcome::Reserved:    return CaptureOutcome::Reserved;
 				case SettingsPage::Page::CaptureOutcome::InUse:       return CaptureOutcome::InUse;
+				case SettingsPage::Page::CaptureOutcome::WrongDevice: return CaptureOutcome::WrongDevice;
 				case SettingsPage::Page::CaptureOutcome::WriteFailed: return CaptureOutcome::WriteFailed;
 				}
 				return CaptureOutcome::NotPending;

@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.1 - 2026-09-15 - untested
+
+### Fixed
+- a keymap row could not be rebound after it was cleared, because capture accepted a code from ANY device (the owner, 2026-09-15: 'wheeler wont let me rebind the dpad after unbinding it'). With the gamepad Toggle Wheel row empty, the capture took mouse-left (256) and the duplicate-binding check then refused it against Activate Primary, which holds 256 on the keyboard side - so every attempt failed for a reason unrelated to the button being pressed, and the row could never be filled again. The captured code's device must now match the row's device: a controller row takes only controller buttons (code 266 and above) and a keyboard row only keys and mouse buttons, with a refusal notice saying so in all eleven languages. The fault predates the Unbind button; clearing a row is what made it reachable.
+
 ## 1.2.0 - 2026-09-15 - untested
 
 ### Added
