@@ -413,7 +413,79 @@ namespace AmfPage
 			MCP::Separator();
 		}
 
-		void DrawTab(const Panel& a_panel, const Tab& a_tab)
+		// Defined below, beside the chooser that owns them: a tab bar registers itself as it draws, and the
+		// section publishes which bar a D-pad press belongs to once every bar has been seen.
+
+		int DeclareInnerTabs(int a_count, int a_current);  // defined below, beside the export it resolves
+
+		// WHICH tab bar a D-pad press should move.
+		//
+		// A section can draw a bar inside a bar - Wheeler Controls, then Input Bindings, then Mouse and Keyboard -
+		// and only one of them can answer the press. Declaring the outermost made the player click a row before it
+		// would move, and it still fell back to the top bar afterwards (the owner, 2026-09-16: "wherever the nav box
+		// is should be considered to be active for navigation because otherwise you have to click every single row").
+		//
+		// So every bar registers itself as it draws, and the press goes to the one the NAV CURSOR is on. When the
+		// cursor is on none of them the DEEPEST bar wins, which is the one the player opened their way into. Focus
+		// is only known after a tab item has been submitted, so a bar is judged on what was seen LAST frame and the
+		// request applied on the next - the same one-frame handover the framework uses for its own bar.
+		struct InnerBar
+		{
+			std::string id;
+			int count = 0;
+			int index = 0;
+			int depth = 0;
+			bool focused = false;
+		};
+
+		std::vector<InnerBar> g_innerBars;      // registered this frame
+		std::map<std::string, bool> s_subFocused;  // which nested bar had the cursor last frame
+		std::string g_chosenBarId;              // the bar the press belongs to
+		int g_pendingRequest = -1;              // the tab it was asked for, handed over once
+
+		int RegisterInnerBar(const std::string& a_id, int a_count, int a_index, int a_depth, bool a_focused)
+		{
+			g_innerBars.push_back(InnerBar{ a_id, a_count, a_index, a_depth, a_focused });
+			if (a_id != g_chosenBarId) {
+				return -1;
+			}
+			const int request = g_pendingRequest;
+			g_pendingRequest = -1;
+			return (request >= 0 && request < a_count) ? request : -1;
+		}
+
+		void PublishChosenInnerBar()
+		{
+			const InnerBar* chosen = nullptr;
+			for (const InnerBar& bar : g_innerBars) {
+				if (bar.count <= 1) {
+					continue;
+				}
+				if (bar.focused) {
+					chosen = &bar;   // the nav cursor is on this bar: it owns the press
+					break;
+				}
+				if (!chosen || bar.depth > chosen->depth) {
+					chosen = &bar;   // otherwise the deepest bar drawn
+				}
+			}
+			if (!chosen) {
+				g_innerBars.clear();
+				g_chosenBarId.clear();
+				return;
+			}
+			g_chosenBarId = chosen->id;
+			const int count = chosen->count;
+			const int index = chosen->index;
+			g_innerBars.clear();
+			const int request = DeclareInnerTabs(count, index);
+			if (request >= 0) {
+				g_pendingRequest = request;
+			}
+		}
+
+
+		void DrawTab(const Panel& a_panel, const Tab& a_tab, const std::string& a_id = std::string(), int a_depth = 0)
 		{
 			MCP::PushID(static_cast<const void*>(&a_tab));
 			if (!a_tab.desc.empty()) {
@@ -426,15 +498,32 @@ namespace AmfPage
 				}
 			}
 			if (!a_tab.children.empty()) {
+				// This bar registers itself like any other, under an id built from its own tab's label, so a press
+				// can be routed to it when the nav cursor is here rather than always to the section's top bar.
+				const std::string subId = a_id + "/" + a_tab.label;
+				static std::map<std::string, int> s_subIndex;
+				const int subRequest = RegisterInnerBar(subId, static_cast<int>(a_tab.children.size()),
+														s_subIndex[subId], a_depth + 1, s_subFocused[subId]);
+				bool subFocused = false;
 				if (MCP::BeginTabBar("sub", MCP::ImGuiTabBarFlags_FittingPolicyScroll | MCP::ImGuiTabBarFlags_TabListPopupButton)) {
+					int childIdx = 0;
 					for (const auto& child : a_tab.children) {
-						if (MCP::BeginTabItem(child.label.c_str())) {
-							DrawTab(a_panel, child);
+						const MCP::ImGuiTabItemFlags flags =
+							(childIdx == subRequest) ? MCP::ImGuiTabItemFlags_SetSelected : 0;
+						const bool open = MCP::BeginTabItem(child.label.c_str(), nullptr, flags);
+						if (MCP::IsItemFocused()) {
+							subFocused = true;   // the nav cursor is on this bar
+						}
+						if (open) {
+							s_subIndex[subId] = childIdx;
+							DrawTab(a_panel, child, subId, a_depth + 1);
 							MCP::EndTabItem();
 						}
+						++childIdx;
 					}
 					MCP::EndTabBar();
 				}
+				s_subFocused[subId] = subFocused;
 			}
 			MCP::PopID();
 		}
@@ -542,9 +631,12 @@ namespace AmfPage
 			// Which of this section's own tabs is open, remembered per section so the framework can be told it
 			// at the START of the frame - the open tab is only known once the items have been submitted.
 			static int s_innerIndex[16] = {};
+			static bool s_innerFocused[16] = {};
 			const int panelSlot = (a_index >= 0 && a_index < 16) ? a_index : 0;
 			const int innerCount = static_cast<int>(panelTab.tabs.size());
-			const int innerRequest = DeclareInnerTabs(innerCount, s_innerIndex[panelSlot]);
+			const std::string topId = "panel" + std::to_string(panelSlot);
+			const int innerRequest = RegisterInnerBar(topId, innerCount, s_innerIndex[panelSlot], 0, s_innerFocused[panelSlot]);
+			bool topFocused = false;
 			if (MCP::BeginTabBar("tabs", MCP::ImGuiTabBarFlags_FittingPolicyScroll | MCP::ImGuiTabBarFlags_TabListPopupButton)) {
 				int innerIdx = 0;
 				for (const auto& tab : panelTab.tabs) {
@@ -552,18 +644,25 @@ namespace AmfPage
 					// selection, so a press, a click and the tab-list popup never fight over what is open.
 					const MCP::ImGuiTabItemFlags flags =
 						(innerIdx == innerRequest) ? MCP::ImGuiTabItemFlags_SetSelected : 0;
-					if (MCP::BeginTabItem(tab.label.c_str(), nullptr, flags)) {
+					const bool topOpen = MCP::BeginTabItem(tab.label.c_str(), nullptr, flags);
+					if (MCP::IsItemFocused()) {
+						topFocused = true;
+					}
+					if (topOpen) {
 						s_innerIndex[panelSlot] = innerIdx;
 						if (panelTab.label.find("Wheeler Controls") != std::string::npos && &tab == &panelTab.tabs.front()) {
 							DrawPresetsPanel();   // General tab, above the descriptor's own controls
 						}
-						DrawTab(*panelTab.panel, tab);
+						DrawTab(*panelTab.panel, tab, topId, 0);
 						MCP::EndTabItem();
 					}
 					++innerIdx;
 				}
 				MCP::EndTabBar();
 			}
+			s_innerFocused[panelSlot] = topFocused;
+			// Every bar this section drew has registered by now: pick the one the press belongs to.
+			PublishChosenInnerBar();
 			MCP::PopID();
 		}
 
