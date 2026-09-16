@@ -401,6 +401,9 @@ bool WheelEntry::IsAvailable(RE::TESObjectREFR::InventoryItemMap& a_inv)
 	return _items[_selectedItem]->IsAvailable(a_inv);
 }
 
+// Defined below, next to the removal that uses it: two wheel items are the same BOUND item.
+static bool IsSameBoundItem(const std::shared_ptr<WheelItem>& a_lhs, const std::shared_ptr<WheelItem>& a_rhs);
+
 void WheelEntry::ActivateItemSecondary(bool editMode)
 {
 	std::unique_lock<std::shared_mutex> lock(this->_lock);
@@ -488,6 +491,30 @@ void WheelEntry::ActivateItemPrimary(bool editMode, std::shared_ptr<WheelItem>* 
 						insertIndex);
 				}
 			}
+			// Already in THIS slot: select it rather than stacking another copy of the same thing.
+			//
+			// The cross-slot sweep only looks at other slots, so without this the same sword could be added to one
+			// slot four times over (the owner, 2026-09-16: "you can also add duplicate items to the same slot and just
+			// add more entries ... which is a gap we need to fix"). The identity test is the one the sweep uses, so two
+			// genuinely different instances - a second sword with its own unique id, enchanted or tempered differently -
+			// are still allowed to sit side by side, which is what the insert-after-selected rule above exists to keep.
+			int existing = -1;
+			for (int i = 0; i < static_cast<int>(_items.size()); ++i) {
+				if (IsSameBoundItem(_items[i], newItem)) {
+					existing = i;
+					break;
+				}
+			}
+			if (existing >= 0) {
+				_selectedItem = existing;
+				if (a_boundOut) {
+					*a_boundOut = _items[existing];  // still a bind: other slots give up their copies
+				}
+				MainWheelDebug::Log(MainWheelDebug::Category::Input,
+					"BindResult: already in this slot at idx={}; selected it instead of adding a duplicate", existing);
+				return;
+			}
+
 			_items.insert(_items.begin() + insertIndex, newItem);
 			if (a_boundOut) {
 				*a_boundOut = newItem;  // the caller clears this item out of any other slot
