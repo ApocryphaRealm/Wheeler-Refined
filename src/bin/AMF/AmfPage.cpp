@@ -479,6 +479,24 @@ namespace AmfPage
 		// kSectionName. Applied at registration and from whichever section is drawing, so a change made on
 		// Wheeler Controls / General (or a preset load) takes effect on the next frame. A framework without the
 		// export keeps the one-line notice RenderPanelIndex draws in each advanced section.
+		// The framework's D-pad navigation can only see the tab bar IT submits, so the bar this page draws
+		// itself is invisible to it and left/right did nothing inside a section (the owner, 2026-09-16: "the nav
+		// box behaves properly on the main tabs of the mod page for Wheeler, but when going to the other tabs
+		// within those tabs, it does not").
+		//
+		// AMF 1.8.7 exports AMF_DeclareInnerTabs(count, current) for exactly this: the page says what it has and
+		// gets back the tab the D-pad asked for, or -1. A framework without the export simply returns nothing and
+		// the bar behaves as it always did, so this is safe against an older AMF.
+		int DeclareInnerTabs(int a_count, int a_current)
+		{
+			using DeclareFn = int (*)(int, int);
+			static const DeclareFn declare = GetMenuFrameworkFunction<DeclareFn>("AMF_DeclareInnerTabs");
+			if (!declare || a_count <= 1) {
+				return -1;
+			}
+			return declare(a_count, a_current);
+		}
+
 		void SyncAdvancedVisibility()
 		{
 			using SetPageVisibleFn = bool (*)(const char*, const char*, bool);
@@ -521,15 +539,28 @@ namespace AmfPage
 			if (panelTab.label.find("Wheel Behavior") != std::string::npos) {
 				DrawLiveSlotCount();
 			}
+			// Which of this section's own tabs is open, remembered per section so the framework can be told it
+			// at the START of the frame - the open tab is only known once the items have been submitted.
+			static int s_innerIndex[16] = {};
+			const int panelSlot = (a_index >= 0 && a_index < 16) ? a_index : 0;
+			const int innerCount = static_cast<int>(panelTab.tabs.size());
+			const int innerRequest = DeclareInnerTabs(innerCount, s_innerIndex[panelSlot]);
 			if (MCP::BeginTabBar("tabs", MCP::ImGuiTabBarFlags_FittingPolicyScroll | MCP::ImGuiTabBarFlags_TabListPopupButton)) {
+				int innerIdx = 0;
 				for (const auto& tab : panelTab.tabs) {
-					if (MCP::BeginTabItem(tab.label.c_str())) {
+					// The D-pad asks for its tab for exactly ONE frame; every other frame the bar owns its own
+					// selection, so a press, a click and the tab-list popup never fight over what is open.
+					const MCP::ImGuiTabItemFlags flags =
+						(innerIdx == innerRequest) ? MCP::ImGuiTabItemFlags_SetSelected : 0;
+					if (MCP::BeginTabItem(tab.label.c_str(), nullptr, flags)) {
+						s_innerIndex[panelSlot] = innerIdx;
 						if (panelTab.label.find("Wheeler Controls") != std::string::npos && &tab == &panelTab.tabs.front()) {
 							DrawPresetsPanel();   // General tab, above the descriptor's own controls
 						}
 						DrawTab(*panelTab.panel, tab);
 						MCP::EndTabItem();
 					}
+					++innerIdx;
 				}
 				MCP::EndTabBar();
 			}
