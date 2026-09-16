@@ -77,7 +77,9 @@ public:
 	/// If we're not in edit mode, the entry calls the currently selected item's ActivateItemPrimary().
 	/// </summary>
 	/// <param name="editMode">Whether the wheel is in edit mode.</param>
-	void ActivateItemPrimary(bool editMode = false);
+	/// <param name="a_boundOut">When binding in edit mode, receives the item that was added, so the caller
+	/// can take it out of whatever other slot held it.</param>
+	void ActivateItemPrimary(bool editMode = false, std::shared_ptr<WheelItem>* a_boundOut = nullptr);
 
 	/// <summary>
 	/// Activate the item with special(middle) input, which corresponds to a middle mouse click or a controller thumbstick press.
@@ -129,6 +131,9 @@ public:
 	/// Remove item at index. Returns true if successful, false if out of range.
 	/// </summary>
 	bool RemoveItemAt(int a_index);
+	/// Removes every copy of a_item from this slot. Used when the same item is bound to another slot, so it
+	/// MOVES rather than ending up in both. Returns how many were taken out.
+	int RemoveMatchingItems(const std::shared_ptr<WheelItem>& a_item);
 
 private:
 	void drawSlot(ImVec2 a_center, bool a_slotOnRightSide, bool a_hovered, RE::TESObjectREFR::InventoryItemMap& a_imap, DrawArgs a_drawArgs, bool a_isMissing, const EquippedHandsCache& a_hands);

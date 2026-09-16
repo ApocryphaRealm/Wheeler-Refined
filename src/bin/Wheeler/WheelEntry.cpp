@@ -11,6 +11,8 @@
 #include "WheelItems/WheelItemWeapon.h"
 #include "WheelItems/WheelItemArmor.h"
 #include "WheelEntry.h"
+
+#include <cstring>
 #include "MainWheelDebug.h"
 #include "bin/Integrations/OStimIntegration.h"
 
@@ -437,7 +439,7 @@ void WheelEntry::ActivateItemSecondary(bool editMode)
 	}
 }
 
-void WheelEntry::ActivateItemPrimary(bool editMode)
+void WheelEntry::ActivateItemPrimary(bool editMode, std::shared_ptr<WheelItem>* a_boundOut)
 {
 	std::unique_lock<std::shared_mutex> lock(this->_lock);
 
@@ -487,6 +489,9 @@ void WheelEntry::ActivateItemPrimary(bool editMode)
 				}
 			}
 			_items.insert(_items.begin() + insertIndex, newItem);
+			if (a_boundOut) {
+				*a_boundOut = newItem;  // the caller clears this item out of any other slot
+			}
 			MainWheelDebug::Log(MainWheelDebug::Category::Input, 
 				"BindResult: SUCCESS inserted at idx={}", insertIndex);
 		} else {
@@ -495,6 +500,62 @@ void WheelEntry::ActivateItemPrimary(bool editMode)
 		}
 	}
 }
+
+// Same item, for the purpose of "binding it to another slot MOVES it there".
+//
+// Type and form id must match. For instance-backed items - weapons and armour, which carry a unique id because two
+// of the same base form can be enchanted or tempered differently - the unique id must match too, so a second sword
+// is a second sword and not a duplicate to be swept away. Anything without that distinction (a spell, a shout, a
+// potion stack) is identified by its form alone.
+static bool IsSameBoundItem(const std::shared_ptr<WheelItem>& a_lhs, const std::shared_ptr<WheelItem>& a_rhs)
+{
+	if (!a_lhs || !a_rhs) {
+		return false;
+	}
+	if (a_lhs == a_rhs) {
+		return true;
+	}
+	const char* lhsType = a_lhs->GetItemTypeName();
+	const char* rhsType = a_rhs->GetItemTypeName();
+	if (!lhsType || !rhsType || std::strcmp(lhsType, rhsType) != 0) {
+		return false;
+	}
+	const RE::FormID formID = a_lhs->GetFormID();
+	if (formID == 0 || formID != a_rhs->GetFormID()) {
+		return false;
+	}
+	auto* lhsMutable = dynamic_cast<WheelItemMutable*>(a_lhs.get());
+	auto* rhsMutable = dynamic_cast<WheelItemMutable*>(a_rhs.get());
+	if (lhsMutable && rhsMutable) {
+		return lhsMutable->GetUniqueID() == rhsMutable->GetUniqueID();
+	}
+	return true;
+}
+
+int WheelEntry::RemoveMatchingItems(const std::shared_ptr<WheelItem>& a_item)
+{
+	if (!a_item) {
+		return 0;
+	}
+	std::unique_lock<std::shared_mutex> lock(this->_lock);
+	int removed = 0;
+	for (int i = static_cast<int>(_items.size()) - 1; i >= 0; --i) {
+		if (IsSameBoundItem(_items[i], a_item)) {
+			_items.erase(_items.begin() + i);
+			++removed;
+		}
+	}
+	if (removed > 0) {
+		if (_selectedItem >= static_cast<int>(_items.size())) {
+			_selectedItem = _items.empty() ? 0 : static_cast<int>(_items.size()) - 1;
+		}
+		if (_selectedItem < 0) {
+			_selectedItem = 0;
+		}
+	}
+	return removed;
+}
+
 
 void WheelEntry::ActivateItemSpecial(bool editMode)
 {

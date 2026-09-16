@@ -1833,7 +1833,29 @@ void Wheel::ActivateHoveredEntryPrimary(bool a_editMode)
 		}
 		return;
 	}
-	this->_entries[_hoveredEntryIdx]->ActivateItemPrimary(a_editMode);
+
+	// Edit mode: binding an item that is already on this wheel MOVES it here rather than leaving a copy behind
+	// (the owner, 2026-09-16: "whenever you bind a item to a Wheeler slot and then you bind it to another slot,
+	// that it moves the binding from one slot to the other instead of duplicating it").
+	//
+	// Only THIS wheel is swept. The same item on a different wheel is far more likely to be deliberate - keeping
+	// separate sets is what several wheels are for - so those are left alone.
+	std::shared_ptr<WheelItem> bound;
+	this->_entries[_hoveredEntryIdx]->ActivateItemPrimary(a_editMode, &bound);
+	if (!bound) {
+		return;
+	}
+	int movedFrom = 0;
+	for (std::size_t i = 0; i < _entries.size(); ++i) {
+		if (static_cast<int>(i) == _hoveredEntryIdx || !_entries[i]) {
+			continue;
+		}
+		movedFrom += _entries[i]->RemoveMatchingItems(bound);
+	}
+	if (movedFrom > 0) {
+		MainWheelDebug::Log(MainWheelDebug::Category::Input,
+			"BindResult: moved - took {} copy/copies out of other slots on this wheel", movedFrom);
+	}
 }
 
 
