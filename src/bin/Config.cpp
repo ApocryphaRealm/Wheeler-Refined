@@ -1,4 +1,6 @@
 #include "Config.h"
+
+#include <initializer_list>
 #include "AutoDrawPatch.h"
 #include "UserInput/Controls.h"
 #include "imgui.h"
@@ -5188,6 +5190,50 @@ void Config::ReadControlConfig()
 		normalise(Config::InputBindings::GamePad::toggleWheelModifier, "gamepad");
 		normalise(Config::InputBindings::MKB::toggleWheelModifier, "keyboard");
 	}
+
+	// toggleWheel must not silently share a button with another of this mod's own bindings.
+	//
+	// The settings page refuses a rebind that collides - it is what told the owner RT was already Next Wheel. But
+	// that check lives in the page, and the wheel key can also be set from OUTSIDE it: Unbind Vanilla Controls
+	// writes it into this file from the game's own Controls page, which never passes through the page's check. So
+	// a collision could be written in and the wheel would quietly do two things at once (the owner, 2026-09-16,
+	// choosing this over leaving it: "do 1").
+	//
+	// Nothing is changed here - the binding a player set is theirs, and guessing which one to drop would be worse
+	// than the collision. It is named in the log instead, so "the wheel key also does something else" is one
+	// search away rather than a mystery.
+	{
+		struct Named
+		{
+			const char* what;
+			std::uint32_t key;
+		};
+		const auto report = [](const char* a_device, std::uint32_t a_toggle, std::initializer_list<Named> a_others) {
+			if (a_toggle == 0) {
+				return;
+			}
+			for (const Named& other : a_others) {
+				if (other.key == a_toggle) {
+					logger::warn("config: {} toggleWheel is {} - the same button as '{}'. Both will answer it; "
+								 "change one of them, from the game's Controls page or Wheeler's own settings.",
+								 a_device, a_toggle, other.what);
+				}
+			}
+		};
+		report("gamepad", Config::InputBindings::GamePad::toggleWheel,
+			   { { "Next Wheel", Config::InputBindings::GamePad::nextWheel },
+				 { "Previous Wheel", Config::InputBindings::GamePad::prevWheel },
+				 { "Next Item", Config::InputBindings::GamePad::nextItem },
+				 { "Previous Item", Config::InputBindings::GamePad::prevItem },
+				 { "Edit Hints", Config::InputBindings::GamePad::toggleEditHints } });
+		report("keyboard", Config::InputBindings::MKB::toggleWheel,
+			   { { "Next Wheel", Config::InputBindings::MKB::nextWheel },
+				 { "Previous Wheel", Config::InputBindings::MKB::prevWheel },
+				 { "Next Item", Config::InputBindings::MKB::nextItem },
+				 { "Previous Item", Config::InputBindings::MKB::prevItem },
+				 { "Edit Hints", Config::InputBindings::MKB::toggleEditHints } });
+	}
+
 	GetUInt32Value(ini, "InputBindings.MKB", "nextItem", Config::InputBindings::MKB::nextItem);
 	GetUInt32Value(ini, "InputBindings.MKB", "prevItem", Config::InputBindings::MKB::prevItem);
 	GetUInt32Value(ini, "InputBindings.MKB", "activatePrimary", Config::InputBindings::MKB::activatePrimary);
