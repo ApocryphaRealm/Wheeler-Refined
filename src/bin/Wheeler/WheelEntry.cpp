@@ -515,6 +515,24 @@ void WheelEntry::ActivateItemPrimary(bool editMode, std::shared_ptr<WheelItem>* 
 				return;
 			}
 
+			// The slot is full.
+			//
+			// MaxItemsPerSlot was only ever applied when a wheel was LOADED, where it truncates and says "excess items
+			// will be lost" - so a sixth item could be added happily in edit mode and then vanish at the next game
+			// load. Refusing the bind up front is the honest behaviour: the limit is a limit, and nothing the player
+			// puts on the wheel disappears behind their back.
+			//
+			// This sits AFTER the duplicate check on purpose: re-binding something the slot already holds still works
+			// when the slot is full, because that path only moves the selection and adds nothing.
+			const int maxPerSlot = Config::WheelBehavior::MaxItemsPerSlot;
+			if (maxPerSlot > 0 && static_cast<int>(_items.size()) >= maxPerSlot) {
+				MainWheelDebug::Log(MainWheelDebug::Category::Input,
+					"BindResult: REFUSED - slot already holds {} item(s), the limit is {}",
+					static_cast<int>(_items.size()), maxPerSlot);
+				return;
+			}
+
+
 			_items.insert(_items.begin() + insertIndex, newItem);
 			if (a_boundOut) {
 				*a_boundOut = newItem;  // the caller clears this item out of any other slot
