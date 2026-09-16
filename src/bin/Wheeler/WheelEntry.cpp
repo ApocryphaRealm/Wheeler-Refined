@@ -512,6 +512,15 @@ void WheelEntry::ActivateItemPrimary(bool editMode, std::shared_ptr<WheelItem>* 
 				}
 				MainWheelDebug::Log(MainWheelDebug::Category::Input,
 					"BindResult: already in this slot at idx={}; selected it instead of adding a duplicate", existing);
+				// A refused bind must be visible, or a full slot is indistinguishable from a dead button - the owner
+				// pressed bind four times over before the log showed him why nothing happened (2026-09-16). The wheel
+				// has no error sound to use (that feedback was removed for CommonLibSSE-NG compatibility), so the entry
+				// is nudged with the same interpolator an activation bumps - at HALF the scale, so it reads as 'heard
+				// you, did nothing' rather than as a confirmation.
+				_arcRadiusBounceInterpolator.InterpolateTo(
+					0.5f * Config::Animation::EntryInputBumpScale *
+						(Config::Styling::Wheel::OuterCircleRadius - Config::Styling::Wheel::InnerCircleRadius),
+					Config::Animation::EntryInputBumpTime);
 				return;
 			}
 
@@ -529,6 +538,15 @@ void WheelEntry::ActivateItemPrimary(bool editMode, std::shared_ptr<WheelItem>* 
 				MainWheelDebug::Log(MainWheelDebug::Category::Input,
 					"BindResult: REFUSED - slot already holds {} item(s), the limit is {}",
 					static_cast<int>(_items.size()), maxPerSlot);
+				// A refused bind must be visible, or a full slot is indistinguishable from a dead button - the owner
+				// pressed bind four times over before the log showed him why nothing happened (2026-09-16). The wheel
+				// has no error sound to use (that feedback was removed for CommonLibSSE-NG compatibility), so the entry
+				// is nudged with the same interpolator an activation bumps - at HALF the scale, so it reads as 'heard
+				// you, did nothing' rather than as a confirmation.
+				_arcRadiusBounceInterpolator.InterpolateTo(
+					0.5f * Config::Animation::EntryInputBumpScale *
+						(Config::Styling::Wheel::OuterCircleRadius - Config::Styling::Wheel::InnerCircleRadius),
+					Config::Animation::EntryInputBumpTime);
 				return;
 			}
 

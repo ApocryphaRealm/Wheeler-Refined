@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.5 - 2026-09-16 - untested
+
+### Fixed
+- **A refused bind is visible on the wheel, not just in the log** (the owner, 2026-09-16: *"refused wheel bind should give feedback"*). Both refusals added in 1.2.4 - the slot already holds that item, and the slot is full - returned silently, so a full slot was indistinguishable from a dead button; the owner pressed bind four times over before the log explained why nothing happened. The entry is now nudged with the same interpolator an activation bumps, at HALF the scale, so it reads as "heard you, did nothing" rather than as a confirmation. There is no error sound to use here: that feedback was removed for CommonLibSSE-NG compatibility.
+
 ## 1.2.4 - 2026-09-16 - untested
 
 ### Fixed
