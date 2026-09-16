@@ -557,7 +557,7 @@ void WheelItem::DrawCooldownOverlayInternal(ImVec2 a_center, DrawArgs a_drawArgs
 	Texture::Image slotBg = Texture::GetIconImage(Texture::icon_image_type::slot_background);
 	const std::vector<ImVec2>* slotOutline = Texture::GetSlotBackgroundOutline();
 	const float scale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
-	const ImVec2 size(slotBg.width * scale, slotBg.height * scale);
+	const ImVec2 size = Texture::CanonicalScaledSize(slotBg, scale);
 
 	const float thickness = 3.0f;
 	const float baseRadius = (std::max)(size.x, size.y) * 0.5f;
@@ -909,7 +909,9 @@ void WheelItem::drawSlotText(ImVec2 a_center, const char* a_text, DrawArgs a_dra
 	if (maxWidth <= 0.0f) {
 		const ::Texture::Image slotBackground = ::Texture::GetIconImage(::Texture::icon_image_type::slot_background);
 		if (slotBackground.width > 0) {
-			maxWidth = slotBackground.width * BackgroundTexture::Scale * 1.15f;
+			// Measured against the canonically-sized background so the text box keeps matching
+			// the art it wraps inside, whatever canvas the background was authored at.
+			maxWidth = ::Texture::CanonicalScaledSize(slotBackground, BackgroundTexture::Scale).x * 1.15f;
 		}
 
 		ImFont* font = ImGui::GetFont();

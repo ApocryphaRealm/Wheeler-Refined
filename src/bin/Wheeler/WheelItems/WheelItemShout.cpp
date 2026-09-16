@@ -91,7 +91,7 @@ void WheelItemShout::DrawSlot(ImVec2 a_center, bool a_hovered, RE::TESObjectREFR
 		// Then restore the normal content from bottom-to-top based on progress.
 		Texture::Image slotBg = Texture::GetIconImage(Texture::icon_image_type::slot_background);
 		const float bgScale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
-		ImVec2 size(slotBg.width * bgScale, slotBg.height * bgScale);
+		ImVec2 size = Texture::CanonicalScaledSize(slotBg, bgScale);
 		if (size.x <= 0.0f || size.y <= 0.0f) {
 			// Fallback to icon bounds if slot background isn't available for sizing.
 			const float iconScale = Config::Styling::Item::Slot::Texture::Scale;

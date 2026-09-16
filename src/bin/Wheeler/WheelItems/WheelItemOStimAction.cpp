@@ -267,7 +267,7 @@ namespace
 
 		Texture::Image slotBg = Texture::GetIconImage(Texture::icon_image_type::slot_background);
 		const float bgScale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
-		ImVec2 fitBox(slotBg.width * bgScale, slotBg.height * bgScale);
+		ImVec2 fitBox = Texture::CanonicalScaledSize(slotBg, bgScale);
 		if (a_highlight) {
 			fitBox.x *= 1.18f;
 			fitBox.y *= 1.18f;
@@ -488,9 +488,11 @@ namespace
 			const Texture::Image slotBackground = Texture::GetSlotBackgroundMaskImage();
 			if (slotBackground.texture && slotBackground.width > 0 && slotBackground.height > 0) {
 				const float backgroundScale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
+				const ImVec2 canonicalContainer =
+					Texture::CanonicalScaledSize(slotBackground, backgroundScale);
 				const ImVec2 containerSize(
-					slotBackground.width * backgroundScale * 0.86f,
-					slotBackground.height * backgroundScale * 0.86f);
+					canonicalContainer.x * 0.86f,
+					canonicalContainer.y * 0.86f);
 				const float canonicalSlotIconSize = 512.0f * Config::Styling::Item::Slot::Texture::Scale;
 				const ImVec2 canonicalFit = ComputeFittedSizeToBox(
 					a_overrideTexture,

@@ -197,7 +197,7 @@ void WheelEntry::DrawBackGround(
 		}
 
 		const float scale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
-		const ImVec2 size(backgroundTexture.width * scale, backgroundTexture.height * scale);
+		const ImVec2 size = Texture::CanonicalScaledSize(backgroundTexture, scale);
 		const ImVec2 posMin(entryCenter.x - size.x * 0.5f, entryCenter.y - size.y * 0.5f);
 		const ImVec2 posMax(entryCenter.x + size.x * 0.5f, entryCenter.y + size.y * 0.5f);
 
@@ -306,7 +306,7 @@ void WheelEntry::drawSlot(ImVec2 a_center, bool a_slotOnRightSide, bool a_hovere
 			if (handState.hasLeft || handState.hasRight) {
 				Texture::Image slotBg = Texture::GetIconImage(Texture::icon_image_type::slot_background);
 				const float bgScale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
-				const ImVec2 size(slotBg.width * bgScale, slotBg.height * bgScale);
+				const ImVec2 size = Texture::CanonicalScaledSize(slotBg, bgScale);
 				if (size.x > 0.0f && size.y > 0.0f) {
 					const ImVec2 slotMin(a_center.x - size.x * 0.5f, a_center.y - size.y * 0.5f);
 					const ImVec2 slotMax(a_center.x + size.x * 0.5f, a_center.y + size.y * 0.5f);

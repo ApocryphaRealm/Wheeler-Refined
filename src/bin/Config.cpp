@@ -3134,6 +3134,10 @@ static void EnsureScaleEntries()
 	add(Config::Styling::Wheel::WheelIndicatorOffsetX, ScaleAxis::X);
 	add(Config::Styling::Wheel::WheelIndicatorOffsetY, ScaleAxis::Y);
 	add(Config::Styling::Wheel::WheelIndicatorSize, ScaleAxis::Uniform);
+	// Was normalised separately in Wheel.cpp as REFERENCE_HEIGHT/gameHeight - the INVERSE of the
+	// GlobalScale * CombinedU applied to every other scale key, so above 1080p the slot art grew
+	// while the wheel background shrank. Normalised here with everything else instead.
+	add(Config::Styling::Wheel::WheelBackgroundTextureScale, ScaleAxis::Uniform);
 	add(Config::Styling::Wheel::WheelIndicatorSpacing, ScaleAxis::Uniform);
 	add(Config::Styling::Wheel::InnerCircleRadius, ScaleAxis::Uniform);
 	add(Config::Styling::Wheel::OuterCircleRadius, ScaleAxis::Uniform);

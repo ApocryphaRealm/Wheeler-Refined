@@ -143,7 +143,7 @@ ImVec2 WheelItemExternalHotkey::ComputeDrawSize(const Texture::Image& a_texture,
 
 	Texture::Image slotBg = Texture::GetIconImage(Texture::icon_image_type::slot_background);
 	const float bgScale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
-	ImVec2 fitBox(slotBg.width * bgScale, slotBg.height * bgScale);
+	ImVec2 fitBox = Texture::CanonicalScaledSize(slotBg, bgScale);
 	if (a_highlight) {
 		fitBox.x *= 1.15f;
 		fitBox.y *= 1.15f;

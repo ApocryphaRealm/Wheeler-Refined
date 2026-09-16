@@ -310,30 +310,17 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 		if (!UseGeometricPrimitiveForBackgroundTexture) {
 			Texture::Image backgroundTexture = Texture::GetIconImage(Texture::icon_image_type::wheel_background);
 			if (backgroundTexture.texture) {
-				auto& resolutionContext = ResolutionScale::Context::GetSingleton();
-				const auto& state = resolutionContext.GetState();
-				float gameHeight = state.gameH;
-				if (gameHeight <= 0.0f) {
-					gameHeight = resolutionContext.GetRenderSize().y;
-				}
-				if (gameHeight <= 0.0f) {
-					gameHeight = static_cast<float>(REFERENCE_HEIGHT);
-				}
-				const float normalize = static_cast<float>(REFERENCE_HEIGHT) / gameHeight;
-				const float effectiveScale = WheelBackgroundTextureScale * normalize;
-				static float lastLoggedGameHeight = 0.0f;
-				if (std::fabs(gameHeight - lastLoggedGameHeight) > 0.5f) {
-					logger::info("[ResolutionFix] Wheel background scale: cfg={:.3f}, normalize={:.3f}, effective={:.3f}, gameH={:.0f}",
-						WheelBackgroundTextureScale, normalize, effectiveScale, gameHeight);
-					lastLoggedGameHeight = gameHeight;
-				}
+				// WheelBackgroundTextureScale is normalised with every other scale key in
+				// Config::OffsetSizingToViewport (GlobalScale * CombinedU). It used to be normalised
+				// here instead, as REFERENCE_HEIGHT/gameHeight - the inverse direction - so above
+				// 1080p the slot art grew while the background shrank. Do not reintroduce that.
+				const ImVec2 backgroundSize =
+					Texture::CanonicalScaledSize(backgroundTexture, WheelBackgroundTextureScale);
 				Drawer::draw_texture(
 					backgroundTexture.texture,
 					a_wheelCenter,
 					0, 0,
-					ImVec2(
-						backgroundTexture.width * effectiveScale,
-						backgroundTexture.height * effectiveScale),
+					backgroundSize,
 					C_SKYRIMWHITE,
 					a_drawArgs);
 			} else {
@@ -822,7 +809,7 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 			const std::vector<ImVec2>* slotOutline = Texture::GetSlotBackgroundOutline();
 
 			const float scale = Config::Styling::Item::Slot::BackgroundTexture::Scale;
-			const ImVec2 size(slotBg.width * scale, slotBg.height * scale);
+			const ImVec2 size = Texture::CanonicalScaledSize(slotBg, scale);
 
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 

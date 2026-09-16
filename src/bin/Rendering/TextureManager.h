@@ -39,6 +39,26 @@ public:
 		int32_t height = 0; // native height
 	};
 
+	// Background/indicator art is sized against a canonical canvas rather than the asset's own
+	// pixel dimensions, so a reskin authored at any canvas size draws at the size the Scale value
+	// asks for. Without this, Scale is a raw multiplier on whatever the author happened to draw on:
+	// the shipped 0.1 defaults are only correct for 512px art, and a 1024px reskin comes out at
+	// double size with no way to tell why (borokoshow, Dragonborn UI, 2026-09-15).
+	// Deliberately NOT applied to item icons - Wheeler's own icon set spans 256px to 4146px, so
+	// normalising those would resize every existing user's wheel.
+	static constexpr float kCanonicalAssetCanvas = 512.0f;
+
+	static ImVec2 CanonicalScaledSize(const Image& a_image, float a_scale)
+	{
+		if (a_image.width <= 0 || a_image.height <= 0) {
+			return ImVec2(0.0f, 0.0f);
+		}
+		const float width = kCanonicalAssetCanvas * a_scale;
+		const float height = width *
+			(static_cast<float>(a_image.height) / static_cast<float>(a_image.width));
+		return ImVec2(width, height);
+	}
+
 	enum class image_type
 	{
 		hud,
