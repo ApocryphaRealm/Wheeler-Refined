@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.4 - 2026-09-16 - untested
+
+### Fixed
+- **A modifier value that is not an input code is read as "no modifier" instead of breaking the wheel** (the owner, 2026-09-16: *"maybe we could let wheeler accept either 0 or -1"*). `toggleWheelModifier` means "none" as 0, but -1 is just as reasonable a convention - it is what One Click Power Attack uses - and Unbind Vanilla Controls, which now sets this key from the game's own Controls page, wrote -1 here by mistake. The value is read UNSIGNED, so -1 arrived as 4294967295 rather than as anything obviously wrong: the modifier then matched no button, and the wheel simply stopped opening with nothing logged anywhere to say why. Any value past the end of the SKSE input range (281) is now taken to mean no modifier, and says so in the log once, so a settings writer using the other convention cannot silently disable the wheel.
+
 ## 1.2.2 - 2026-09-15 - untested
 
 ### Fixed

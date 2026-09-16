@@ -5169,6 +5169,25 @@ void Config::ReadControlConfig()
 	GetUInt32Value(ini, "InputBindings.MKB", "closeWheel", Config::InputBindings::MKB::closeWheel);
 	GetUInt32Value(ini, "InputBindings.MKB", "closeWheelAlt", Config::InputBindings::MKB::closeWheelAlt);
 	GetUInt32Value(ini, "InputBindings.MKB", "toggleWheelModifier", Config::InputBindings::MKB::toggleWheelModifier);
+
+	// "No modifier" is 0 here, but a settings writer may reasonably use -1 instead: that is the convention One
+	// Click Power Attack uses, and Unbind Vanilla Controls - which sets this key from the game's own Controls page -
+	// wrote it here by mistake (2026-09-16). These are read UNSIGNED, so -1 arrives as 0xFFFFFFFF rather than
+	// something obviously wrong, the modifier then matches no button, and the wheel simply stops opening with no
+	// error anywhere. The owner: "maybe we could let wheeler accept either 0 or -1".
+	//
+	// So anything that is not a real input code is taken to mean "no modifier". The SKSE Input Script space ends at
+	// 281 (kMaxMacros - 1), which makes the test exact rather than a guess at sentinels.
+	{
+		constexpr std::uint32_t kMaxInputCode = 281;
+		const auto normalise = [](std::uint32_t& a_value, const char* a_where) {
+			if (a_value <= kMaxInputCode) { return; }
+			logger::info("config: {} toggleWheelModifier was {} - not an input code, read as no modifier", a_where, a_value);
+			a_value = 0;
+		};
+		normalise(Config::InputBindings::GamePad::toggleWheelModifier, "gamepad");
+		normalise(Config::InputBindings::MKB::toggleWheelModifier, "keyboard");
+	}
 	GetUInt32Value(ini, "InputBindings.MKB", "nextItem", Config::InputBindings::MKB::nextItem);
 	GetUInt32Value(ini, "InputBindings.MKB", "prevItem", Config::InputBindings::MKB::prevItem);
 	GetUInt32Value(ini, "InputBindings.MKB", "activatePrimary", Config::InputBindings::MKB::activatePrimary);
