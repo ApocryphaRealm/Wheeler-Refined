@@ -11,11 +11,12 @@
     "nlohmann-json",
     "freetype",
     {
-      "name":  "imgui",
-      "features":  [
-                       "dx11-binding",
-                       "win32-binding"
-                   ]
+      "name": "imgui",
+      "features": [
+        "dx11-binding",
+        "win32-binding"
+      ]
     }
-  ]
+  ],
+  "license": "GPL-3.0-or-later"
 }
