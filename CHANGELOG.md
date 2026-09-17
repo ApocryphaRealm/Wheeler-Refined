@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.9 - 2026-09-17 - untested
+
+### Added
+- **The Address Library check speaks before CommonLib can fail** (oproso on the Nexus page, 16-17 Sep 2026, Fluorine on SteamOS: *"wheeler.dll - CommonLibSSE-NG/include/REL/ID(219): failed to open the address library file"*, the same from our CNO patch). That line is CommonLibSSE-NG's, raised the first time an address is resolved, and it names neither the file it wanted, the folder it looked in nor the game version it decided on - under Proton any of the three can be the wrong one. Before this plugin resolves anything it now makes the same decision CommonLib will make and writes it to the log: the runtime detected and the executable it was read from, the exact file (`versionlib-<v>.bin` for AE, `version-<v>.bin` for SE), the working directory that path is relative to, and whether the file is there - and whether it is there beside the executable instead, which would mean the working directory is the problem. When it is missing, a message names all of that and the plugin loads inert; the game carries on. `src/bin/AddressLibraryGuard.h` is self-contained so every mod of ours on CommonLibSSE-NG can carry it.
+
 ## 1.2.8 - 2026-09-17 - untested
 
 ### Added
