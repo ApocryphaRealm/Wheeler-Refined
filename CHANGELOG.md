@@ -10,6 +10,16 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.3.1 - 2026-09-17 - working
+
+### Added
+- **Left stick controls the wheel** (General tab, on by default; the owner, 2026-09-17: *"a toggle that prevents player movement mapping to the left stick while in the wheel menu"*, *"The whole point of dropping left stick movement is so that we can map a control to it for the wheel menu"*, *"we can have the move wheel forward set to the left stick"*). While the wheel is open the left thumbstick is consumed - the character stops moving - and its four directions are controller buttons 282-285 (Left Stick Up / Down / Left / Right) that any wheel action binds to; a flick past 0.6 presses, returning inside 0.3 releases. **Move Wheel Forward ships on Left Stick Right and Move Wheel Back on Left Stick Left** (both were unbound on the controller since 1.2.8); a Controls.ini that still has both at 0 gets the stick defaults once and is marked. The page's Rebind takes a stick flick for those rows. Off, the stick moves the character as before.
+- **Stop time while the wheel is open** (General tab, off by default; the owner: *"a toggle for fully stopping time while in menu"*): the wheel opens on the vanilla pause path (the same one SlowTimeScale = 0 uses) whatever the slow-time scale says.
+- The driving tool gained `op=stick x y`, which feeds one left-stick sample through the same code the input hook uses (the bench cannot synthesise a thumbstick event).
+
+### Changed
+- The binary now calls itself **Perfected Wheeler** (log banner, the framework's mod list entry, the version resource); the 1.3.0 rename reached only the page and package names.
+
 ## 1.3.0 - 2026-09-17 - working
 
 ### Added

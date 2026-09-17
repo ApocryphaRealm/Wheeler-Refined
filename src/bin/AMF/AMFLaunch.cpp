@@ -151,7 +151,7 @@ namespace AMFLaunch
 		}
 
 		g_api = api;
-		const bool ok = g_api.registerPage("Wheeler - Refined", "Settings", &RenderInsideAmf);
+		const bool ok = g_api.registerPage("Perfected Wheeler", "Settings", &RenderInsideAmf);
 		if (!ok) {
 			logger::warn("[AMFLaunch] AMF_RegisterPage refused the registration (see the framework's log)");
 			return;
@@ -160,7 +160,7 @@ namespace AMFLaunch
 		static char s_name[64] = {};
 		WideCharToMultiByte(CP_UTF8, 0, moduleName, -1, s_name, sizeof(s_name), nullptr, nullptr);
 		g_registeredWith = s_name;
-		logger::info("[AMFLaunch] registered 'Wheeler - Refined / Settings' with {}", g_registeredWith);
+		logger::info("[AMFLaunch] registered 'Perfected Wheeler / Settings' with {}", g_registeredWith);
 	}
 
 	void Tick()
@@ -270,7 +270,7 @@ namespace AMFLaunch
 			logger::info("[AMFLaunch] the loaded framework has no AMF_OpenMenu export (needs Apocrypha Menu Framework 1.7.7)");
 			return false;
 		}
-		open("Wheeler - Refined");
+		open("Perfected Wheeler");
 		return true;
 	}
 

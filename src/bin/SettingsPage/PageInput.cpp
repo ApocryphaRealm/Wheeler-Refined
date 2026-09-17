@@ -1,4 +1,5 @@
 #include "PageInput.h"
+#include "bin/UserInput/LeftStick.h"
 
 #include "Page.h"
 
@@ -20,6 +21,9 @@ namespace SettingsPage
 {
 	namespace PageInput
 	{
+		// 1.3.1: declared before the anonymous namespace as well, so CaptureLeftStickFlick inside it can hand an armed
+		// row a left-stick flick (LeftStick.h). Same function as the declaration further down.
+		bool BeginCaptureFromInputThread(std::uint32_t a_dispatchCode, bool a_isCancelKey);
 		namespace
 		{
 			// A flat POD so the input thread copies and moves on - no allocation, no ImGui call,
@@ -175,6 +179,18 @@ namespace SettingsPage
 				}
 			}
 
+			// A flick past the press threshold while a row is armed binds that direction; latched until the stick returns.
+			bool CaptureLeftStickFlick(const RE::ThumbstickEvent* a_thumb)
+			{
+				static bool s_flickLatched = false;
+				if (!a_thumb || !a_thumb->IsLeft() || !IsCapturingKeymap()) { return false; }
+				const std::uint32_t dir = LeftStick::CodeFor(a_thumb->xValue, a_thumb->yValue);
+				if (dir == 0) { s_flickLatched = false; return false; }
+				if (s_flickLatched) { return false; }
+				s_flickLatched = true;
+				return BeginCaptureFromInputThread(dir, false);
+			}
+
 			void CopyForImGui(const RE::InputEvent* a_event)
 			{
 				switch (a_event->GetEventType()) {
@@ -234,6 +250,9 @@ namespace SettingsPage
 				case RE::INPUT_EVENT_TYPE::kThumbstick:
 					{
 						const auto* thumb = static_cast<const RE::ThumbstickEvent*>(a_event);
+						// 1.3.1: an armed keymap row takes a left-stick flick as one of the four direction buttons
+						// (LeftStick.h), so Move Wheel Forward can be put back on the stick from the page.
+						if (CaptureLeftStickFlick(thumb)) { break; }
 						Enqueue({ Record::Kind::kThumbstick, thumb->IsLeft() ? 0u : 1u, false,
 							thumb->xValue, thumb->yValue });
 						break;
@@ -258,6 +277,9 @@ namespace SettingsPage
 			// M9: a keymap row armed on the framework-hosted page captures here too, with the overlay
 			// closed - the capture bookkeeping is the same, only the widget that armed it differs.
 			if (!Page::IsOpen()) {
+				if (a_event->eventType == RE::INPUT_EVENT_TYPE::kThumbstick && CaptureLeftStickFlick(static_cast<const RE::ThumbstickEvent*>(a_event))) {
+					return true;   // 1.3.1: the flick bound the row
+				}
 				const auto* hostedButton = a_event->AsButtonEvent();
 				if (hostedButton && hostedButton->IsDown() && IsCapturingKeymap()) {
 					const bool isCancel =

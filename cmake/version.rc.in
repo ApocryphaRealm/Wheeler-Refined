@@ -21,7 +21,7 @@ BEGIN
 			VALUE "FileVersion", "@PROJECT_VERSION@.0"
 			VALUE "InternalName", "@PROJECT_NAME@"
 			VALUE "LegalCopyright", "Original Wheeler Copyright (c) 2024 dTry; Refined modifications by C0kadam and contributors"
-			VALUE "ProductName", "Wheeler Refined"
+			VALUE "ProductName", "Perfected Wheeler - Apocrypha Menu Framework"
 			VALUE "ProductVersion", "@PROJECT_VERSION@.0"
 			VALUE "CompanyName", "c0kadam"
 			VALUE "Comments", "GPL-3.0-only; see LICENSE, NOTICE.md, and THIRD_PARTY_NOTICES.md"

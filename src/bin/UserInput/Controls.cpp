@@ -1723,7 +1723,7 @@ std::string Controls::GetKeyNameForGamepad(KeyId key)
 		return "Gamepad " + std::to_string(key);
 	}
 
-	static const std::array<const char*, 16> kGamepadNames = {
+	static const std::array<const char*, 20> kGamepadNames = {
 		"D-Pad Up",
 		"D-Pad Down",
 		"D-Pad Left",
@@ -1739,7 +1739,11 @@ std::string Controls::GetKeyNameForGamepad(KeyId key)
 		"X",
 		"Y",
 		"Left Trigger",
-		"Right Trigger"
+		"Right Trigger",
+		"Left Stick Up",      // 1.3.1: the stick's directions as buttons (LeftStick.h)
+		"Left Stick Down",
+		"Left Stick Left",
+		"Left Stick Right"
 	};
 
 	const std::size_t index = static_cast<std::size_t>(key - KEY_GAMEPAD_OFFSET);

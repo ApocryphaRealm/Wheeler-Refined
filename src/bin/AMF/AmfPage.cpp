@@ -35,7 +35,7 @@ namespace AmfPage
 		namespace Shared = SettingsPage::Page::Shared;
 		namespace MCP = ImGuiMCP;
 
-		constexpr const char* kSectionName = "Wheeler - Refined";
+		constexpr const char* kSectionName = "Perfected Wheeler";
 		constexpr int kMaxPanels = 16;
 
 		bool g_hosted = false;

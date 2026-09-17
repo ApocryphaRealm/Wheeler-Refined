@@ -23,7 +23,7 @@ namespace Plugin
 	// ("v1.3.3", "4/26/2026"), which is precisely how the startup banner went on announcing 1.3.3
 	// after the build system had moved on - the number appeared in five places and only four of them
 	// were reachable by the version tooling. Deriving them means the binary cannot contradict itself.
-	inline constexpr auto DISPLAY_NAME = "Wheeler - Refined"sv;
+	inline constexpr auto DISPLAY_NAME = "Perfected Wheeler"sv;   // renamed 2026-09-17 (the owner); the Nexus title adds " - Apocrypha Menu Framework"
 	inline constexpr auto DISPLAY_VERSION = "v@PROJECT_VERSION@"sv;
 	inline constexpr auto AUTHOR = "ApocryphaRealm"sv;
 	inline constexpr auto BUILD_TIMESTAMP = __DATE__ ""sv;

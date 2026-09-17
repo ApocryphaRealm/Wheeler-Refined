@@ -1,4 +1,5 @@
 #include "bin/Wheeler/FavoritesToSlots.h"
+#include "bin/UserInput/LeftStick.h"
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
@@ -9102,8 +9103,8 @@ void Wheeler::OpenWheeler()
 				}
 			}
 		}
-		// SlowTimeScale <= 0 now means vanilla pause (kPausesGame); no SGTM.
-		const float slowScale = Config::Styling::Wheel::SlowTimeScale;
+		// SlowTimeScale <= 0 now means vanilla pause (kPausesGame); no SGTM. 1.3.1: Stop Time While Open forces that path.
+		const float slowScale = Config::Control::Wheel::StopTimeWhileOpen ? 0.0f : Config::Styling::Wheel::SlowTimeScale;
 		ResetMountedVelocityRestoreState();
 		if (slowScale <= 0.0f) {
 			_wheelerModifiedTimeScale = false;
@@ -9258,6 +9259,7 @@ void Wheeler::CloseWheeler()
 	}
 	_state = WheelState::KClosed;
 	RestoreWheelAfterMenuSelect();   // 1.3.0: a menu's wheel does not outlive the wheel it was opened for
+	LeftStick::Reset();              // 1.3.1: a stick direction held at close is released
 	if (!IsAmmoWheelOpen()) {
 		InputBroker::ClearActiveOwner(InputBroker::kWheelerRefinedPluginId);
 	}

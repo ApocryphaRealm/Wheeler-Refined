@@ -1,4 +1,5 @@
 #include "Input.h"
+#include "bin/UserInput/LeftStick.h"
 
 #include <WinUser.h>
 #include <Windows.h>
@@ -782,7 +783,17 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 			const bool wheelerOpen = Wheeler::IsWheelerOpen();
 			const bool ammoWheelOpen = Wheeler::IsAmmoWheelOpen();
 			RE::ThumbstickEvent* thumbstick = static_cast<RE::ThumbstickEvent*>(event);
-			if (wheelerOpen && !brokerOwnerBlocked && thumbstick->IsRight()) {
+			if (wheelerOpen && !brokerOwnerBlocked && thumbstick->IsLeft() && Config::Control::Wheel::LeftStickWheelControl) {
+				// 1.3.1: the left stick is a wheel control - consumed (the character stops), its directions dispatched
+				// as the buttons 282-285 (LeftStick.h), where Move Wheel Forward / Back live by default.
+				const std::uint32_t edge = LeftStick::Feed(thumbstick->xValue, thumbstick->yValue);
+				consumeEvent = true;
+				spyDevice = RE::INPUT_DEVICE::kGamepad;
+				spyAnalogValue = (std::max)((std::abs)(thumbstick->xValue), (std::abs)(thumbstick->yValue));
+				spyCandidates = "MainWheelLeftStick";
+				spyWinner = "MainWheel";
+				spyResult = edge ? (LeftStick::Held() ? "ConsumedStickPress" : "ConsumedStickRelease") : "ConsumedStickHeld";
+			} else if (wheelerOpen && !brokerOwnerBlocked && thumbstick->IsRight()) {
 				Wheeler::UpdateCursorPosGamepad(thumbstick->xValue, thumbstick->yValue);
 				consumeEvent = true;
 				spyDevice = RE::INPUT_DEVICE::kGamepad;

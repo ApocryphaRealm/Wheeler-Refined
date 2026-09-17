@@ -176,10 +176,10 @@ namespace Config::Debug
         if (contains("[BUILD_MARK] wheeler build")) {
             return true;
         }
-        if (message.rfind("Wheeler - Refined ", 0) == 0) {
+        if (message.rfind("Perfected Wheeler ", 0) == 0 || message.rfind("Wheeler - Refined ", 0) == 0) {
             return true;
         }
-        if (message.rfind("=== Wheeler - Refined ", 0) == 0) {
+        if (message.rfind("=== Perfected Wheeler ", 0) == 0 || message.rfind("=== Wheeler - Refined ", 0) == 0) {
             return true;
         }
         if (contains("Init: Load stage complete (trampoline=")) {

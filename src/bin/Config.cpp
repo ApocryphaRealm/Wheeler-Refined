@@ -5218,6 +5218,28 @@ void Config::ReadControlConfig()
 					 Config::InputBindings::GamePad::pickUpSlot);
 	}
 
+	// 1.3.1: Move Wheel Forward / Back ship on Left Stick Right / Left (285 / 284). A Controls.ini from 1.2.8-1.3.0
+	// carries both as 0 (1.2.8 unbound them when R3 went to Pick Up / Drop Slot), which no player chose, so the
+	// stick defaults are applied ONCE and the file marked; a player who unbinds them afterwards keeps that.
+	{
+		CSimpleIniA userIni;
+		userIni.SetUnicode();
+		if (userIni.LoadFile(CONTROLSETTINGS_PATH) >= 0) {
+			const bool marked = userIni.GetBoolValue("InputBindings.GamePad", "leftStickDefaultsApplied", false);
+			if (!marked) {
+				if (Config::InputBindings::GamePad::moveWheelForward == 0 && Config::InputBindings::GamePad::moveWheelBack == 0) {
+					Config::InputBindings::GamePad::moveWheelForward = 285;
+					Config::InputBindings::GamePad::moveWheelBack = 284;
+					userIni.SetValue("InputBindings.GamePad", "moveWheelForward", "285");
+					userIni.SetValue("InputBindings.GamePad", "moveWheelBack", "284");
+					logger::info("config: 1.3.1 - Move Wheel Forward / Back were unbound on the controller; now Left Stick Right / Left (285 / 284), Controls.ini updated");
+				}
+				userIni.SetBoolValue("InputBindings.GamePad", "leftStickDefaultsApplied", true);
+				userIni.SaveFile(CONTROLSETTINGS_PATH);
+			}
+		}
+	}
+
 	// toggleWheel must not silently share a button with another of this mod's own bindings.
 	//
 	// The settings page refuses a rebind that collides - it is what told the owner RT was already Next Wheel. But
@@ -5284,6 +5306,8 @@ void Config::ReadControlConfig()
 	// button or a settings page bound key either since it's just through AMF"); both stay 0, unbound.
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
 	GetBoolValue(ini, "Control.Wheel", "FavoritesSystem", Config::Control::Wheel::FavoritesSystem);
+	GetBoolValue(ini, "Control.Wheel", "LeftStickWheelControl", Config::Control::Wheel::LeftStickWheelControl);
+	GetBoolValue(ini, "Control.Wheel", "StopTimeWhileOpen", Config::Control::Wheel::StopTimeWhileOpen);
 	GetBoolValue(ini, "Control.Wheel", "ShowAdvancedSettings", Config::Control::Wheel::ShowAdvancedSettings);
 	GetBoolValue(ini, "Control.Wheel", "ToggleKeyPassThrough", Config::Control::Wheel::ToggleKeyPassThrough);
 	GetBoolValue(ini, "Control.Wheel", "DpadHoldToToggle", Config::Control::Wheel::DpadHoldToToggle);

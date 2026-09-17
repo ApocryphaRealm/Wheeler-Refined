@@ -4,6 +4,7 @@
 
 #include "bin/Wheeler/Wheeler.h"
 #include "bin/Wheeler/FavoritesToSlots.h"
+#include "bin/UserInput/LeftStick.h"
 #include "bin/DevBench/InputInject.h"
 #include "bin/Config.h"
 #include "bin/AMF/AMFLaunch.h"
@@ -187,6 +188,23 @@ namespace DevBenchTool
 				result = std::string("{\"ok\":true,\"op\":\"slot\",\"sub\":\"") + sub + "\",\"wheel\":" + std::to_string(Wheeler::GetActiveWheelIndex()) + ",\"wheelName\":\"" + Wheeler::WheelDisplayName(Wheeler::GetActiveWheelIndex()) + "\",\"editMode\":" + (Wheeler::IsInEditMode() ? "true" : "false") +
 					",\"open\":" + (Wheeler::IsWheelerOpen() ? "true" : "false") + ",\"hovered\":" + std::to_string(Wheeler::GetHoveredSlotIndex()) +
 					",\"held\":" + std::to_string(Wheeler::GetHeldSlotIndex()) + ",\"order\":[" + order + "]}";
+			} else if (op == "wheel") {
+				// 1.3.1: open or close the wheel itself from the tool (sub=open|close), so a gameplay capture needs no held button.
+				const std::string wsub = JsonStr(args, "sub");
+				if (wsub == "open") { Wheeler::TryOpenWheeler(); } else if (wsub == "close") { Wheeler::TryCloseWheeler(); }
+				result = "{\"ok\":true,\"op\":\"wheel\",\"sub\":\"" + wsub + "\",\"open\":" + std::string(Wheeler::IsWheelerOpen() ? "true" : "false") + ",\"editMode\":" + (Wheeler::IsInEditMode() ? "true" : "false") + "}";
+			} else if (op == "stick") {
+				// 1.3.1: feed one left-stick sample (x, y in -1..1) exactly as Input.cpp would while the wheel is open;
+				// the result names the direction button pressed or released and what is held.
+				float x = static_cast<float>(JsonNum(args, "x", 0.0)), y = static_cast<float>(JsonNum(args, "y", 0.0));
+				// dir=left|right|up|down|center as a plain word, for a caller whose JSON path mangles negative numbers.
+				const std::string dir = JsonStr(args, "dir");
+				if (dir == "left") { x = -1.0f; y = 0.0f; } else if (dir == "right") { x = 1.0f; y = 0.0f; }
+				else if (dir == "up") { x = 0.0f; y = 1.0f; } else if (dir == "down") { x = 0.0f; y = -1.0f; } else if (dir == "center") { x = 0.0f; y = 0.0f; }
+				std::uint32_t edge = 0;
+				if (Wheeler::IsWheelerOpen() && Config::Control::Wheel::LeftStickWheelControl) { edge = LeftStick::Feed(x, y); }
+				result = "{\"ok\":true,\"op\":\"stick\",\"open\":" + std::string(Wheeler::IsWheelerOpen() ? "true" : "false") + ",\"enabled\":" + (Config::Control::Wheel::LeftStickWheelControl ? "true" : "false") +
+					",\"edge\":" + std::to_string(edge) + ",\"held\":" + std::to_string(LeftStick::Held()) + ",\"activeWheel\":" + std::to_string(Wheeler::GetActiveWheelIndex()) + "}";
 			} else if (op == "favorites") {
 				// 1.3.0: sub=scan queues a favourites scan on the game thread now; no sub reads the state.
 				if (JsonStr(args, "sub") == "scan") { FavoritesToSlots::ScanNow(); }

@@ -862,13 +862,13 @@
                                     "control": {
                                         "failAction": "disable"
                                     },
-                                    "default": 0,
+                                    "default": 285,
                                     "ini": {
                                         "id": "moveWheelForward",
                                         "section": "InputBindings.GamePad"
                                     },
                                     "text": {
-                                        "desc": "Move the currently active wheel forward in the set of wheels.\nThis button is only functional under edit mode(i.e. when you're inside inventory or magic menu).",
+                                        "desc": "Move the currently active wheel forward in the set of wheels.\nThis button is only functional under edit mode(i.e. when you're inside inventory or magic menu). Ships on Left Stick Right (the stick is a wheel control while the wheel is open).",
                                         "name": "Move Wheel Forward"
                                     },
                                     "translation": {
@@ -881,13 +881,13 @@
                                     "control": {
                                         "failAction": "disable"
                                     },
-                                    "default": 0,
+                                    "default": 284,
                                     "ini": {
                                         "id": "moveWheelBack",
                                         "section": "InputBindings.GamePad"
                                     },
                                     "text": {
-                                        "desc": "Move the currently active wheel back in the set of wheels.\nThis button is only functional under edit mode(i.e. when you're inside inventory or magic menu).",
+                                        "desc": "Move the currently active wheel back in the set of wheels.\nThis button is only functional under edit mode(i.e. when you're inside inventory or magic menu). Ships on Left Stick Left.",
                                         "name": "Move Wheel Back"
                                     },
                                     "translation": {
@@ -960,6 +960,44 @@
             "text": {
                 "desc": "The Perfected Wheeler favorites system: two named wheels on install (Inventory Wheel, Magic Wheel), favorites going straight to the slot whose category takes them, shouts and powers locked in the Inventory Wheel's bottom slot, and the Magic menu opening on the Magic Wheel. On by default. Off, Wheeler behaves as it did before this system existed; the categories stay on the Wheel Behavior > Favorites Menu tab for when it is on.",
                 "name": "Perfected Wheeler Favorites System"
+            },
+            "translation": {
+                "desc": "",
+                "name": ""
+            },
+            "type": "checkbox"
+        },
+        {
+            "control": {
+                "failAction": "disable"
+            },
+            "default": true,
+            "ini": {
+                "id": "LeftStickWheelControl",
+                "section": "Control.Wheel"
+            },
+            "text": {
+                "desc": "While the wheel is open the left stick no longer moves your character; its four directions become controller buttons (Left Stick Up, Down, Left, Right) that any wheel action can be bound to on the Gamepad page. Move Wheel Forward ships on Left Stick Right and Move Wheel Back on Left Stick Left. Off, the stick moves your character as it always did.",
+                "name": "Left stick controls the wheel"
+            },
+            "translation": {
+                "desc": "",
+                "name": ""
+            },
+            "type": "checkbox"
+        },
+        {
+            "control": {
+                "failAction": "disable"
+            },
+            "default": false,
+            "ini": {
+                "id": "StopTimeWhileOpen",
+                "section": "Control.Wheel"
+            },
+            "text": {
+                "desc": "Stop the game completely while the wheel is open, whatever the slow-time scale on the Styles page says. Off, the wheel slows time by that scale instead.",
+                "name": "Stop time while the wheel is open"
             },
             "translation": {
                 "desc": "",

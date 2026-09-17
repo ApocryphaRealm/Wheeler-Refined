@@ -558,6 +558,14 @@ namespace Config
 			// opened matching the menu). Off, the mod behaves as 1.2.9 did (the owner, 2026-09-17: "so it doesn't
 			// bleed into the non favorites wheeler"). Default ON. Lives in Controls.ini, which the presets cover.
 			inline bool FavoritesSystem = true;
+			// 1.3.1: while the wheel is open the left stick stops moving the character and its four directions are
+			// gamepad buttons (Left Stick Up/Down/Left/Right, codes 282-285) the wheel's actions bind to; Move Wheel
+			// Forward / Back ship on Right / Left. The owner, 2026-09-17: "The whole point of dropping left stick
+			// movement is so that we can map a control to it for the wheel menu." Default ON.
+			inline bool LeftStickWheelControl = true;
+			// 1.3.1: stop time completely while the wheel is open (the vanilla pause path, as SlowTimeScale = 0 does),
+			// whatever SlowTimeScale says (the owner: "a toggle for fully stopping time while in menu"). Default OFF.
+			inline bool StopTimeWhileOpen = false;
 			// The owner, 2026-09-13: an Advanced settings toggle on Wheeler Controls / General; off hides every
 			// section after the first three (Wheeler Controls, Wheel Behavior, Ammo Wheel). Default on.
 			inline bool ShowAdvancedSettings = true;
