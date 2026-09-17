@@ -5156,6 +5156,7 @@ void Config::ReadControlConfig()
 	GetUInt32Value(ini, "InputBindings.GamePad", "addEmptyEntry", Config::InputBindings::GamePad::addEmptyEntry);
 	GetUInt32Value(ini, "InputBindings.GamePad", "moveEntryForward", Config::InputBindings::GamePad::moveEntryForward);
 	GetUInt32Value(ini, "InputBindings.GamePad", "moveEntryBack", Config::InputBindings::GamePad::moveEntryBack);
+	GetUInt32Value(ini, "InputBindings.GamePad", "pickUpSlot", Config::InputBindings::GamePad::pickUpSlot);
 	GetUInt32Value(ini, "InputBindings.GamePad", "moveWheelForward", Config::InputBindings::GamePad::moveWheelForward);
 	GetUInt32Value(ini, "InputBindings.GamePad", "moveWheelBack", Config::InputBindings::GamePad::moveWheelBack);
 	GetUInt32Value(ini, "InputBindings.GamePad", "toggleWheelIfInInventory", Config::InputBindings::GamePad::toggleWheelIfInInventory);
@@ -5189,6 +5190,26 @@ void Config::ReadControlConfig()
 		};
 		normalise(Config::InputBindings::GamePad::toggleWheelModifier, "gamepad");
 		normalise(Config::InputBindings::MKB::toggleWheelModifier, "keyboard");
+	}
+
+	// 1.2.8: R3 belonged to Move Wheel Forward by inherited default and now belongs to Pick Up / Drop Slot.
+	// A Controls.ini written before 1.2.8 still carries moveWheelForward = 273, which would put both on R3
+	// and leave the new bind dead (the owner's own profile, 2026-09-17). That value was never chosen -
+	// it was the old default - so when the two coincide Move Wheel Forward is unbound on the controller,
+	// written back to the file so the settings page agrees, and said in the log. A player who wants it
+	// back rebinds it there.
+	if (Config::InputBindings::GamePad::pickUpSlot != 0 &&
+		Config::InputBindings::GamePad::moveWheelForward == Config::InputBindings::GamePad::pickUpSlot) {
+		Config::InputBindings::GamePad::moveWheelForward = 0;
+		CSimpleIniA userIni;
+		userIni.SetUnicode();
+		if (userIni.LoadFile(CONTROLSETTINGS_PATH) >= 0) {
+			userIni.SetValue("InputBindings.GamePad", "moveWheelForward", "0");
+			userIni.SaveFile(CONTROLSETTINGS_PATH);
+		}
+		logger::warn("config: gamepad moveWheelForward shared button {} with pickUpSlot (the pre-1.2.8 default); "
+					 "Move Wheel Forward is now unbound on the controller and Controls.ini updated - rebind it on the settings page if you use it",
+					 Config::InputBindings::GamePad::pickUpSlot);
 	}
 
 	// toggleWheel must not silently share a button with another of this mod's own bindings.
@@ -5242,6 +5263,7 @@ void Config::ReadControlConfig()
 	GetUInt32Value(ini, "InputBindings.MKB", "addEmptyEntry", Config::InputBindings::MKB::addEmptyEntry);
 	GetUInt32Value(ini, "InputBindings.MKB", "moveEntryForward", Config::InputBindings::MKB::moveEntryForward);
 	GetUInt32Value(ini, "InputBindings.MKB", "moveEntryBack", Config::InputBindings::MKB::moveEntryBack);
+	GetUInt32Value(ini, "InputBindings.MKB", "pickUpSlot", Config::InputBindings::MKB::pickUpSlot);
 	GetUInt32Value(ini, "InputBindings.MKB", "moveWheelForward", Config::InputBindings::MKB::moveWheelForward);
 	GetUInt32Value(ini, "InputBindings.MKB", "moveWheelBack", Config::InputBindings::MKB::moveWheelBack);
 

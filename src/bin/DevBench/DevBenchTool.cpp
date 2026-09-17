@@ -104,7 +104,7 @@ namespace DevBenchTool
 		constexpr const char* kDescriptor = R"JSON({
 "description":"Drive Wheeler's in-game settings page: open or close it, move to a tab, read and write any setting by its INI key, and run a keymap rebind end to end without a physical key press. Setting keys may be given as 'Key' or, when a bare key is ambiguous across the eight descriptor files, as 'Section/Key'.",
 "inputSchema":{"type":"object","properties":{
-"op":{"type":"string","enum":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","texts","font"],"description":"what to do"},
+"op":{"type":"string","enum":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","texts","font","slot"],"description":"what to do"},
 "key":{"type":"string","description":"setting INI key, 'Key' or 'Section/Key' (get, set, rebind)"},
 "value":{"type":"string","description":"raw value to write, in the notation the INI already uses (set)"},
 "panel":{"type":"string","description":"panel tab label (list, selecttab)"},
@@ -169,6 +169,23 @@ namespace DevBenchTool
 				int after = before;
 				if (desired > 0 && before >= 0) { after = Wheeler::SetCurrentWheelSlotCount(desired); }   // a fresh wheel has 0 entries and is still a wheel
 				result = "{\"ok\":true,\"op\":\"slots\",\"before\":" + std::to_string(before) + ",\"requested\":" + std::to_string(desired) + ",\"after\":" + std::to_string(after) + "}";
+			} else if (op == "slot") {
+				// 1.2.8: drive the pick-up/drop bind. sub=hover with index puts the cursor on a slot (the
+				// wheel must be open in edit mode); sub=pickup presses the bind; no sub reads the order.
+				// The result is the active wheel's slots in order (selected item names) plus the hovered
+				// and held indices, so a proof reads the order before and after a drop.
+				const std::string sub = JsonStr(args, "sub");
+				// hover holds the driven hover until hover -1; pickup with an index hovers there first.
+				if (sub == "hover") { Wheeler::SetHoveredSlotIndex(static_cast<int>(JsonNum(args, "index", -1.0))); }
+				else if (sub == "pickup") { const int ix = static_cast<int>(JsonNum(args, "index", -2.0)); if (ix >= -1) { Wheeler::SetHoveredSlotIndex(ix); } Wheeler::PickUpOrDropSlot(); }
+				std::string order;
+				for (const std::string& n : Wheeler::DescribeCurrentWheelSlots()) {
+					std::string e; for (char c : n) { if (c == '"' || c == '\\') { e += '\\'; } e += c; }
+					order += (order.empty() ? "\"" : ",\"") + e + "\"";
+				}
+				result = std::string("{\"ok\":true,\"op\":\"slot\",\"sub\":\"") + sub + "\",\"editMode\":" + (Wheeler::IsInEditMode() ? "true" : "false") +
+					",\"open\":" + (Wheeler::IsWheelerOpen() ? "true" : "false") + ",\"hovered\":" + std::to_string(Wheeler::GetHoveredSlotIndex()) +
+					",\"held\":" + std::to_string(Wheeler::GetHeldSlotIndex()) + ",\"order\":[" + order + "]}";
 			} else if (op == "wheels") {
 				// The number-of-wheels slider's setter (the owner, 2026-09-13). value = desired count.
 				const int before = Wheeler::GetWheelCount();
@@ -253,7 +270,7 @@ namespace DevBenchTool
 					",\"buttonRect\":[" + std::to_string(r.x0) + "," + std::to_string(r.y0) + "," + std::to_string(r.x1) + "," + std::to_string(r.y1) + "]}";
 			} else {
 				result =
-					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf","spy","inject","slots","texts","font"]})";
+					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf","spy","inject","slots","texts","font","slot"]})";
 			}
 
 			a_write(a_sink, result.c_str());

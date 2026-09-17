@@ -726,10 +726,17 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 		
 		const bool suppressHoverVisuals = centerRestActive;
 
+		// A hover held by the driving tool overrides the cursor's until it is released (1.2.8).
+		if (_driveHoverIdx >= 0 && _driveHoverIdx < numEntries) {
+			_hoveredEntryIdx = _driveHoverIdx;
+		}
 		// draw background, cache data for foreground
 		for (int entryIdx = 0; entryIdx < numEntries; entryIdx++) {
 			const auto& angles = entryAnglesDraw[entryIdx];
 			bool hovered = (!suppressHoverVisuals && _hoveredEntryIdx == entryIdx);
+			// A picked-up slot keeps the highlighted background while the cursor is elsewhere, so the
+			// player can see what is in hand; the foreground (icons, activation) follows the cursor only.
+			const bool heldHere = (_heldEntryIdx == entryIdx);
 
 			// calculate wheel center
 			float t1 = (OuterCircleRadius - InnerCircleRadius) / 2;
@@ -771,7 +778,7 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 			wheelEntry->DrawBackGround(a_wheelCenter, entryCenter,
 				innerSpacingRadDraw,
 				angles.innerMin, angles.innerMax,
-				angles.outerMin, angles.outerMax, hovered, numArcSegments, a_imap, a_drawArgs);
+				angles.outerMin, angles.outerMax, hovered || heldHere, numArcSegments, a_imap, a_drawArgs);
 
 			// prepare for foreground drawing
 			entryRuntimeDataVec.push_back(EntryRuntimeData{ entryCenter, hovered, slotOnRightSide });
@@ -791,6 +798,18 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 			}
 			const auto& runtime = entryRuntimeDataVec[entryIdx];
 			_entries[entryIdx]->DrawSlotAndHighlight(a_wheelCenter, runtime.center, runtime.slotOnRightSide, runtime.hovered, a_imap, a_drawArgs, handsCache);
+			// The slot in hand wears a pulsing gold ring until it is dropped or put back (the owner,
+			// 2026-09-17: "i couldnt tell when the slot was unselected") - the hover highlight alone
+			// could not say which of two lit slots was the one being carried.
+			if (_heldEntryIdx == entryIdx) {
+				const Texture::Image bg = Texture::GetIconImage(Texture::icon_image_type::slot_background);
+				const ImVec2 size = Texture::CanonicalScaledSize(bg, Config::Styling::Item::Slot::BackgroundTexture::Scale);
+				const float base = (std::max)(size.x, size.y) * 0.5f;
+				const float pulse = 0.5f + 0.5f * sinf(static_cast<float>(ImGui::GetTime()) * 6.0f);
+				const float thick = 4.0f + 3.0f * pulse;
+				const ImU32 gold = IM_COL32(255, 205, 70, static_cast<int>(150 + 105 * pulse));
+				Drawer::draw_arc(runtime.center, base + 4.0f, base + 4.0f + thick, 0.0f, 2.0f * IM_PI, 0.0f, 2.0f * IM_PI, gold, 64, a_drawArgs);
+			}
 		}
 
 		// Activation progress indicator (drawn as an external border sweep; avoids darkening the slot interior).
@@ -1738,6 +1757,7 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 }
 void Wheel::PushEntry(std::unique_ptr<WheelEntry> a_entry) 
 {
+	_heldEntryIdx = -1;
 	std::unique_lock<std::shared_mutex> lock(_lock);
     this->_entries.push_back(std::move(a_entry));
 }
@@ -1994,6 +2014,37 @@ void Wheel::MoveHoveredEntryForward()
 	std::swap(this->_entries[_hoveredEntryIdx], this->_entries[target]);
 }
 
+const char* Wheel::PickUpOrDropHoveredEntry()
+{
+	std::unique_lock<std::shared_mutex> lock(_lock);
+	const int n = static_cast<int>(this->_entries.size());
+	if (_hoveredEntryIdx < 0 || _hoveredEntryIdx >= n) {
+		// The cursor is at rest: a press here neither picks up nor drops. The hand is kept, so a
+		// stick that flicked through the centre does not lose the slot.
+		return _heldEntryIdx >= 0 && _heldEntryIdx < n ? "nothing hovered, still holding" : "nothing hovered";
+	}
+	if (_heldEntryIdx < 0 || _heldEntryIdx >= n) {
+		_heldEntryIdx = _hoveredEntryIdx;
+		return "picked up";
+	}
+	if (_heldEntryIdx == _hoveredEntryIdx) {
+		_heldEntryIdx = -1;
+		return "put back";
+	}
+	// The held slot and the slot under the cursor SWAP places - full or empty - so nothing else on
+	// the wheel moves (the owner, 2026-09-17: "make it swap places if another full slot is
+	// selected to move the current slot to"). The cursor's index now names the moved slot.
+	std::swap(this->_entries[_heldEntryIdx], this->_entries[_hoveredEntryIdx]);
+	_heldEntryIdx = -1;
+	return "swapped";
+}
+
+void Wheel::ClearHeldEntry()
+{
+	std::unique_lock<std::shared_mutex> lock(_lock);
+	_heldEntryIdx = -1;
+}
+
 void Wheel::MoveHoveredEntryBack()
 {
 	std::unique_lock<std::shared_mutex> lock(_lock);  // might involve editing the wheel, so unique loc
@@ -2084,6 +2135,7 @@ WheelEntry* Wheel::GetEntry(int index)
 
 void Wheel::RemoveEntryByIndex(int index)
 {
+	_heldEntryIdx = -1;   // indices renumber below; whatever was in hand is put down
 	std::unique_lock<std::shared_mutex> lock(_lock);
 	if (index >= 0 && index < static_cast<int>(_entries.size())) {
 		_entries.erase(_entries.begin() + index);

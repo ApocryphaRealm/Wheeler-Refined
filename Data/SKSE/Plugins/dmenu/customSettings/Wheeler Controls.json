@@ -425,6 +425,7 @@
                                                                                                  },
                                                                                  "type":  "keymap"
                                                                              },
+{"control":{"failAction":"disable"},"default":47,"ini":{"id":"pickUpSlot","section":"InputBindings.MKB"},"text":{"desc":"Pick the highlighted slot up with everything in it; move to another slot and press again to drop it there - the slots between shift along. Press it on the slot in hand to put it back. Only in edit mode.","name":"Pick Up / Drop Slot"},"translation":{"desc":"","name":""},"type":"keymap"},
                                                                              {
                                                                                  "control":  {
                                                                                                  "failAction":  "disable"
@@ -821,11 +822,12 @@
                                                                                                  },
                                                                                  "type":  "keymap"
                                                                              },
+{"control":{"failAction":"disable"},"default":273,"ini":{"id":"pickUpSlot","section":"InputBindings.GamePad"},"text":{"desc":"Pick the highlighted slot up with everything in it; move to another slot and press again to drop it there - the slots between shift along. Press it on the slot in hand to put it back. Only in edit mode.","name":"Pick Up / Drop Slot"},"translation":{"desc":"","name":""},"type":"keymap"},
                                                                              {
                                                                                  "control":  {
                                                                                                  "failAction":  "disable"
                                                                                              },
-                                                                                 "default":  273,
+                                                                                 "default":  0,
                                                                                  "ini":  {
                                                                                              "id":  "moveWheelForward",
                                                                                              "section":  "InputBindings.GamePad"
@@ -844,7 +846,7 @@
                                                                                  "control":  {
                                                                                                  "failAction":  "disable"
                                                                                              },
-                                                                                 "default":  272,
+                                                                                 "default":  0,
                                                                                  "ini":  {
                                                                                              "id":  "moveWheelBack",
                                                                                              "section":  "InputBindings.GamePad"

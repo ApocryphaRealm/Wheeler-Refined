@@ -30,6 +30,7 @@ public:
 		AddEmptyEntry,
 		MoveEntryForward,
 		MoveEntryBack,
+		PickUpSlot,
 		MoveWheelForward,
 		MoveWheelBack,
 		ToggleEditHints,

@@ -428,6 +428,18 @@ public:
 	/// Move the currently active entry backward by one in the current wheel. Only available in edit mode.
 	/// </summary>
 	static void MoveEntryBackInCurrentWheel();
+	/// <summary>
+	/// 1.2.8: pick the hovered slot up with all its items, or drop the held one at the hovered position.
+	/// Only in edit mode. Leaving edit mode or changing wheel puts the slot back where it was.
+	/// </summary>
+	static void PickUpOrDropSlot();
+	/// The slot in hand on the active wheel, -1 when none (the driving tool's read-back).
+	static int GetHeldSlotIndex();
+	/// The hovered slot on the active wheel, settable by the driving tool so a pick-up/drop can be driven.
+	static int GetHoveredSlotIndex();
+	static void SetHoveredSlotIndex(int a_index);
+	/// The active wheel's slots in order, each as the name of its selected item ("" when empty), for the driving tool.
+	static std::vector<std::string> DescribeCurrentWheelSlots();
 	
 	/// <summary>
 	/// Move the currently active wheel forward by one in the set of wheels. Only available in edit mode.

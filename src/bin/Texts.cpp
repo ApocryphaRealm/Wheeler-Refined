@@ -54,6 +54,8 @@ namespace
 			return "EditHintActionMoveSlotForward";
 		case Texts::TextType::EditHintActionMoveSlotBack:
 			return "EditHintActionMoveSlotBack";
+		case Texts::TextType::EditHintActionPickUpSlot:
+			return "EditHintActionPickUpSlot";
 		case Texts::TextType::EditHintActionMoveWheelForward:
 			return "EditHintActionMoveWheelForward";
 		case Texts::TextType::EditHintActionMoveWheelBack:

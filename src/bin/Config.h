@@ -365,6 +365,7 @@ namespace Config
 			inline uint32_t addEmptyEntry = 0;        // unmapped
 			inline uint32_t moveEntryForward = 0;     // unmapped
 			inline uint32_t moveEntryBack = 0;        // unmapped
+			inline uint32_t pickUpSlot = 273;         // R3 (1.2.8, the owner's shape: click the slot with R3, move to the position, click to release)
 			inline uint32_t moveWheelForward = 0;     // unmapped
 			inline uint32_t moveWheelBack = 0;        // unmapped
 
@@ -391,6 +392,7 @@ namespace Config
 			inline uint32_t addEmptyEntry = 50;       // M
 			inline uint32_t moveEntryForward = 200;   // up arrow
 			inline uint32_t moveEntryBack = 208;      // down arrow
+			inline uint32_t pickUpSlot = 47;          // V (1.2.8; not B - the owner's own toggle key is B): pick a slot up, drop it where the cursor is
 			inline uint32_t moveWheelForward = 205;   // right arrow
 			inline uint32_t moveWheelBack = 203;      // left arrow
 		}

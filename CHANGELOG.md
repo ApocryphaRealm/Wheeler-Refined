@@ -8,6 +8,13 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.8 - 2026-09-17 - untested
+
+### Added
+- **Pick Up / Drop Slot** (Barbadoza on the Nexus page, 2026-09-17, asking to reorient a loaded wheel without rebuilding it; the owner's shape of it: *"click the slot with r3 and move it to the desired position then click to release"*). In edit mode, one press picks the highlighted slot up with everything in it - the slot keeps its highlight while the cursor moves away, so the hand is visible - and a second press on another slot drops it there: the two slots swap places, full or empty, so nothing else on the wheel moves (the owner, 2026-09-17: *"make it swap places if another full slot is selected to move the current slot to"*). A press on the slot in hand puts it back, and so does closing the wheel or changing wheel. Defaults: **V** on the keyboard, **R3** (right stick click) on the controller; both rebindable on the Wheeler Controls page, and the edit-mode hints list the new row. A slot removed or added while one is in hand puts the hand down first, because the slot numbers change under it.
+- The two controller buttons for moving a whole WHEEL forward and back now ship unbound (still rebindable): R3 belongs to the new bind, and the back button had been sharing L3 with the hints toggle since upstream, which the load-time collision report of 1.2.5 would have named on every start.
+- The driving tool gained `op=slot` (`sub=hover index=N`, `sub=pickup`, or no sub to read): the active wheel's slots in order, plus the hovered and held indices, so a pick-up and drop is proved by reading the order before and after. A Controls.ini from before 1.2.8 that still has Move Wheel Forward on R3 (the old default) is updated on load, with a line in the log, so the new bind is not dead on an existing install.
+
 ## 1.2.7 - 2026-09-17 - untested
 
 ### Fixed

@@ -76,6 +76,14 @@ public:
 
 	void MoveHoveredEntryForward();
 	void MoveHoveredEntryBack();
+	// 1.2.8 (Barbadoza on the Nexus page, the owner's shape of it): pick the hovered slot up with
+	// everything in it, move the cursor, press again to drop it there: the two slots SWAP places,
+	// full or empty, so nothing else on the wheel moves. Pressing on the held slot itself puts it
+	// back. Returns what happened, for the log and the driving tool.
+	const char* PickUpOrDropHoveredEntry();
+	int GetHeldEntryIndex() const { return _heldEntryIdx; }
+	void ClearHeldEntry();
+	void SetDriveHover(int a_index) { _driveHoverIdx = a_index; }
 
 	void SerializeIntoJsonObj(nlohmann::json& a_json);
 	static std::unique_ptr<Wheel> SerializeFromJsonObj(const nlohmann::json& a_json, SKSE::SerializationInterface* a_intfc);
@@ -127,6 +135,10 @@ private:
 	
 	// currently active item, will be highlighted. Gets reset every time wheel reopens.
 	int _hoveredEntryIdx = -1;
+	int _heldEntryIdx = -1;   // the slot picked up in edit mode, -1 when none
+	// The driving tool's hover: the cursor recomputes _hoveredEntryIdx every frame and returns
+	// to -1 the moment nothing deflects it, so a driven hover has to be held FOR it. -1 = none.
+	int _driveHoverIdx = -1;
 	MouseHoverState _mouseHoverState{};
 	
 };

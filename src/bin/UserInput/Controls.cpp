@@ -51,6 +51,7 @@ static bool IsEditModeOnlyAction(Controls::Action action)
 	case Action::AddEmptyEntry:
 	case Action::MoveEntryForward:
 	case Action::MoveEntryBack:
+	case Action::PickUpSlot:
 	case Action::MoveWheelForward:
 	case Action::MoveWheelBack:
 	case Action::ToggleEditHints:
@@ -78,6 +79,8 @@ static const char* ActionToString(Controls::Action action)
 		return "MoveEntryForward";
 	case Action::MoveEntryBack:
 		return "MoveEntryBack";
+	case Action::PickUpSlot:
+		return "PickUpSlot";
 	case Action::MoveWheelForward:
 		return "MoveWheelForward";
 	case Action::MoveWheelBack:
@@ -336,6 +339,7 @@ void Controls::BindAllInputsFromConfig()
 		bindInput(addEmptyEntry, &Wheeler::AddEmptyEntryToCurrentWheel, Action::AddEmptyEntry, true, false);
 		bindInput(moveEntryForward, &Wheeler::MoveEntryForwardInCurrentWheel, Action::MoveEntryForward, true, false);
 		bindInput(moveEntryBack, &Wheeler::MoveEntryBackInCurrentWheel, Action::MoveEntryBack, true, false);
+		bindInput(pickUpSlot, &Wheeler::PickUpOrDropSlot, Action::PickUpSlot, true, false);
 		bindInput(moveWheelForward, &Wheeler::MoveWheelForward, Action::MoveWheelForward, true, false);
 		bindInput(moveWheelBack, &Wheeler::MoveWheelBack, Action::MoveWheelBack, true, false);
 		bindInput(toggleEditHints, &Wheeler::ToggleEditModeHintsVisibility, Action::ToggleEditHints, true, false);
@@ -452,6 +456,7 @@ void Controls::BindAllInputsFromConfig()
 		bindGamepadInput(addEmptyEntry, &Wheeler::AddEmptyEntryToCurrentWheel, Action::AddEmptyEntry, true);
 		bindGamepadInput(moveEntryForward, &Wheeler::MoveEntryForwardInCurrentWheel, Action::MoveEntryForward, true);
 		bindGamepadInput(moveEntryBack, &Wheeler::MoveEntryBackInCurrentWheel, Action::MoveEntryBack, true);
+		bindGamepadInput(pickUpSlot, &Wheeler::PickUpOrDropSlot, Action::PickUpSlot, true);
 		bindGamepadInput(moveWheelForward, &Wheeler::MoveWheelForward, Action::MoveWheelForward, true);
 		bindGamepadInput(moveWheelBack, &Wheeler::MoveWheelBack, Action::MoveWheelBack, true);
 		bindGamepadInput(toggleEditHints, &Wheeler::ToggleEditModeHintsVisibility, Action::ToggleEditHints, true);

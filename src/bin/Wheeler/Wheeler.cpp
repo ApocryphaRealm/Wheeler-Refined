@@ -389,7 +389,7 @@ namespace
 		EditHintActionBinding::Binding gamepad{};
 	};
 
-	constexpr std::size_t kEditHintActionCount = 16;   // the owner, 2026-09-13: more of the controls
+	constexpr std::size_t kEditHintActionCount = 17;   // the owner, 2026-09-13: more of the controls; 17 with Pick Up / Drop Slot (1.2.8)
 	constexpr std::uint32_t kGamepadOffset = 266;
 	constexpr std::uint32_t kGamepadMax = kGamepadOffset + 15;
 
@@ -461,6 +461,7 @@ namespace
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionPreviousWheel), { Config::InputBindings::MKB::prevWheel }, { Config::InputBindings::GamePad::prevWheel } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveSlotForward), { Config::InputBindings::MKB::moveEntryForward }, { Config::InputBindings::GamePad::moveEntryForward } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveSlotBack), { Config::InputBindings::MKB::moveEntryBack }, { Config::InputBindings::GamePad::moveEntryBack } },
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionPickUpSlot), { Config::InputBindings::MKB::pickUpSlot }, { Config::InputBindings::GamePad::pickUpSlot } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveWheelForward), { Config::InputBindings::MKB::moveWheelForward }, { Config::InputBindings::GamePad::moveWheelForward } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveWheelBack), { Config::InputBindings::MKB::moveWheelBack }, { Config::InputBindings::GamePad::moveWheelBack } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionSettingsDMenu), pageBindings.mkb, pageBindings.gamepad },
@@ -7580,6 +7581,8 @@ void Wheeler::Update(float a_deltaTime)
 			ImGui::EndPopup();
 			if (_activeWheelIdx >= 0 && _activeWheelIdx < _wheels.size()) {
 				_wheels[_activeWheelIdx]->SetHoveredEntryIndex(-1);  // reset active entry on close
+				_wheels[_activeWheelIdx]->SetDriveHover(-1);
+				_wheels[_activeWheelIdx]->ClearHeldEntry();          // a closed wheel puts the held slot down (1.2.8)
 			}
 			//ImGui::GetIO().MouseDrawCursor = false;
 			if (_editMode) {
@@ -11590,6 +11593,72 @@ void Wheeler::MoveEntryBackInCurrentWheel()
 	_wheels[_activeWheelIdx]->MoveHoveredEntryBack();
 }
 
+void Wheeler::PickUpOrDropSlot()
+{
+	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (!_editMode || _state == WheelState::KClosed) {
+		return;
+	}
+	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "PickUpOrDropSlot")) {
+		return;
+	}
+	// A slot picked up on another wheel is put back there first: a drop only ever lands on the wheel
+	// it was lifted from.
+	for (int i = 0; i < static_cast<int>(_wheels.size()); ++i) {
+		if (i != _activeWheelIdx && _wheels[i] && _wheels[i]->GetHeldEntryIndex() >= 0) {
+			_wheels[i]->ClearHeldEntry();
+		}
+	}
+	const char* what = _wheels[_activeWheelIdx]->PickUpOrDropHoveredEntry();
+	logger::info("[Wheeler] PickUpOrDropSlot: {} (wheel {}, hovered {}, held {})", what, _activeWheelIdx,
+		_wheels[_activeWheelIdx]->GetHoveredEntryIndex(), _wheels[_activeWheelIdx]->GetHeldEntryIndex());
+}
+
+int Wheeler::GetHeldSlotIndex()
+{
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (_activeWheelIdx < 0 || _activeWheelIdx >= static_cast<int>(_wheels.size()) || !_wheels[_activeWheelIdx]) { return -1; }
+	return _wheels[_activeWheelIdx]->GetHeldEntryIndex();
+}
+
+int Wheeler::GetHoveredSlotIndex()
+{
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (_activeWheelIdx < 0 || _activeWheelIdx >= static_cast<int>(_wheels.size()) || !_wheels[_activeWheelIdx]) { return -1; }
+	return _wheels[_activeWheelIdx]->GetHoveredEntryIndex();
+}
+
+void Wheeler::SetHoveredSlotIndex(int a_index)
+{
+	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (_activeWheelIdx < 0 || _activeWheelIdx >= static_cast<int>(_wheels.size()) || !_wheels[_activeWheelIdx]) { return; }
+	if (a_index >= _wheels[_activeWheelIdx]->GetNumEntries()) { return; }
+	_wheels[_activeWheelIdx]->SetDriveHover(a_index);   // -1 releases the driven hover
+	if (a_index >= 0) { _wheels[_activeWheelIdx]->SetHoveredEntryIndex(a_index); }
+}
+
+std::vector<std::string> Wheeler::DescribeCurrentWheelSlots()
+{
+	std::vector<std::string> out;
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (_activeWheelIdx < 0 || _activeWheelIdx >= static_cast<int>(_wheels.size()) || !_wheels[_activeWheelIdx]) { return out; }
+	auto* wheel = _wheels[_activeWheelIdx].get();
+	for (int i = 0; i < wheel->GetNumEntries(); ++i) {
+		WheelEntry* e = wheel->GetEntry(i);
+		std::shared_ptr<WheelItem> item = e ? e->GetSelectedItem() : nullptr;
+		// An empty slot is named by its address, which is stable for the session, so a move of an
+		// empty slot is as visible to the driving tool as a move of a full one.
+		if (item && item->GetItemName() && item->GetItemName()[0]) {
+			out.push_back(item->GetItemName());
+		} else {
+			char buf[32];
+			std::snprintf(buf, sizeof(buf), "empty@%llx", static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(e)));
+			out.push_back(buf);
+		}
+	}
+	return out;
+}
+
 void Wheeler::MoveWheelForward()
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
@@ -11949,6 +12018,10 @@ void Wheeler::exitEditMode()
 		return;
 	}
 	_editMode = false;
+	// Whatever was picked up is put back where it was (1.2.8).
+	for (auto& w : _wheels) {
+		if (w) { w->SetDriveHover(-1); if (w->GetHeldEntryIndex() >= 0) { w->ClearHeldEntry(); } }
+	}
 }
 
 float Wheeler::getCursorRadiusMax()
