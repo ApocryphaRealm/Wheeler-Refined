@@ -553,6 +553,11 @@ namespace Config
 			// Default ON since 1.2.6 (the owner, 2026-09-16): Wheeler takes the place of the Favorites menu,
 			// so the vanilla one stays shut unless the player switches this off on the settings page.
 			inline bool DisableVanillaFavoritesMenu = true;
+			// 1.3.0: the Perfected Wheeler Favorites System - the master toggle for everything 1.3.0 added (the two
+			// named wheels on install, favourites going to their slots, the locked shouts-and-powers slot, the wheel
+			// opened matching the menu). Off, the mod behaves as 1.2.9 did (the owner, 2026-09-17: "so it doesn't
+			// bleed into the non favorites wheeler"). Default ON. Lives in Controls.ini, which the presets cover.
+			inline bool FavoritesSystem = true;
 			// The owner, 2026-09-13: an Advanced settings toggle on Wheeler Controls / General; off hides every
 			// section after the first three (Wheeler Controls, Wheel Behavior, Ammo Wheel). Default on.
 			inline bool ShowAdvancedSettings = true;
@@ -806,6 +811,7 @@ namespace Config
 	{
 		// Core toggle: when true, closing the wheel (releasing the toggle key) activates the hovered slot.
 		inline bool ReleaseToUse = false;
+
 
 		// If true, closes the wheel after a successful activation via click (primary/secondary/special).
 		// Note: RTU activation happens on wheel close already; this primarily affects click-activations while the wheel is open.
@@ -1193,6 +1199,15 @@ namespace Config
 				inline bool HasOverlay = false;
 			}
 		}
+	}
+
+	// 1.3.0: which category each of the first nine slot POSITIONS receives when an item of it is
+	// favourited (FavoritesToSlots::Category as an int; 0 = unassigned). The defaults are the SkyUI
+	// tabs in order: Weapons, Apparel, Potions, Scrolls, Food, Ingredients, Spells, Powers, Shouts.
+	namespace SlotAssignments
+	{
+		// [wheel][slot]: wheel 1 = the inventory wheel, wheel 2 = the magic wheel. INI keys W1Slot1Category ...
+		inline int Slot[2][10] = { { 10, 20, 21, 3, 5, 11, 6, 7, 8, 13 }, { 14, 15, 16, 17, 18, 0, 0, 0, 0, 0 } };
 	}
 
 	// Debug logging toggles (safe patch, disabled by default).

@@ -2014,6 +2014,14 @@ void Wheel::MoveHoveredEntryForward()
 	std::swap(this->_entries[_hoveredEntryIdx], this->_entries[target]);
 }
 
+bool Wheel::IsLockedEntry(int a_index) const
+{
+	if (!Config::Control::Wheel::FavoritesSystem || _role != "inventory") { return false; }
+	const int n = static_cast<int>(this->_entries.size());
+	if (n < 2 || a_index < 0 || a_index >= n) { return false; }
+	return a_index == 0 || a_index == n / 2;
+}
+
 const char* Wheel::PickUpOrDropHoveredEntry()
 {
 	std::unique_lock<std::shared_mutex> lock(_lock);
@@ -2022,6 +2030,10 @@ const char* Wheel::PickUpOrDropHoveredEntry()
 		// The cursor is at rest: a press here neither picks up nor drops. The hand is kept, so a
 		// stick that flicked through the centre does not lose the slot.
 		return _heldEntryIdx >= 0 && _heldEntryIdx < n ? "nothing hovered, still holding" : "nothing hovered";
+	}
+	if (IsLockedEntry(_hoveredEntryIdx)) {
+		// 1.3.0: the inventory wheel's bottom slot (powers) and top slot (shouts) are locked in place - neither picked up nor dropped on.
+		return _heldEntryIdx >= 0 && _heldEntryIdx < n ? "locked slot, still holding" : "locked slot";
 	}
 	if (_heldEntryIdx < 0 || _heldEntryIdx >= n) {
 		_heldEntryIdx = _hoveredEntryIdx;
@@ -2060,6 +2072,9 @@ void Wheel::SerializeIntoJsonObj(nlohmann::json& j_wheel)
 	if (!_clientTag.empty()) {
 		j_wheel["clienttag"] = _clientTag;
 	}
+	if (!_role.empty()) {
+		j_wheel["role"] = _role;
+	}
 	j_wheel["entries"] = nlohmann::json::array();
 	for (const std::unique_ptr<WheelEntry>& entry : this->_entries) {
 		nlohmann::json j_entry;
@@ -2075,6 +2090,9 @@ std::unique_ptr<Wheel> Wheel::SerializeFromJsonObj(const nlohmann::json& j_wheel
 	std::unique_ptr<Wheel> wheel = std::make_unique<Wheel>();
 	if (j_wheel.contains("clienttag") && j_wheel["clienttag"].is_string()) {
 		wheel->SetClientTag(j_wheel["clienttag"].get<std::string>());
+	}
+	if (j_wheel.contains("role") && j_wheel["role"].is_string()) {
+		wheel->SetRole(j_wheel["role"].get<std::string>());
 	}
 	if (!j_wheel.contains("entries") || !j_wheel["entries"].is_array()) {
 		logger::warn("Deserialize: wheel missing 'entries' array, creating empty wheel");

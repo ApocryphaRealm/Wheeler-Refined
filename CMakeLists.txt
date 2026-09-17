@@ -2,7 +2,7 @@
 
 project(
 	wheeler
-	VERSION 1.2.9
+	VERSION 1.3.0
 	LANGUAGES CXX
 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

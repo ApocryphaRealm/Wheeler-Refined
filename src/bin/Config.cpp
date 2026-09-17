@@ -850,6 +850,7 @@ namespace
 		// [WheelBehavior] (and legacy [InstantUse])
 		bool releaseToUse{ false };
 		bool closeWheelAfterUse{ false };
+		int slotCategory[2][10]{ { 10, 20, 21, 3, 5, 11, 6, 7, 8, 13 }, { 14, 15, 16, 17, 18, 0, 0, 0, 0, 0 } };
 		bool rtuAlchemy{ true };
 		bool rtuSpell{ true };
 		bool rtuShout{ true };
@@ -1193,6 +1194,7 @@ namespace
 	{
 		return a.releaseToUse == b.releaseToUse &&
 		       a.closeWheelAfterUse == b.closeWheelAfterUse &&
+		       std::equal(&a.slotCategory[0][0], &a.slotCategory[0][0] + 20, &b.slotCategory[0][0]) &&
 		       a.rtuAlchemy == b.rtuAlchemy &&
 		       a.rtuSpell == b.rtuSpell &&
 		       a.rtuShout == b.rtuShout &&
@@ -1457,6 +1459,7 @@ namespace
 		auto readSection = [&](const char* section) {
 			GetBoolValue(ini, section, "ReleaseToUse", snapshot.releaseToUse);
 			GetBoolValue(ini, section, "CloseWheelAfterUse", snapshot.closeWheelAfterUse);
+			for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { std::uint32_t v = static_cast<std::uint32_t>(snapshot.slotCategory[w][i]); GetUInt32Value(ini, "SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), v); snapshot.slotCategory[w][i] = static_cast<int>(v); } }
 			GetBoolValue(ini, section, "RTUAlchemy", snapshot.rtuAlchemy);
 			GetBoolValue(ini, section, "RTUSpell", snapshot.rtuSpell);
 			GetBoolValue(ini, section, "RTUShout", snapshot.rtuShout);
@@ -2021,6 +2024,7 @@ namespace
 	{
 		Config::WheelBehavior::ReleaseToUse = snapshot.releaseToUse;
 		Config::WheelBehavior::CloseWheelAfterUse = snapshot.closeWheelAfterUse;
+		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { Config::SlotAssignments::Slot[w][i] = snapshot.slotCategory[w][i]; } }
 		Config::WheelBehavior::RTUAlchemy = snapshot.rtuAlchemy;
 		Config::WheelBehavior::RTUSpell = snapshot.rtuSpell;
 		Config::WheelBehavior::RTUShout = snapshot.rtuShout;
@@ -2307,6 +2311,7 @@ namespace
 
 		out.SetBoolValue("WheelBehavior", "ReleaseToUse", snapshot.releaseToUse);
 		out.SetBoolValue("WheelBehavior", "CloseWheelAfterUse", snapshot.closeWheelAfterUse);
+		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { out.SetLongValue("SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), snapshot.slotCategory[w][i]); } }
 		out.SetBoolValue("WheelBehavior", "RTUAlchemy", snapshot.rtuAlchemy);
 		out.SetBoolValue("WheelBehavior", "RTUSpell", snapshot.rtuSpell);
 		out.SetBoolValue("WheelBehavior", "RTUShout", snapshot.rtuShout);
@@ -3526,6 +3531,7 @@ static void ReadWheelBehaviorConfigFromIni(const CSimpleIniA& ini)
 	auto readSection = [&](const char* section) {
 		GetBoolValue(ini, section, "ReleaseToUse", Config::WheelBehavior::ReleaseToUse);
 		GetBoolValue(ini, section, "CloseWheelAfterUse", Config::WheelBehavior::CloseWheelAfterUse);
+		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { std::uint32_t v = static_cast<std::uint32_t>(Config::SlotAssignments::Slot[w][i]); GetUInt32Value(ini, "SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), v); Config::SlotAssignments::Slot[w][i] = static_cast<int>(v); } }
 		GetBoolValue(ini, section, "RTUAlchemy", Config::WheelBehavior::RTUAlchemy);
 		GetBoolValue(ini, section, "RTUSpell", Config::WheelBehavior::RTUSpell);
 		GetBoolValue(ini, section, "RTUShout", Config::WheelBehavior::RTUShout);
@@ -5277,6 +5283,7 @@ void Config::ReadControlConfig()
 	// SettingsPageKey and SettingsPageGamepadButton are no longer read (1.1.9; the owner: "we don't need a settings page bound
 	// button or a settings page bound key either since it's just through AMF"); both stay 0, unbound.
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
+	GetBoolValue(ini, "Control.Wheel", "FavoritesSystem", Config::Control::Wheel::FavoritesSystem);
 	GetBoolValue(ini, "Control.Wheel", "ShowAdvancedSettings", Config::Control::Wheel::ShowAdvancedSettings);
 	GetBoolValue(ini, "Control.Wheel", "ToggleKeyPassThrough", Config::Control::Wheel::ToggleKeyPassThrough);
 	GetBoolValue(ini, "Control.Wheel", "DpadHoldToToggle", Config::Control::Wheel::DpadHoldToToggle);

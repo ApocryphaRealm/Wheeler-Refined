@@ -438,6 +438,20 @@ public:
 	/// The hovered slot on the active wheel, settable by the driving tool so a pick-up/drop can be driven.
 	static int GetHoveredSlotIndex();
 	static void SetHoveredSlotIndex(int a_index);
+	/// 1.3.0: put an item into a slot of the given wheel from outside edit mode (favourites going to their
+	/// designated slots). Refuses a form already anywhere on that wheel and a slot at Max Items Per Slot.
+	enum class AddToSlotResult { Added, NoWheel, NoSuchSlot, AlreadyOnWheel, SlotFull, BadItem };
+	static AddToSlotResult AddItemToSlotOnWheel(int a_wheel, int a_slot, std::shared_ptr<WheelItem> a_item);
+	/// 1.3.0: the wheel carrying a role ("inventory" / "magic"), or -1; and a wheel's slot count, or -1.
+	static int FindWheelIndexByRole(const std::string& a_role);
+	static int GetSlotCountOfWheel(int a_wheel);
+	/// 1.3.0: the name drawn under the wheel indicator - the role's translated name, or empty.
+	static std::string WheelDisplayName(int a_wheel);
+	/// 1.3.0: opened inside the Magic menu the magic wheel shows, inside the Inventory menu the inventory wheel.
+	static void SelectWheelForOpenMenu();
+	/// 1.3.0: the wheel the player had before a menu switched it, put back when the wheel closes.
+	static void RestoreWheelAfterMenuSelect();
+	static inline int _wheelIdxBeforeMenuSelect = -1;
 	/// The active wheel's slots in order, each as the name of its selected item ("" when empty), for the driving tool.
 	static std::vector<std::string> DescribeCurrentWheelSlots();
 	

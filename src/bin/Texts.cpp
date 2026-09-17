@@ -56,6 +56,14 @@ namespace
 			return "EditHintActionMoveSlotBack";
 		case Texts::TextType::EditHintActionPickUpSlot:
 			return "EditHintActionPickUpSlot";
+		case Texts::TextType::FavoriteAddedToSlot:
+			return "FavoriteAddedToSlot";
+		case Texts::TextType::FavoriteSlotFull:
+			return "FavoriteSlotFull";
+		case Texts::TextType::WheelNameInventory:
+			return "WheelNameInventory";
+		case Texts::TextType::WheelNameMagic:
+			return "WheelNameMagic";
 		case Texts::TextType::EditHintActionMoveWheelForward:
 			return "EditHintActionMoveWheelForward";
 		case Texts::TextType::EditHintActionMoveWheelBack:

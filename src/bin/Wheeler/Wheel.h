@@ -91,6 +91,16 @@ public:
 	void SetClientTag(std::string_view tag) { _clientTag.assign(tag); }
 	const std::string& GetClientTag() const { return _clientTag; }
 	bool HasClientTag() const { return !_clientTag.empty(); }
+	// 1.3.0: the two built-in wheels carry a ROLE - "inventory" or "magic" - saved with the wheel, so the
+	// favourites-to-slots system and the menus find them wherever the player moves them in the order, and
+	// the wheel's name (Inventory Wheel / Magic Wheel, translated) is drawn under the wheel indicator.
+	void SetRole(std::string_view a_role) { _role.assign(a_role); }
+	const std::string& GetRole() const { return _role; }
+	// The inventory wheel's bottom slot (index 0, Powers) and top slot (index n/2, Shouts) are locked (the owner,
+	// 2026-09-17: "powers go to the bottom of the wheel visually and shouts go to the top visually" ... "locked").
+	// Slot i is drawn at arcSpan*i + pi/2 with screen y downward, so index 0 is the bottom. Pick-up/drop leaves
+	// a locked slot where it is. False on every other wheel and when the favorites system is off.
+	bool IsLockedEntry(int a_index) const;
 	
 	int GetNumEntries();
 	
@@ -130,6 +140,7 @@ private:
 	};
 
 	std::string _clientTag;
+	std::string _role;   // 1.3.0: "inventory", "magic" or empty
     std::vector<std::unique_ptr<WheelEntry>> _entries = {};
 	std::shared_mutex _lock;
 	

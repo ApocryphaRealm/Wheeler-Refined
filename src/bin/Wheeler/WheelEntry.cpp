@@ -853,6 +853,13 @@ WheelEntry::WheelEntry()
 	_selectedItem = 0;
 }
 
+bool WheelEntry::ContainsForm(RE::FormID a_formID)
+{
+	std::shared_lock<std::shared_mutex> lock(this->_lock);
+	for (const auto& it : this->_items) { if (it && it->GetFormID() == a_formID) { return true; } }
+	return false;
+}
+
 void WheelEntry::PushItem(std::shared_ptr<WheelItem> item)
 {
 	std::unique_lock<std::shared_mutex> lock(this->_lock);

@@ -3,6 +3,7 @@
 #include "bin/SettingsPresets.h"
 
 #include "bin/Wheeler/Wheeler.h"
+#include "bin/Wheeler/FavoritesToSlots.h"
 #include "bin/DevBench/InputInject.h"
 #include "bin/Config.h"
 #include "bin/AMF/AMFLaunch.h"
@@ -104,7 +105,7 @@ namespace DevBenchTool
 		constexpr const char* kDescriptor = R"JSON({
 "description":"Drive Wheeler's in-game settings page: open or close it, move to a tab, read and write any setting by its INI key, and run a keymap rebind end to end without a physical key press. Setting keys may be given as 'Key' or, when a bare key is ambiguous across the eight descriptor files, as 'Section/Key'.",
 "inputSchema":{"type":"object","properties":{
-"op":{"type":"string","enum":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","texts","font","slot"],"description":"what to do"},
+"op":{"type":"string","enum":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","texts","font","slot","favorites"],"description":"what to do"},
 "key":{"type":"string","description":"setting INI key, 'Key' or 'Section/Key' (get, set, rebind)"},
 "value":{"type":"string","description":"raw value to write, in the notation the INI already uses (set)"},
 "panel":{"type":"string","description":"panel tab label (list, selecttab)"},
@@ -183,16 +184,29 @@ namespace DevBenchTool
 					std::string e; for (char c : n) { if (c == '"' || c == '\\') { e += '\\'; } e += c; }
 					order += (order.empty() ? "\"" : ",\"") + e + "\"";
 				}
-				result = std::string("{\"ok\":true,\"op\":\"slot\",\"sub\":\"") + sub + "\",\"editMode\":" + (Wheeler::IsInEditMode() ? "true" : "false") +
+				result = std::string("{\"ok\":true,\"op\":\"slot\",\"sub\":\"") + sub + "\",\"wheel\":" + std::to_string(Wheeler::GetActiveWheelIndex()) + ",\"wheelName\":\"" + Wheeler::WheelDisplayName(Wheeler::GetActiveWheelIndex()) + "\",\"editMode\":" + (Wheeler::IsInEditMode() ? "true" : "false") +
 					",\"open\":" + (Wheeler::IsWheelerOpen() ? "true" : "false") + ",\"hovered\":" + std::to_string(Wheeler::GetHoveredSlotIndex()) +
 					",\"held\":" + std::to_string(Wheeler::GetHeldSlotIndex()) + ",\"order\":[" + order + "]}";
+			} else if (op == "favorites") {
+				// 1.3.0: sub=scan queues a favourites scan on the game thread now; no sub reads the state.
+				if (JsonStr(args, "sub") == "scan") { FavoritesToSlots::ScanNow(); }
+				else if (JsonStr(args, "sub") == "adopt") { FavoritesToSlots::AdoptAllForTest(); }   // test only
+				else if (JsonStr(args, "sub") == "mark") { FavoritesToSlots::MarkForTest(static_cast<int>(JsonNum(args, "count", 12.0))); }   // test only
+				result = "{\"ok\":true,\"op\":\"favorites\",\"state\":" + FavoritesToSlots::StatusJson() + "}";
 			} else if (op == "wheels") {
 				// The number-of-wheels slider's setter (the owner, 2026-09-13). value = desired count.
+				// 1.3.0: sub=reset runs the General tab's Reset All Wheels (SetupDefaultWheels) so a proof can watch
+				// the two named wheels being made; sub=activate with index makes that wheel the active one.
+				{
+					const std::string wsub = JsonStr(args, "sub");
+					if (wsub == "reset") { Wheeler::SetupDefaultWheels(); }
+					else if (wsub == "activate") { Wheeler::SetActiveWheelIndex(static_cast<int>(JsonNum(args, "index", 0.0))); }
+				}
 				const int before = Wheeler::GetWheelCount();
 				const int desired = static_cast<int>(JsonNum(args, "value", -1.0));
 				int after = before;
 				if (desired > 0) { after = Wheeler::SetWheelCount(desired); }
-				result = "{\"ok\":true,\"op\":\"wheels\",\"before\":" + std::to_string(before) + ",\"requested\":" + std::to_string(desired) + ",\"after\":" + std::to_string(after) + "}";
+				result = "{\"ok\":true,\"op\":\"wheels\",\"active\":" + std::to_string(Wheeler::GetActiveWheelIndex()) + ",\"activeName\":\"" + Wheeler::WheelDisplayName(Wheeler::GetActiveWheelIndex()) + "\",\"before\":" + std::to_string(before) + ",\"requested\":" + std::to_string(desired) + ",\"after\":" + std::to_string(after) + "}";
 			} else if (op == "presets") {
 				// Settings presets (the owner, 2026-09-13). sub = list | save | load | rename | delete |
 				// reset | reload | select; name / to as the sub needs. The result carries the

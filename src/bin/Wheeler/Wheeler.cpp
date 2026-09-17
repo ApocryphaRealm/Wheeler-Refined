@@ -1,3 +1,4 @@
+#include "bin/Wheeler/FavoritesToSlots.h"
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
@@ -7400,6 +7401,7 @@ bool Wheeler::IsEquipmentDurabilitySystemActive()
 void Wheeler::Update(float a_deltaTime)
 {
 	InputBroker::RefreshConfigFromSettings();
+	FavoritesToSlots::Tick();   // 1.3.0: queues a favourites scan on the game thread while an item menu is open
 	InputBroker::RefreshWheelerReservations();
 	InputBroker::SyncWheelerActiveOwner(IsWheelerOpen(), IsAmmoWheelOpen());
 
@@ -8114,6 +8116,15 @@ void Wheeler::Update(float a_deltaTime)
 		ProcessPendingActions();
 
 
+		// 1.3.0: the active wheel's name (Inventory Wheel / Magic Wheel) under the indicator dots.
+		if (const std::string wheelName = WheelDisplayName(_activeWheelIdx); !wheelName.empty()) {
+			float nameX = wheelCenter.x + Config::Styling::Wheel::WheelIndicatorOffsetX;
+			if (Config::Styling::Wheel::WheelIndicatorAlignment != Config::WidgetAlignment::kCenter) {
+				nameX += (_wheels.size() - 1) * Config::Styling::Wheel::WheelIndicatorSpacing / 2.f;
+			}
+			const float nameY = wheelCenter.y + Config::Styling::Wheel::WheelIndicatorOffsetY + Config::Styling::Wheel::WheelIndicatorSize + 4.0f;
+			Drawer::draw_text(nameX, nameY, wheelName.c_str(), C_SKYRIMWHITE, Config::Styling::Wheel::WheelIndicatorSize * 1.1f, drawArgs, true);
+		}
 		// draw wheel indicator
 		for (int i = 0; i < _wheels.size(); i++) {
 			bool isWheelActive = i == _activeWheelIdx;
@@ -8829,6 +8840,8 @@ void Wheeler::OpenWheeler()
 		return;
 	}
 
+	SelectWheelForOpenMenu();   // 1.3.0: magic menu -> magic wheel, inventory menu -> inventory wheel
+
 	if (TransformWheelManager::IsPlayerHuman() &&
 		TransformWheelManager::IsTransformWheelIndex(_activeWheelIdx)) {
 		int fallbackIdx = 0;
@@ -9244,6 +9257,7 @@ void Wheeler::CloseWheeler()
 		_gamepadOpenGraceUntil = 0.0;
 	}
 	_state = WheelState::KClosed;
+	RestoreWheelAfterMenuSelect();   // 1.3.0: a menu's wheel does not outlive the wheel it was opened for
 	if (!IsAmmoWheelOpen()) {
 		InputBroker::ClearActiveOwner(InputBroker::kWheelerRefinedPluginId);
 	}
@@ -11385,7 +11399,7 @@ void Wheeler::AddWheel()
 	// a new wheel gets as many empty slots as the slots slider shows - the active wheel's count - and eight when
 	// there is no wheel yet, so no wheel is ever created with zero slots.
 	const int newWheelSlots = (hadValidActive && _wheels[_activeWheelIdx] && _wheels[_activeWheelIdx]->GetNumEntries() > 0) ?
-	                              _wheels[_activeWheelIdx]->GetNumEntries() : 8;
+	                              _wheels[_activeWheelIdx]->GetNumEntries() : (Config::Control::Wheel::FavoritesSystem ? FavoritesToSlots::kDefaultSlots[0] : 8);   // 1.3.0: the inventory wheel's ten with the favorites system on, else the eight of old
 	_wheels.push_back(std::make_unique<Wheel>());
 	for (int i = 0; i < newWheelSlots; ++i) {
 		_wheels.back()->PushEmptyEntry();
@@ -11405,7 +11419,7 @@ void Wheeler::PushWheel()
 	// a new wheel gets as many empty slots as the slots slider shows - the active wheel's count - and eight when
 	// there is no wheel yet, so no wheel is ever created with zero slots.
 	const int newWheelSlots = (hadValidActive && _wheels[_activeWheelIdx] && _wheels[_activeWheelIdx]->GetNumEntries() > 0) ?
-	                              _wheels[_activeWheelIdx]->GetNumEntries() : 8;
+	                              _wheels[_activeWheelIdx]->GetNumEntries() : (Config::Control::Wheel::FavoritesSystem ? FavoritesToSlots::kDefaultSlots[0] : 8);   // 1.3.0: ten with the favorites system on
 	_wheels.push_back(std::make_unique<Wheel>());
 	for (int i = 0; i < newWheelSlots; ++i) {
 		_wheels.back()->PushEmptyEntry();
@@ -11628,6 +11642,24 @@ int Wheeler::GetHoveredSlotIndex()
 	return _wheels[_activeWheelIdx]->GetHoveredEntryIndex();
 }
 
+Wheeler::AddToSlotResult Wheeler::AddItemToSlotOnWheel(int a_wheel, int a_slot, std::shared_ptr<WheelItem> a_item)
+{
+	if (!a_item) { return AddToSlotResult::BadItem; }
+	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (a_wheel < 0 || a_wheel >= static_cast<int>(_wheels.size()) || !_wheels[a_wheel]) { return AddToSlotResult::NoWheel; }
+	auto* wheel = _wheels[a_wheel].get();
+	if (a_slot < 0 || a_slot >= wheel->GetNumEntries()) { return AddToSlotResult::NoSuchSlot; }
+	for (int i = 0; i < wheel->GetNumEntries(); ++i) {
+		WheelEntry* e = wheel->GetEntry(i);
+		if (e && e->ContainsForm(a_item->GetFormID())) { return AddToSlotResult::AlreadyOnWheel; }
+	}
+	WheelEntry* entry = wheel->GetEntry(a_slot);
+	if (!entry) { return AddToSlotResult::NoSuchSlot; }
+	if (entry->GetNumItems() >= Config::WheelBehavior::MaxItemsPerSlot) { return AddToSlotResult::SlotFull; }
+	entry->PushItem(a_item);
+	return AddToSlotResult::Added;
+}
+
 void Wheeler::SetHoveredSlotIndex(int a_index)
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
@@ -11648,8 +11680,10 @@ std::vector<std::string> Wheeler::DescribeCurrentWheelSlots()
 		std::shared_ptr<WheelItem> item = e ? e->GetSelectedItem() : nullptr;
 		// An empty slot is named by its address, which is stable for the session, so a move of an
 		// empty slot is as visible to the driving tool as a move of a full one.
-		if (item && item->GetItemName() && item->GetItemName()[0]) {
+		if (item && item->GetItemName() && item->GetItemName()[0] && std::string_view(item->GetItemName()) != "Unknown") {
 			out.push_back(item->GetItemName());
+		} else if (auto* form = item ? RE::TESForm::LookupByID(item->GetFormID()) : nullptr; form && form->GetName() && form->GetName()[0]) {
+			out.push_back(form->GetName());   // 1.3.0: spells and shouts have no item name of their own
 		} else {
 			char buf[32];
 			std::snprintf(buf, sizeof(buf), "empty@%llx", static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(e)));
@@ -11879,7 +11913,7 @@ void Wheeler::EnsureFirstWheel()
 		if (!_wheels.empty()) {
 			// 1.1.8: a wheel saved with ZERO slots (older builds' create-first-wheel button made those, and the
 			// owner's test save held one) gets the slots a new wheel would: the first wheel with slots, else eight.
-			int slots = 8;
+			int slots = Config::Control::Wheel::FavoritesSystem ? FavoritesToSlots::kDefaultSlots[0] : 8;
 			for (const auto& wheel : _wheels) {
 				if (wheel && wheel->GetNumEntries() > 0) {
 					slots = wheel->GetNumEntries();
@@ -11901,21 +11935,90 @@ void Wheeler::EnsureFirstWheel()
 			return;
 		}
 	}
-	logger::info("[Wheeler] no wheel in this save - creating the first wheel with 8 empty slots");
+	logger::info("[Wheeler] no wheel in this save - creating the two default wheels (Inventory Wheel: 10 slots, Magic Wheel: 5)");
 	SetupDefaultWheels();
 }
 
 void Wheeler::SetupDefaultWheels()
 {
-	const int defaultWheelNum = 1;
+	// 1.3.0 (the owner, 2026-09-17): TWO wheels on install, already made. The INVENTORY WHEEL has ten slots -
+	// powers locked at the bottom, shouts locked at the top, the SkyUI inventory tabs between; the MAGIC WHEEL has
+	// five - the schools. Each carries its role in the save, so the favourites system and the menus find it by role.
 	Wheeler::Clear();
-	int wheelIdx = 0;
-	while (wheelIdx < defaultWheelNum) {
-		Wheeler::PushWheel();   // 1.1.8: PushWheel gives it its slots - eight, as Clear left no wheel
-		wheelIdx++;
+	Wheeler::PushWheel();   // ten slots with the system on (PushWheel's default when no wheel exists yet), eight off
+	if (!Config::Control::Wheel::FavoritesSystem) {
+		logger::info("[Wheeler] default wheel created: one wheel with 8 slots (the favorites system is off)");
+		Wheeler::SetActiveWheelIndex(0);
+		return;
 	}
+	Wheeler::PushWheel();   // takes the active wheel's ten; trimmed to the magic wheel's five below
+	{
+		std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+		if (_wheels.size() >= 2 && _wheels[0] && _wheels[1]) {
+			_wheels[0]->SetRole(FavoritesToSlots::kRole[0]);
+			_wheels[1]->SetRole(FavoritesToSlots::kRole[1]);
+			while (_wheels[1]->GetNumEntries() > FavoritesToSlots::kDefaultSlots[1]) { _wheels[1]->RemoveEntryByIndex(_wheels[1]->GetNumEntries() - 1); }
+		}
+	}
+	logger::info("[Wheeler] default wheels created: Inventory Wheel with {} slots, Magic Wheel with {} slots", FavoritesToSlots::kDefaultSlots[0], FavoritesToSlots::kDefaultSlots[1]);
 	Wheeler::SetActiveWheelIndex(0);
+}
 
+int Wheeler::FindWheelIndexByRole(const std::string& a_role)
+{
+	if (a_role.empty()) { return -1; }
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	for (int i = 0; i < static_cast<int>(_wheels.size()); ++i) {
+		if (_wheels[i] && _wheels[i]->GetRole() == a_role) { return i; }
+	}
+	return -1;
+}
+
+int Wheeler::GetSlotCountOfWheel(int a_wheel)
+{
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (a_wheel < 0 || a_wheel >= static_cast<int>(_wheels.size()) || !_wheels[a_wheel]) { return -1; }
+	return _wheels[a_wheel]->GetNumEntries();
+}
+
+std::string Wheeler::WheelDisplayName(int a_wheel)
+{
+	if (!Config::Control::Wheel::FavoritesSystem) { return {}; }
+	std::string role;
+	{
+		std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+		if (a_wheel < 0 || a_wheel >= static_cast<int>(_wheels.size()) || !_wheels[a_wheel]) { return {}; }
+		role = _wheels[a_wheel]->GetRole();
+	}
+	if (role == "inventory") { return Texts::GetText(Texts::TextType::WheelNameInventory); }
+	if (role == "magic") { return Texts::GetText(Texts::TextType::WheelNameMagic); }
+	return {};
+}
+
+void Wheeler::SelectWheelForOpenMenu()
+{
+	// The owner, 2026-09-17: "these labels aren't cosmetic only, we should also make it so that the magic wheel
+	// is opened by default in the magic menu". The Inventory menu opens on the inventory wheel the same way.
+	if (!Config::Control::Wheel::FavoritesSystem) { return; }
+	auto* ui = RE::UI::GetSingleton();
+	if (!ui) { return; }
+	const char* role = ui->IsMenuOpen(RE::MagicMenu::MENU_NAME) ? "magic" : ui->IsMenuOpen(RE::InventoryMenu::MENU_NAME) ? "inventory" : nullptr;
+	if (!role) { return; }
+	const int idx = FindWheelIndexByRole(role);
+	if (idx < 0 || idx == _activeWheelIdx) { return; }
+	// Remember the wheel the player had, so closing puts it back and gameplay does not inherit the menu's
+	// wheel (the owner: "the magic wheel should be the second wheel not the first wheel").
+	if (_wheelIdxBeforeMenuSelect < 0) { _wheelIdxBeforeMenuSelect = _activeWheelIdx; }
+	logger::info("[Wheeler] opened inside the {} menu: switching to wheel {} ({}), wheel {} restored on close", role, idx + 1, role, _wheelIdxBeforeMenuSelect + 1);
+	SetActiveWheelIndex(idx);
+}
+
+void Wheeler::RestoreWheelAfterMenuSelect()
+{
+	const int idx = _wheelIdxBeforeMenuSelect;
+	_wheelIdxBeforeMenuSelect = -1;
+	if (idx < 0 || idx >= static_cast<int>(_wheels.size()) || !_wheels[idx] || idx == _activeWheelIdx) { return; }
+	SetActiveWheelIndex(idx);
 }
 
 inline ImVec2 Wheeler::getWheelCenter()

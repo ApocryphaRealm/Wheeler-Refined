@@ -91,6 +91,8 @@ public:
 	void PrevItem();
 	void NextItem();
 	void PushItem(std::shared_ptr<WheelItem> item);
+	// 1.3.0: whether any item in this entry is the given form.
+	bool ContainsForm(RE::FormID a_formID);
 
 	std::shared_ptr<WheelItem> GetSelectedItem();
 	int GetSelectedItemIndex();
