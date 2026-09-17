@@ -896,13 +896,13 @@
                                          "control":  {
                                                          "failAction":  "disable"
                                                      },
-                                         "default":  false,
+                                         "default":  true,
                                          "ini":  {
                                                      "id":  "DisableVanillaFavoritesMenu",
                                                      "section":  "Control.Wheel"
                                                  },
                                          "text":  {
-                                                      "desc":  "Turn the game's own Favorites menu off completely, so Wheeler takes its place. Off by default.",
+                                                      "desc":  "Turn the game's own Favorites menu off completely, so Wheeler takes its place. On by default (the owner, 2026-09-16): the wheel IS the favorites menu here, and a Favorites control still holding its buttons also stops the game giving those buttons to anything else.",
                                                       "name":  "Disable Vanilla Favorites Menu"
                                                   },
                                          "translation":  {

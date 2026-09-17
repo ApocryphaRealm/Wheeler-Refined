@@ -548,9 +548,9 @@ namespace Config
 			// It stops the menu being opened at all, by consuming its user event before the game sees it,
 			// so Wheeler takes its place.
 			//
-			// Default OFF: taking away a vanilla menu is not something to do to someone who did not
-			// ask for it.
-			inline bool DisableVanillaFavoritesMenu = false;
+			// Default ON since 1.2.6 (the owner, 2026-09-16): Wheeler takes the place of the Favorites menu,
+			// so the vanilla one stays shut unless the player switches this off on the settings page.
+			inline bool DisableVanillaFavoritesMenu = true;
 			// The owner, 2026-09-13: an Advanced settings toggle on Wheeler Controls / General; off hides every
 			// section after the first three (Wheeler Controls, Wheel Behavior, Ammo Wheel). Default on.
 			inline bool ShowAdvancedSettings = true;

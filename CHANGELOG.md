@@ -8,6 +8,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.6 - 2026-09-16 - untested
+
+### Changed
+- **Disable Vanilla Favorites Menu ships ON** (the owner, 2026-09-16: *"wheeler should have a toggle to turn off favorites menu"* - the toggle existed on Wheeler Controls since 1.1.5 but shipped off, so from the player's side there was no such thing). The wheel takes the place of the Favorites menu in this fork, and a vanilla Favorites control that is still live also keeps its buttons: the game refused to give D-pad up to Toggle POV while Favorites held it. `DisableVanillaFavoritesMenu` now defaults to true in the compiled default, in `Controls.defaults.ini` and on the settings page; anyone who wants the vanilla menu back switches it off there. No other behaviour changes.
+
 ## 1.2.5 - 2026-09-16 - untested
 
 ### Fixed
