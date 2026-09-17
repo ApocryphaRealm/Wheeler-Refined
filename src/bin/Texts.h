@@ -97,6 +97,8 @@ public:
 	// a_forceLanguage (a driving op) reloads with that language instead of the game's.
 	static void LoadLanguageFile(const std::string& a_forceLanguage = std::string());
 	static const std::string& Language();
+	// Every string currently in force, concatenated: the font atlas is built from it (1.2.7).
+	static std::string AllText();
 	static const std::string& LanguageFile();
 	static int LanguageEntries();
 	static const char* GetText(TextType a_textType);

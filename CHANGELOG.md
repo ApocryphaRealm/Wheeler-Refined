@@ -8,6 +8,12 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.2.7 - 2026-09-17 - untested
+
+### Fixed
+- **Japanese (and every non-Latin script) draws on the wheel** (littlefot on the Nexus page, 2026-09-17: with `font = japanese` the Japanese face loaded, the log read *"Language 'japanese' - using GlyphPreset 3 (Latin Full)"*, and 火炎 / 治癒 came out as `????`). The folder name in FontConfig.ini was compared case-sensitively against `Japanese`, so a lower-case folder - which Windows opens just the same - fell through to the Latin presets and the atlas held no kana or kanji at all. The atlas is now BUILT rather than picked: the preset the player chose (the English fallback strings need it), the built-in ranges of the folder's script matched without regard to case, the built-in ranges of the GAME's language (a Japanese game shows Japanese item names on the wheel whatever the folder says), and every character of the loaded translation. When the chosen face lacks the script - Segoe UI has no kana, hangul or hanzi - a Windows face that has it is merged in for the missing glyphs (Meiryo / Yu Gothic / MS Gothic for Japanese, Malgun Gothic for Korean, Microsoft YaHei / SimSun for Chinese, Leelawadee UI for Thai), so no font folder is needed for those languages any more. The atlas is rebuilt once the translations are loaded and again whenever the language is switched, outside a frame. Chinese uses Dear ImGui's 2500 common simplified characters plus everything the translation contains rather than the full 21000: at the wheel's 64 px rasterisation the full set would need an atlas taller than Direct3D allows.
+- The driving tool gained `op=font`: the face and merged face in use, the folder and game scripts, the glyph count, the atlas size and one probe glyph per script (kana, hangul, hanzi, Cyrillic, Thai), with `lang=` to switch language first - so the fix is proved by reading the atlas, not by squinting at a capture.
+
 ## 1.2.6 - 2026-09-16 - untested
 
 ### Changed

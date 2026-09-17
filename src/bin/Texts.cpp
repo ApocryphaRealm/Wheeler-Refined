@@ -1,4 +1,5 @@
 #include "Texts.h"
+#include "bin/Rendering/RenderManager.h"
 
 #include <fstream>
 #include <algorithm>
@@ -346,6 +347,8 @@ namespace
 
 void Texts::LoadLanguageFile(const std::string& a_forceLanguage)
 {
+	// Whatever language ends up in force, the atlas must hold its glyphs (1.2.7).
+	struct RebuildOnExit { ~RebuildOnExit() { RenderManager::RequestFontRebuild(); } } rebuild;
 	const std::string lang = a_forceLanguage.empty() ? GameLanguage() : LowerAscii(a_forceLanguage);
 	_language = lang;
 	_languageEntries = 0;
@@ -383,6 +386,16 @@ void Texts::LoadLanguageFile(const std::string& a_forceLanguage)
 }
 
 const std::string& Texts::Language() { return _language; }
+
+std::string Texts::AllText()
+{
+	std::string out;
+	for (const auto& [textType, text] : _textData) {
+		out += text;
+		out += '\n';
+	}
+	return out;
+}
 const std::string& Texts::LanguageFile() { return _languageFile; }
 int Texts::LanguageEntries() { return _languageEntries; }
 

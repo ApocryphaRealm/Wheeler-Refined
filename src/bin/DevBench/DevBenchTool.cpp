@@ -10,6 +10,7 @@
 #include "bin/SettingsPage/PageShared.h"
 #include "bin/DevBench/DevBenchAPI.h"
 #include "bin/SettingsPage/Page.h"
+#include "bin/Rendering/RenderManager.h"
 
 #include <cstdlib>
 #include <string>
@@ -103,7 +104,7 @@ namespace DevBenchTool
 		constexpr const char* kDescriptor = R"JSON({
 "description":"Drive Wheeler's in-game settings page: open or close it, move to a tab, read and write any setting by its INI key, and run a keymap rebind end to end without a physical key press. Setting keys may be given as 'Key' or, when a bare key is ambiguous across the eight descriptor files, as 'Section/Key'.",
 "inputSchema":{"type":"object","properties":{
-"op":{"type":"string","enum":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab"],"description":"what to do"},
+"op":{"type":"string","enum":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","texts","font"],"description":"what to do"},
 "key":{"type":"string","description":"setting INI key, 'Key' or 'Section/Key' (get, set, rebind)"},
 "value":{"type":"string","description":"raw value to write, in the notation the INI already uses (set)"},
 "panel":{"type":"string","description":"panel tab label (list, selecttab)"},
@@ -203,6 +204,23 @@ namespace DevBenchTool
 				std::string sample; for (char c : std::string(Texts::GetText(Texts::TextType::PresetsHeader))) { if (c == '\\' || c == '"') { sample += '\\'; } sample += c; }
 				result = "{\"ok\":true,\"op\":\"texts\",\"language\":\"" + Texts::Language() + "\",\"file\":\"" + esc +
 					"\",\"applied\":" + std::to_string(Texts::LanguageEntries()) + ",\"sample\":\"" + sample + "\"}";
+			} else if (op == "font") {
+				// 1.2.7: what the wheel's font atlas can draw - one probe glyph per script - and where its
+				// faces came from. lang=<name> switches the language first (as 'texts' does); the rebuild
+				// runs before the next frame, so read again after a moment to see the new atlas.
+				const std::string lang = JsonStr(args, "lang");
+				if (!lang.empty()) { Texts::LoadLanguageFile(lang); }
+				const auto fs = RenderManager::GetFontState();
+				auto esc = [](const std::string& s) { std::string o; for (char c : s) { if (c == '\\' || c == '"') { o += '\\'; } o += c; } return o; };
+				result = std::string("{\"ok\":true,\"op\":\"font\",\"language\":\"") + Texts::Language() +
+					"\",\"builds\":" + std::to_string(fs.builds) + ",\"pending\":" + (RenderManager::fontRebuildPending.load() ? "true" : "false") +
+					",\"face\":\"" + esc(fs.face) + "\",\"merged\":\"" + esc(fs.merged) + "\",\"folder\":\"" + esc(fs.folder) +
+					"\",\"folderScript\":\"" + fs.folderScript + "\",\"gameLanguage\":\"" + fs.gameLanguage + "\",\"gameScript\":\"" + fs.gameScript +
+					"\",\"preset\":" + std::to_string(fs.preset) + ",\"glyphs\":" + std::to_string(fs.glyphs) +
+					",\"atlas\":[" + std::to_string(fs.atlasWidth) + "," + std::to_string(fs.atlasHeight) + "]" +
+					",\"hasKana\":" + (fs.hasKana ? "true" : "false") + ",\"hasHangul\":" + (fs.hasHangul ? "true" : "false") +
+					",\"hasHanzi\":" + (fs.hasHanzi ? "true" : "false") + ",\"hasCyrillic\":" + (fs.hasCyrillic ? "true" : "false") +
+					",\"hasThai\":" + (fs.hasThai ? "true" : "false") + "}";
 			} else if (op == "spy") {
 				// Runtime switch for the input spy and the menu-block reasons, so a proof can read every
 				// event's verdict from wheeler.log without depending on INI layering. sub=on|off|status.
@@ -235,7 +253,7 @@ namespace DevBenchTool
 					",\"buttonRect\":[" + std::to_string(r.x0) + "," + std::to_string(r.y0) + "," + std::to_string(r.x1) + "," + std::to_string(r.y1) + "]}";
 			} else {
 				result =
-					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf","spy","inject","slots"]})";
+					R"({"ok":false,"error":"unknown op","ops":["status","open","close","toggle","tabs","list","get","set","rebind","selecttab","amf","spy","inject","slots","texts","font"]})";
 			}
 
 			a_write(a_sink, result.c_str());

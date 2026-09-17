@@ -26,6 +26,9 @@
 #include "bin/Rendering/ResolutionScaleContext.h"
 #include "bin/InitState.h"
 #include "bin/Config.h"
+#include "bin/Texts.h"
+#include <mutex>
+#include <vector>
 #include "bin/SettingsPage/Page.h"
 #include "bin/SettingsPage/PageInput.h"
 
@@ -252,6 +255,304 @@ LRESULT RenderManager::WndProcHook::thunk(HWND hWnd, UINT uMsg, WPARAM wParam, L
 	return func(hWnd, uMsg, wParam, lParam);
 }
 
+// ========== FONT ATLAS ==========
+// 1.2.7 (littlefot's report on the Nexus page, 2026-09-17): with `font = japanese` in FontConfig.ini
+// the Japanese face loaded but the log read "Language 'japanese' - using GlyphPreset 3 (Latin Full)"
+// and every kana and kanji drew as '?'. The folder name was compared CASE-SENSITIVELY against
+// "Japanese", so a lower-case folder - which Windows opens just the same - fell through to the Latin
+// presets. Three things changed, all in this one function:
+//   1. the folder name is matched without regard to case;
+//   2. the ranges are BUILT rather than picked: the preset the player chose (English fallback strings
+//      need it), the built-in ranges of the folder's script, the built-in ranges of the GAME's language
+//      (a Japanese game shows Japanese item names on the wheel whatever the folder says), and every
+//      character of the loaded translation - so no table can be wrong or incomplete;
+//   3. when the needed script is one the chosen face lacks, a system face that has it is MERGED in
+//      (MergeMode adds only the glyphs still missing) - the same fallback the menu framework uses.
+// The atlas is rebuilt once the translations are loaded (kDataLoaded, through RequestFontRebuild)
+// and again whenever the language is switched, outside a frame.
+namespace
+{
+	std::string LowerAscii(std::string a_s)
+	{
+		std::transform(a_s.begin(), a_s.end(), a_s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		return a_s;
+	}
+
+	// The script a language name asks for beyond Latin. Both the game's sLanguage values
+	// ("japanese", "russian") and the folder names FontConfig.ini documents ("Japanese", "Cyrillic")
+	// arrive here lower-cased.
+	enum class Script { None, Japanese, Korean, Chinese, Thai, Vietnamese, Cyrillic };
+
+	Script ScriptFor(const std::string& a_lower)
+	{
+		if (a_lower == "japanese") { return Script::Japanese; }
+		if (a_lower == "korean") { return Script::Korean; }
+		if (a_lower == "chinese" || a_lower == "chinesesimplified" || a_lower == "chinesetraditional" || a_lower == "schinese" || a_lower == "tchinese") { return Script::Chinese; }
+		if (a_lower == "thai") { return Script::Thai; }
+		if (a_lower == "vietnamese") { return Script::Vietnamese; }
+		if (a_lower == "cyrillic" || a_lower == "russian" || a_lower == "ukrainian" || a_lower == "bulgarian" || a_lower == "serbian" || a_lower == "belarusian") { return Script::Cyrillic; }
+		return Script::None;
+	}
+
+	const char* ScriptName(Script a_s)
+	{
+		switch (a_s) {
+		case Script::Japanese: return "Japanese";
+		case Script::Korean: return "Korean";
+		case Script::Chinese: return "Chinese";
+		case Script::Thai: return "Thai";
+		case Script::Vietnamese: return "Vietnamese";
+		case Script::Cyrillic: return "Cyrillic";
+		default: return "none";
+		}
+	}
+
+	// Dear ImGui's own tables. Chinese uses the 2500 common simplified characters rather than the
+	// full 21000: the wheel rasterises at 64 px, and the full set would need an atlas taller than
+	// D3D11 allows (4096 x 21000). Everything the translation actually contains is added on top.
+	const ImWchar* BuiltInRanges(Script a_s, ImFontAtlas* a_atlas)
+	{
+		switch (a_s) {
+		case Script::Japanese: return a_atlas->GetGlyphRangesJapanese();
+		case Script::Korean: return a_atlas->GetGlyphRangesKorean();
+		case Script::Chinese: return a_atlas->GetGlyphRangesChineseSimplifiedCommon();
+		case Script::Thai: return a_atlas->GetGlyphRangesThai();
+		case Script::Vietnamese: return a_atlas->GetGlyphRangesVietnamese();
+		case Script::Cyrillic: return a_atlas->GetGlyphRangesCyrillic();
+		default: return nullptr;
+		}
+	}
+
+	bool IsCjk(Script a_s) { return a_s == Script::Japanese || a_s == Script::Korean || a_s == Script::Chinese; }
+
+	// System faces that carry each script, preferred first. Segoe UI already has Cyrillic and
+	// Vietnamese; Thai lives in Leelawadee UI and Tahoma.
+	std::vector<std::string> FallbackFaces(Script a_s)
+	{
+		wchar_t winDir[MAX_PATH] = {};
+		std::filesystem::path fonts = GetWindowsDirectoryW(winDir, MAX_PATH) > 0 ? std::filesystem::path(winDir) / L"Fonts" : std::filesystem::path(L"C:\\Windows\\Fonts");
+		std::vector<const char*> names;
+		switch (a_s) {
+		case Script::Japanese: names = { "meiryo.ttc", "YuGothM.ttc", "msgothic.ttc", "msyh.ttc" }; break;
+		case Script::Korean: names = { "malgun.ttf", "malgunbd.ttf", "msyh.ttc" }; break;
+		case Script::Chinese: names = { "msyh.ttc", "simsun.ttc", "meiryo.ttc" }; break;
+		case Script::Thai: names = { "leelawui.ttf", "tahoma.ttf" }; break;
+		default: break;
+		}
+		std::vector<std::string> out;
+		for (const char* n : names) {
+			std::error_code ec;
+			const auto p = fonts / n;
+			if (std::filesystem::exists(p, ec)) { out.push_back(p.string()); }
+		}
+		return out;
+	}
+
+	std::mutex g_fontStateLock;
+	RenderManager::FontState g_fontState;
+}
+
+RenderManager::FontState RenderManager::GetFontState()
+{
+	std::scoped_lock l(g_fontStateLock);
+	return g_fontState;
+}
+
+void RenderManager::RequestFontRebuild() { fontRebuildPending.store(true); }
+
+void RenderManager::BuildFontAtlas()
+{
+	INFO("Building font atlas...");
+	FontState state;
+
+	// Load font configuration from FontConfig.ini
+	std::filesystem::path fontPath;
+	bool foundCustomFont = false;
+	std::string languageStr;
+
+#define FONTSETTING_PATH "Data\\SKSE\\Plugins\\wheeler\\resources\\fonts\\FontConfig.ini"
+	CSimpleIniA ini;
+	ini.LoadFile(FONTSETTING_PATH);
+
+	// Read glyph preset from FontConfig.ini (overrides Config::Font::GlyphPreset)
+	int glyphPreset = Config::Font::GlyphPreset;
+	std::string customRanges = Config::Font::CustomRanges;
+	bool logAtlasInfo = Config::Font::Debug::LogAtlasInfo;
+	bool showTestOverlay = Config::Font::Debug::ShowGlyphTestOverlay;
+
+	if (const char* presetStr = ini.GetValue("config", "GlyphPreset", nullptr)) {
+		glyphPreset = std::atoi(presetStr);
+		INFO("[Font] GlyphPreset from INI: {}", glyphPreset);
+	}
+	if (const char* customRangesStr = ini.GetValue("config", "CustomRanges", nullptr)) {
+		customRanges = customRangesStr;
+	}
+	if (const char* logAtlasStr = ini.GetValue("config.debug", "LogAtlasInfo", nullptr)) {
+		logAtlasInfo = (std::string(logAtlasStr) == "true" || std::string(logAtlasStr) == "1");
+	}
+	if (const char* showOverlayStr = ini.GetValue("config.debug", "ShowGlyphTestOverlay", nullptr)) {
+		showTestOverlay = (std::string(showOverlayStr) == "true" || std::string(showOverlayStr) == "1");
+		Config::Font::Debug::ShowGlyphTestOverlay = showTestOverlay;  // Update config for runtime
+	}
+
+	// The face: the folder named in the INI when it holds a .ttf/.ttc, otherwise a system face.
+	if (!ini.IsEmpty()) {
+		if (const char* language = ini.GetValue("config", "font", nullptr); language && *language) {
+			languageStr = language;
+			std::string fontDir = R"(Data\SKSE\Plugins\wheeler\resources\fonts\)" + languageStr;
+			std::error_code ec;
+			if (std::filesystem::is_directory(fontDir, ec)) {
+				for (const auto& entry : std::filesystem::directory_iterator(fontDir, ec)) {
+					const auto ext = LowerAscii(entry.path().extension().string());
+					if (ext == ".ttf" || ext == ".ttc" || ext == ".otf") {
+						fontPath = entry.path();
+						foundCustomFont = true;
+						break;
+					}
+				}
+			}
+			if (foundCustomFont) {
+				INFO("[Font] Loading font: {}", fontPath.string());
+			} else {
+				INFO("[Font] No font found for language: {}", languageStr);
+			}
+		}
+	}
+	if (!foundCustomFont) {
+		// The owner, 2026-09-13: "a better looking font, something that's not as pixelated". With no
+		// custom face configured the wheel used Dear ImGui's 13 px bitmap font scaled up. Every Windows
+		// install carries Segoe UI; it is loaded at 64 px like a custom face and scaled down by the
+		// drawer, so the labels are hinted TrueType at any size. A FontConfig.ini `font =` still wins.
+		wchar_t winDir[MAX_PATH] = {};
+		if (GetWindowsDirectoryW(winDir, MAX_PATH) > 0) {
+			for (const wchar_t* face : { L"Fonts/segoeui.ttf", L"Fonts/arial.ttf" }) {
+				std::filesystem::path candidate = std::filesystem::path(winDir) / face;
+				std::error_code ec;
+				if (std::filesystem::exists(candidate, ec)) {
+					fontPath = candidate;
+					foundCustomFont = true;
+					INFO("[Font] No custom font configured; using the system face {}", fontPath.string());
+					break;
+				}
+			}
+		}
+	}
+
+	// The scripts needed: the folder's (case-insensitive) and the game's own language's.
+	ImFontAtlas* atlas = ImGui::GetIO().Fonts;
+	const Script folderScript = ScriptFor(LowerAscii(languageStr));
+	const std::string gameLanguage = Texts::Language();
+	const Script gameScript = ScriptFor(gameLanguage);
+	INFO("[Font] Folder '{}' -> script {}; game language '{}' -> script {}; GlyphPreset {} ({})",
+		languageStr, ScriptName(folderScript), gameLanguage, ScriptName(gameScript), glyphPreset, GlyphRanges::GetPresetName(glyphPreset));
+
+	// The ranges, built rather than picked (see the note at the top of this section).
+	static ImVector<ImWchar> s_ranges;
+	{
+		ImFontGlyphRangesBuilder builder;
+		builder.AddRanges(GlyphRanges::GetGlyphRangesForPreset(glyphPreset, customRanges));
+		if (const ImWchar* r = BuiltInRanges(folderScript, atlas)) { builder.AddRanges(r); }
+		if (gameScript != folderScript) {
+			if (const ImWchar* r = BuiltInRanges(gameScript, atlas)) { builder.AddRanges(r); }
+		}
+		const std::string translated = Texts::AllText();
+		builder.AddText(translated.c_str());
+		s_ranges.clear();
+		builder.BuildRanges(&s_ranges);
+	}
+	if (logAtlasInfo) {
+		GlyphRanges::LogRangeDetails(s_ranges.Data);
+	}
+
+	atlas->Clear();
+	ImFont* loaded = nullptr;
+	const bool cjk = IsCjk(folderScript) || IsCjk(gameScript);
+	if (foundCustomFont) {
+		ImFontConfig cfg;
+		if (cjk) {
+			// Thousands of 64 px glyphs: horizontal oversampling would triple the atlas width for
+			// no visible gain at this size.
+			cfg.OversampleH = 1;
+			cfg.OversampleV = 1;
+		}
+		loaded = atlas->AddFontFromFileTTF(fontPath.string().c_str(), 64.0f, &cfg, s_ranges.Data);
+		if (!loaded) { logger::warn("[Font] {} could not be rasterised", fontPath.string()); }
+		state.face = fontPath.string();
+	}
+
+	// Merge a system face for the scripts the chosen face may lack. MergeMode adds only what is
+	// still missing, so a folder font that already carries them is left alone.
+	if (loaded) {
+		std::vector<Script> needed;
+		for (const Script s : { folderScript, gameScript }) {
+			if ((IsCjk(s) || s == Script::Thai) && std::find(needed.begin(), needed.end(), s) == needed.end()) { needed.push_back(s); }
+		}
+		for (const Script s : needed) {
+			bool merged = false;
+			for (const std::string& face : FallbackFaces(s)) {
+				ImFontConfig merge;
+				merge.MergeMode = true;
+				merge.PixelSnapH = true;
+				merge.OversampleH = 1;
+				merge.OversampleV = 1;
+				if (atlas->AddFontFromFileTTF(face.c_str(), 64.0f, &merge, s_ranges.Data)) {
+					INFO("[Font] Merged {} for the {} glyphs the atlas needs", face, ScriptName(s));
+					state.merged = face;
+					merged = true;
+					break;
+				}
+			}
+			if (!merged) { logger::warn("[Font] No system face found for {}; characters the main face lacks will draw as '?'", ScriptName(s)); }
+		}
+	}
+
+	if (!loaded) {
+		logger::warn("[Font] No TrueType face could be loaded; using the built-in bitmap font");
+		atlas->AddFontDefault();
+	}
+
+	// Build the atlas and log size info
+	atlas->Build();
+
+	int atlasWidth = 0, atlasHeight = 0;
+	unsigned char* pixels = nullptr;
+	atlas->GetTexDataAsRGBA32(&pixels, &atlasWidth, &atlasHeight);
+	if (logAtlasInfo) {
+		INFO("[Font] Atlas built: {}x{} pixels", atlasWidth, atlasHeight);
+		if (atlasWidth > 4096 || atlasHeight > 4096) {
+			logger::warn("[Font] Atlas is large ({}x{}). Consider using a smaller glyph preset.", atlasWidth, atlasHeight);
+		}
+	}
+
+	// What the atlas can actually draw, one probe per script, so a driving op can prove the fix
+	// without a screenshot: hiragana A, hangul HAN, the hanzi for water, Cyrillic ZHE, Thai KO KAI.
+	if (ImFont* f = loaded ? loaded : atlas->Fonts.empty() ? nullptr : atlas->Fonts[0]) {
+		state.hasKana = f->FindGlyphNoFallback(0x3042) != nullptr;
+		state.hasHangul = f->FindGlyphNoFallback(0xD55C) != nullptr;
+		state.hasHanzi = f->FindGlyphNoFallback(0x6C34) != nullptr;
+		state.hasCyrillic = f->FindGlyphNoFallback(0x0416) != nullptr;
+		state.hasThai = f->FindGlyphNoFallback(0x0E01) != nullptr;
+		state.glyphs = f->Glyphs.Size;
+	}
+	state.folder = languageStr;
+	state.folderScript = ScriptName(folderScript);
+	state.gameLanguage = gameLanguage;
+	state.gameScript = ScriptName(gameScript);
+	state.preset = glyphPreset;
+	state.atlasWidth = atlasWidth;
+	state.atlasHeight = atlasHeight;
+	{
+		std::scoped_lock l(g_fontStateLock);
+		state.builds = g_fontState.builds + 1;
+		g_fontState = state;
+	}
+	INFO("[Font] Atlas {} built: face {}, merged {}, {} glyphs, kana {} hangul {} hanzi {} cyrillic {} thai {}",
+		state.builds, state.face.empty() ? "(built-in)" : state.face, state.merged.empty() ? "(none)" : state.merged, state.glyphs,
+		state.hasKana, state.hasHangul, state.hasHanzi, state.hasCyrillic, state.hasThai);
+	INFO("...font atlas built");
+}
+// ========== END FONT ATLAS ==========
+
 void RenderManager::D3DInitHook::thunk()
 {
 	func();
@@ -312,162 +613,7 @@ void RenderManager::D3DInitHook::thunk()
 	if (!WndProcHook::func)
 		ERROR("SetWindowLongPtrA failed!");
 
-	INFO("Building font atlas...");
-	
-	// Load font configuration from FontConfig.ini
-	std::filesystem::path fontPath;
-	bool foundCustomFont = false;
-	const ImWchar* glyphRanges = nullptr;
-	std::string languageStr;
-	
-#define FONTSETTING_PATH "Data\\SKSE\\Plugins\\wheeler\\resources\\fonts\\FontConfig.ini"
-	CSimpleIniA ini;
-	ini.LoadFile(FONTSETTING_PATH);
-	
-	// Read glyph preset from FontConfig.ini (overrides Config::Font::GlyphPreset)
-	int glyphPreset = Config::Font::GlyphPreset;
-	std::string customRanges = Config::Font::CustomRanges;
-	bool logAtlasInfo = Config::Font::Debug::LogAtlasInfo;
-	bool showTestOverlay = Config::Font::Debug::ShowGlyphTestOverlay;
-	
-	// Check for GlyphPreset in INI
-	const char* presetStr = ini.GetValue("config", "GlyphPreset", nullptr);
-	if (presetStr) {
-		glyphPreset = std::atoi(presetStr);
-		INFO("[Font] GlyphPreset from INI: {}", glyphPreset);
-	}
-	
-	// Check for CustomRanges in INI
-	const char* customRangesStr = ini.GetValue("config", "CustomRanges", nullptr);
-	if (customRangesStr) {
-		customRanges = customRangesStr;
-	}
-	
-	// Check for debug settings in INI
-	const char* logAtlasStr = ini.GetValue("config.debug", "LogAtlasInfo", nullptr);
-	if (logAtlasStr) {
-		logAtlasInfo = (std::string(logAtlasStr) == "true" || std::string(logAtlasStr) == "1");
-	}
-	const char* showOverlayStr = ini.GetValue("config.debug", "ShowGlyphTestOverlay", nullptr);
-	if (showOverlayStr) {
-		showTestOverlay = (std::string(showOverlayStr) == "true" || std::string(showOverlayStr) == "1");
-		Config::Font::Debug::ShowGlyphTestOverlay = showTestOverlay;  // Update config for runtime
-	}
-	
-	if (!ini.IsEmpty()) {
-		const char* language = ini.GetValue("config", "font", nullptr);
-		if (language) {
-			languageStr = language;
-			std::string fontDir = R"(Data\SKSE\Plugins\wheeler\resources\fonts\)" + languageStr;
-			// check if folder exists
-			if (std::filesystem::exists(fontDir) && std::filesystem::is_directory(fontDir)) {
-				for (const auto& entry : std::filesystem::directory_iterator(fontDir)) {
-					auto entryPath = entry.path();
-					if (entryPath.extension() == ".ttf" || entryPath.extension() == ".ttc") {
-						fontPath = entryPath;
-						foundCustomFont = true;
-						break;
-					}
-				}
-			}
-			if (foundCustomFont) {
-				INFO("[Font] Loading font: {}", fontPath.string().c_str());
-				
-				// Determine glyph ranges based on language or preset
-				// Asian languages use ImGui built-in ranges
-				if (languageStr == "Chinese") {
-					INFO("[Font] Glyph range set to Chinese (ImGui built-in)");
-					glyphRanges = ImGui::GetIO().Fonts->GetGlyphRangesChineseFull();
-				} else if (languageStr == "Korean") {
-					INFO("[Font] Glyph range set to Korean (ImGui built-in)");
-					glyphRanges = ImGui::GetIO().Fonts->GetGlyphRangesKorean();
-				} else if (languageStr == "Japanese") {
-					INFO("[Font] Glyph range set to Japanese (ImGui built-in)");
-					glyphRanges = ImGui::GetIO().Fonts->GetGlyphRangesJapanese();
-				} else if (languageStr == "Thai") {
-					INFO("[Font] Glyph range set to Thai (ImGui built-in)");
-					glyphRanges = ImGui::GetIO().Fonts->GetGlyphRangesThai();
-				} else if (languageStr == "Vietnamese") {
-					INFO("[Font] Glyph range set to Vietnamese (ImGui built-in)");
-					glyphRanges = ImGui::GetIO().Fonts->GetGlyphRangesVietnamese();
-				} else if (languageStr == "Cyrillic") {
-					INFO("[Font] Glyph range set to Cyrillic (ImGui built-in)");
-					glyphRanges = ImGui::GetIO().Fonts->GetGlyphRangesCyrillic();
-				} else {
-					// For all Latin-based languages, use the glyph preset system
-					// This covers: LatinExt, Turkish, Polish, Czech, Slovak, Hungarian, Romanian,
-					// Croatian, Slovenian, Lithuanian, Latvian, Estonian, Albanian, Icelandic,
-					// Bosnian, SerbianLatin, Norwegian, Swedish, Danish, Finnish, German, etc.
-					INFO("[Font] Language '{}' - using GlyphPreset {} ({})", 
-						languageStr, glyphPreset, GlyphRanges::GetPresetName(glyphPreset));
-					glyphRanges = GlyphRanges::GetGlyphRangesForPreset(glyphPreset, customRanges);
-				}
-			} else {
-				INFO("[Font] No font found for language: {}", language);
-			}
-		}
-	}
-	
-	// If no language-specific font, still apply glyph preset for default font
-	if (!foundCustomFont && glyphPreset >= 0) {
-		// The owner, 2026-09-13: "a better looking font, something that's not as pixelated". With no
-		// custom face configured the wheel used Dear ImGui's 13 px bitmap font scaled up. Every Windows
-		// install carries Segoe UI; it is loaded at 64 px like a custom face and scaled down by the
-		// drawer, so the labels are hinted TrueType at any size. A FontConfig.ini `font =` still wins.
-		wchar_t winDir[MAX_PATH] = {};
-		if (GetWindowsDirectoryW(winDir, MAX_PATH) > 0) {
-			for (const wchar_t* face : { L"Fonts/segoeui.ttf", L"Fontsrial.ttf" }) {
-				std::filesystem::path candidate = std::filesystem::path(winDir) / face;
-				if (std::filesystem::exists(candidate)) {
-					fontPath = candidate;
-					foundCustomFont = true;
-					glyphRanges = GlyphRanges::GetGlyphRangesForPreset(glyphPreset, customRanges);
-					INFO("[Font] No custom font configured; using the system face {} with GlyphPreset {} ({})",
-						fontPath.string(), glyphPreset, GlyphRanges::GetPresetName(glyphPreset));
-					break;
-				}
-			}
-		}
-	}
-	if (!foundCustomFont && glyphPreset >= 0) {
-		INFO("[Font] No custom font, using default with GlyphPreset {} ({})", 
-			glyphPreset, GlyphRanges::GetPresetName(glyphPreset));
-		glyphRanges = GlyphRanges::GetGlyphRangesForPreset(glyphPreset, customRanges);
-	}
-	
-	// Log glyph range details if debug logging enabled
-	if (logAtlasInfo && glyphRanges) {
-		GlyphRanges::LogRangeDetails(glyphRanges);
-	}
-	
-#define ENABLE_FREETYPE 0
-#if ENABLE_FREETYPE
-	ImFontAtlas* atlas = ImGui::GetIO().Fonts;
-	atlas->FontBuilderIO = ImGuiFreeType::GetBuilderForFreeType();
-	atlas->FontBuilderFlags = ImGuiFreeTypeBuilderFlags_LightHinting;
-#endif
-
-	// Add font with computed glyph ranges
-	if (foundCustomFont) {
-		ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.string().c_str(), 64.0f, nullptr, glyphRanges);
-	}
-	
-	// Build the atlas and log size info
-	ImGui::GetIO().Fonts->Build();
-	
-	if (logAtlasInfo) {
-		int atlasWidth = 0, atlasHeight = 0;
-		unsigned char* pixels = nullptr;
-		ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &atlasWidth, &atlasHeight);
-		INFO("[Font] Atlas built: {}x{} pixels", atlasWidth, atlasHeight);
-		
-		// Warn if atlas is very large (>4096 in either dimension)
-		if (atlasWidth > 4096 || atlasHeight > 4096) {
-			logger::warn("[Font] Atlas is large ({}x{}). Consider using a smaller glyph preset.", atlasWidth, atlasHeight);
-		}
-	}
-	
-	INFO("...font atlas built");
+	BuildFontAtlas();
 
 	INFO("RenderManager: Initialized");
 
@@ -479,6 +625,13 @@ void RenderManager::DXGIPresentHook::thunk(std::uint32_t a_p1)
 
 	if (!D3DInitHook::initialized.load())
 		return;
+
+	// A pending atlas rebuild (translations loaded, language switched) happens here, OUTSIDE a
+	// frame: the backend's device objects are dropped first so NewFrame recreates the font texture.
+	if (fontRebuildPending.exchange(false)) {
+		ImGui_ImplDX11_InvalidateDeviceObjects();
+		BuildFontAtlas();
+	}
 
 	// prologue
 	ImGui_ImplDX11_NewFrame();
