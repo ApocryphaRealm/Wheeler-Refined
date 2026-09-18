@@ -10,7 +10,12 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
-## 1.3.2 - 2026-09-17 - untested
+## 1.3.3 - 2026-09-18 - untested
+
+### Fixed
+- **The Address Library guard now runs before SKSE::Init.** CommonLibSSE-NG's Init opens the Address Library itself, so the guard added for a missing file sat after the very call that fails on it and never ran; oproso's log (Perfected Wheeler 1.3.2, 2026-09-18) showed the banner, then CommonLib's bare 'failed to open address library file', and no [AddressLibrary] line. The check is now the first thing after the logger, so a missing file is named - game version, file, folder - and the plugin loads inert.
+
+## 1.3.2 - 2026-09-17 - working
 
 ### Fixed
 - **Custom wheels can be deleted again** (littlefot, Nexus, 2026-09-17: *"a wheel that has been added cannot be deleted ... nothing happens and the wheel remains in the list"*). Since 1.1.8 every new wheel is born with the slider's count of empty slots, but the delete still demanded a wheel with no slots at all, so the edit-mode secondary press on an empty wheel silently did nothing. A wheel that holds no items is now the deletable one; the log says `DeleteWheel: deleting wheel idx=N` or why it refused (only wheel, still holds items, or one of the two favorites-system wheels).

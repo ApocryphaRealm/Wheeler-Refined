@@ -451,16 +451,17 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("=== {} {} | fork of Wheeler - Refined {} by {} | External API Enabled ==="sv,
 		Plugin::DISPLAY_NAME, Plugin::DISPLAY_VERSION, Plugin::UPSTREAM_VERSION, Plugin::UPSTREAM_AUTHOR);
 
+	// The guard runs BEFORE SKSE::Init: CommonLibSSE-NG's Init opens the Address Library itself, so a guard placed after it never ran when the file was missing (oproso's wheeler.log, 2026-09-18 - banner, then the bare failure, no [AddressLibrary] line).
+	if (!AddressLibraryGuard::Guard(Plugin::DISPLAY_NAME.data())) {
+		logger::critical("[AddressLibrary] loading inert: no hooks, no listeners, nothing resolved");
+		return true;
+	}
 	SKSE::Init(a_skse);
 
 	// 1.2.9: say which Address Library file this game version needs and whether it is there BEFORE
 	// any address is resolved; a missing file leaves the plugin inert with a message that names it
 	// instead of CommonLib's bare "failed to open the address library file" (oproso, Fluorine on
 	// SteamOS, 2026-09-16).
-	if (!AddressLibraryGuard::Guard(Plugin::DISPLAY_NAME.data())) {
-		logger::critical("[AddressLibrary] loading inert: no hooks, no listeners, nothing resolved");
-		return true;
-	}
 
 	auto messaging = SKSE::GetMessagingInterface();
 	if (!messaging->RegisterListener("SKSE", MessageHandler)) {
