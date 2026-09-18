@@ -1773,6 +1773,17 @@ bool Wheel::IsEmpty()
     return this->_entries.empty();
 }
 
+bool Wheel::HoldsNoItems()
+{
+	std::shared_lock<std::shared_mutex> lock(_lock);
+	for (const auto& entry : this->_entries) {
+		if (entry && !entry->IsEmpty()) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void Wheel::Clear()
 {
 	std::unique_lock<std::shared_mutex> lock(_lock);

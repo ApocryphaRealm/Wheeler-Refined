@@ -10,6 +10,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.3.2 - 2026-09-17 - untested
+
+### Fixed
+- **Custom wheels can be deleted again** (littlefot, Nexus, 2026-09-17: *"a wheel that has been added cannot be deleted ... nothing happens and the wheel remains in the list"*). Since 1.1.8 every new wheel is born with the slider's count of empty slots, but the delete still demanded a wheel with no slots at all, so the edit-mode secondary press on an empty wheel silently did nothing. A wheel that holds no items is now the deletable one; the log says `DeleteWheel: deleting wheel idx=N` or why it refused (only wheel, still holds items, or one of the two favorites-system wheels).
+
 ## 1.3.1 - 2026-09-17 - working
 
 ### Added

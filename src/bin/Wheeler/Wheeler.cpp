@@ -10081,9 +10081,16 @@ void Wheeler::ActivateHoveredEntrySecondary()
 	if (_state == WheelState::KOpened) {
 		const bool allowEditMutation = _editMode;
 		std::unique_ptr<Wheel>& activeWheel = _wheels[_activeWheelIdx];
-		if (activeWheel->IsEmpty()) {         // empty wheel, we can only delete in edit mode.
-			if (allowEditMutation && _wheels.size() > 1) {  // we have more than one wheel, so it's safe to delete this one.
-				DeleteCurrentWheel();
+		// 1.3.2 (littlefot, Nexus, 2026-09-17: "a wheel that has been added cannot be deleted"): a new wheel has
+		// carried the slider's count of EMPTY slots since 1.1.8, so IsEmpty() (no slots at all) was never true and
+		// the delete silently refused. A wheel that holds no ITEMS is the one the player means to delete.
+		if (activeWheel->HoldsNoItems()) {    // a wheel holding nothing: in edit mode the secondary press deletes it.
+			if (allowEditMutation) {
+				if (_wheels.size() > 1) {  // we have more than one wheel, so it's safe to delete this one.
+					DeleteCurrentWheel();
+				} else {
+					logger::info("DeleteWheel: refused - it is the only wheel");
+				}
 			}
 		} else {
 			if (allowEditMutation) {
@@ -11442,12 +11449,20 @@ void Wheeler::DeleteCurrentWheel()
 	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "DeleteCurrentWheel")) {
 		return;
 	}
+	// 1.3.0's designated wheels (Inventory Wheel, Magic Wheel) carry the favourites routing; with the system on
+	// they stay, so a favourite always has a wheel to land on.
+	if (Config::Control::Wheel::FavoritesSystem && _activeWheelIdx < FavoritesToSlots::kWheelCount) {
+		logger::info("DeleteWheel: refused - wheel idx={} is the {} wheel of the favorites system", _activeWheelIdx, FavoritesToSlots::kRole[_activeWheelIdx]);
+		return;
+	}
 	if (_wheels.size() > 1) {
 		const int deletedIdx = _activeWheelIdx;
 		std::unique_ptr<Wheel>& toDelete = _wheels[_activeWheelIdx];
-		if (!toDelete || !toDelete->IsEmpty()) { // do not delete an non-empty wheel
+		if (!toDelete || !toDelete->HoldsNoItems()) { // 1.3.2: do not delete a wheel that still holds an item (empty SLOTS are fine)
+			logger::info("DeleteWheel: refused - wheel idx={} still holds items", _activeWheelIdx);
 			return;
 		}
+		logger::info("DeleteWheel: deleting wheel idx={} ({} empty slots), {} wheels before", deletedIdx, toDelete->GetNumEntries(), _wheels.size());
 		_wheels.erase(_wheels.begin() + _activeWheelIdx);
 		if (deletedIdx >= 0 && deletedIdx < static_cast<int>(_lastHoveredEntryByWheel.size())) {
 			_lastHoveredEntryByWheel.erase(_lastHoveredEntryByWheel.begin() + deletedIdx);

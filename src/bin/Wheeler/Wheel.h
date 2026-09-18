@@ -42,6 +42,9 @@ public:
 
     void Clear();
     bool IsEmpty();
+    // 1.3.2: true when no slot holds an item - the wheel a player may delete. IsEmpty() is "no slots at
+    // all", which no wheel has had since 1.1.8 gave every new wheel the slider's count of empty slots.
+    bool HoldsNoItems();
     
     void PushEntry(std::unique_ptr<WheelEntry> a_entry);
 	void PushEmptyEntry();
