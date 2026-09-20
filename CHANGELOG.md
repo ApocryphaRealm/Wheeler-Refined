@@ -10,6 +10,23 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.3.4 - 2026-09-19 - untested
+
+### Fixed
+- **A button the ammo wheel uses can now also be bound to a main-wheel action.** The owner, 2026-09-19: *"D-pad right
+  is used by the ammo wheel, but the ammo wheel is contextual and should not interfere with the functioning of the
+  normal wheels ... we need to make it so that D-pad right can be bound to D-pad right, even if it's being used by
+  ammo wheel."* The settings page refused it, naming the ammo wheel as the holder.
+
+  The standing rule was always that two functions which can be active AT THE SAME TIME may not share a button - and
+  an ammo-wheel action and a main-wheel action never are, because only one wheel is ever open. So the refusal now
+  applies within a wheel's own settings, and across the two only for the rows that OPEN a wheel: those are pressed in
+  gameplay, where both would answer at once, and they still refuse each other.
+
+  Nothing was needed at the press itself: with the main wheel open, the ammo wheel's toggle already stands down
+  (`ToggleAmmoWheel` returns at once unless the main wheel is closed), the dispatcher sees no state change and falls
+  through to the main-wheel action on the same button. With the ammo wheel open, that button closes it, as before.
+
 ## 1.3.3 - 2026-09-18 - untested
 
 ### Fixed

@@ -531,13 +531,55 @@ namespace SettingsPage
 				WriteFailed   // captured, but ValueStore::Set refused (see its read-back check)
 			};
 
+			// WHICH WHEEL A ROW BELONGS TO, by the file the panel writes. The two wheels are never open
+			// at the same time, so a button can mean one thing in one and something else in the other.
+			enum class BindContext
+			{
+				MainWheel,
+				AmmoWheel,
+				Other       // anything not clearly one of the two: treated strictly, as before
+			};
+
+			inline BindContext ContextOfPanel(const Panel& a_panel)
+			{
+				std::string path = a_panel.iniPath;
+				std::transform(path.begin(), path.end(), path.begin(),
+					[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+				if (path.find("ammowheel.ini") != std::string::npos) { return BindContext::AmmoWheel; }
+				if (path.find("controls.ini") != std::string::npos) { return BindContext::MainWheel; }
+				return BindContext::Other;
+			}
+
+			// Does this row's control act in GAMEPLAY, rather than only while its own wheel is already
+			// open? Only the rows that OPEN a wheel do, and those are the ones that would genuinely
+			// fight over a button: two openers on one button is ambiguous at the moment it is pressed.
+			inline bool RowOpensAWheel(const Entry& a_entry)
+			{
+				std::string key = a_entry.iniKey;
+				std::transform(key.begin(), key.end(), key.begin(),
+					[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+				return key == "togglewheel" || key == "togglewheelifininventory" ||
+					   key == "togglewheelifnotininventory" || key == "togglekeygamepad" ||
+					   key == "togglekeymkb" || key == "togglemousebutton";
+			}
+
 			// The owner, 2026-09-12: "within the mod ... two separate functions cannot be bound to the same
 			// key". Every keymap row in every descriptor is checked, on the SAME device as the row being
 			// bound (a gamepad code and a keyboard code can never collide - the stored ranges differ).
 			// Modifier rows count too: a chord key that is also a plain action fires both. Returns the
 			// name of the row that holds the code, or empty when nothing does.
-			std::string FindOtherActionOnCode(const Entry& a_self, bool a_gamepad, std::uint32_t a_code)
+			//
+			// AMENDED 2026-09-19 (the owner): "D-pad right is used by the ammo wheel, but the ammo wheel
+			// is contextual and should not interfere with the functioning of the normal wheels ... we need
+			// to make it so that D-pad right can be bound to D-pad right, even if it's being used by ammo
+			// wheel." The standing rule was always about functions that can be active AT THE SAME TIME,
+			// and an ammo-wheel action and a main-wheel action never are - only one wheel is ever open. So
+			// a code may be shared across the two, with one exception: the rows that OPEN a wheel are
+			// pressed in gameplay, where both would answer at once, and those still refuse each other.
+			std::string FindOtherActionOnCode(const Panel& a_selfPanel, const Entry& a_self, bool a_gamepad, std::uint32_t a_code)
 			{
+				const BindContext selfContext = ContextOfPanel(a_selfPanel);
+				const bool selfOpens = RowOpensAWheel(a_self);
 				std::string holder;
 				const auto& store = ValueStore::GetSingleton();
 				std::function<void(const Panel&, const Entry&)> walk = [&](const Panel& panel, const Entry& entry) {
@@ -559,6 +601,16 @@ namespace SettingsPage
 					const auto held = static_cast<std::uint32_t>(
 						store.Get(panel, entry).AsNumber(entry.defaultNumber.value_or(0.0)));
 					if (held != 0u && held == a_code) {
+						const BindContext otherContext = ContextOfPanel(panel);
+						const bool crossWheel =
+							(selfContext == BindContext::MainWheel && otherContext == BindContext::AmmoWheel) ||
+							(selfContext == BindContext::AmmoWheel && otherContext == BindContext::MainWheel);
+						if (crossWheel && !(selfOpens && RowOpensAWheel(entry))) {
+							logger::info("[SettingsPage] code {} is held by '{}' in the other wheel's settings, "
+										 "which is never open at the same time - allowed",
+								a_code, entry.name.empty() ? entry.iniKey : entry.name);
+							return;
+						}
 						holder = entry.name.empty() ? (entry.iniSection + "/" + entry.iniKey) : entry.name;
 					}
 				};
@@ -636,7 +688,7 @@ namespace SettingsPage
 				}
 
 				// Same mod, same device, same code, different action: refused, naming the holder.
-				const std::string holder = FindOtherActionOnCode(a_entry, LooksLikeGamepad(a_entry), captured);
+				const std::string holder = FindOtherActionOnCode(a_panel, a_entry, LooksLikeGamepad(a_entry), captured);
 				if (!holder.empty()) {
 					logger::info("[SettingsPage] rebind of {} refused: code {} is already bound to '{}'", a_entry.iniKey, captured, holder);
 					g_rowNoticeKey = CaptureId(a_entry);
