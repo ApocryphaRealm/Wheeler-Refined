@@ -180,6 +180,8 @@ namespace
 			return "EditHintActionNextItem";
 		case Texts::TextType::EditHintActionPreviousItem:
 			return "EditHintActionPreviousItem";
+		case Texts::TextType::EditHintActionRotateWheel:
+			return "EditHintActionRotateWheel";
 		case Texts::TextType::EditHintActionToggleHints:
 			return "EditHintActionToggleHints";
 		case Texts::TextType::WheelCountLabel:

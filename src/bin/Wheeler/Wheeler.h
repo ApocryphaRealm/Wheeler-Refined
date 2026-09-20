@@ -130,6 +130,21 @@ public:
 	static void PrevItemInEntryGamepad();
 	static void NextItemInEntryGamepad();
 	static void ToggleEditModeHintsVisibility();
+
+	// ---- 1.3.6: TURNING THE WHEEL (the owner, 2026-09-20) --------------------------------------
+	// With the wheel open, the Rotate Wheel button (L3 by default) takes hold of the ring; the left
+	// stick - or the mouse, for a player on keyboard - then turns it, and the button, B, or closing
+	// the wheel lets go. Only the ANGLE changes: no slot moves in the order, nothing is swapped, and
+	// the turn is saved with the wheel.
+	static float GetActiveWheelRotation();
+	static void ToggleWheelRotation();
+	static bool IsRotatingWheel();
+	static void EndWheelRotation();
+	// One left-stick sample while the ring is held. Returns true when it was used for turning, which
+	// is how the caller knows not to feed it to the direction buttons as well.
+	static bool FeedRotationStick(float a_x, float a_y);
+	// The same from the mouse: the angle of the cursor around the wheel's centre.
+	static void FeedRotationAngle(float a_angleRad);
 	static void ReturnToPreviousActionHotkeysWheel();
 	static void RefreshActionHotkeysMirror();
 	static void ResetActionHotkeysBridgeLayout();
@@ -637,6 +652,16 @@ private:
 	
 	static inline bool _editMode = false;
 	static inline bool _editModeHintsVisible = true;
+	// 1.3.6: the ring is being turned; the highlight holds still while it is.
+	static inline bool _rotatingWheel = false;
+	static inline bool _rotationGrabbed = false;   // the stick/cursor has been taken hold of since the mode began
+	static inline float _rotationGrabAngle = 0.0f; // where it was taken hold of
+	static inline float _rotationAtGrab = 0.0f;    // the wheel's angle at that moment
+	// 1.3.6: the left button in the inventory. The press arms; a mouse that then MOVES turns the wheel,
+	// and a mouse that does not adds the item on release, which is what the press used to do.
+	static inline bool _editPrimaryArmed = false;
+	static inline bool _editPrimaryBecameTurn = false;
+	static inline ImVec2 _editPrimaryPressPos{ 0.0f, 0.0f };
 	static inline EditModeGameplayInputBlocker _editModeGameplayInputBlocker;
 	static inline EditModeHiddenMenuTracker _editModeHiddenMenus;
 

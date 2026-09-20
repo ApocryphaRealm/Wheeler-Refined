@@ -5149,6 +5149,7 @@ void Config::ReadControlConfig()
 			defaultsLoaded,
 			userLoaded);
 	}
+	GetUInt32Value(ini, "InputBindings.GamePad", "rotateWheel", Config::InputBindings::GamePad::rotateWheel);
 	GetUInt32Value(ini, "InputBindings.GamePad", "nextWheel", Config::InputBindings::GamePad::nextWheel);
 	GetUInt32Value(ini, "InputBindings.GamePad", "prevWheel", Config::InputBindings::GamePad::prevWheel);
 	GetUInt32Value(ini, "InputBindings.GamePad", "toggleWheel", Config::InputBindings::GamePad::toggleWheel);
@@ -5171,6 +5172,7 @@ void Config::ReadControlConfig()
 	GetUInt32Value(ini, "InputBindings.GamePad", "toggleWheelIfNotInInventoryModifier", Config::InputBindings::GamePad::toggleWheelIfNotInInventoryModifier);
 	GetUInt32Value(ini, "InputBindings.GamePad", "exitWheel", Config::InputBindings::GamePad::exitWheel);
 
+	GetUInt32Value(ini, "InputBindings.MKB", "rotateWheel", Config::InputBindings::MKB::rotateWheel);
 	GetUInt32Value(ini, "InputBindings.MKB", "nextWheel", Config::InputBindings::MKB::nextWheel);
 	GetUInt32Value(ini, "InputBindings.MKB", "prevWheel", Config::InputBindings::MKB::prevWheel);
 	GetUInt32Value(ini, "InputBindings.MKB", "toggleWheel", Config::InputBindings::MKB::toggleWheel);
@@ -5270,13 +5272,15 @@ void Config::ReadControlConfig()
 			}
 		};
 		report("gamepad", Config::InputBindings::GamePad::toggleWheel,
-			   { { "Next Wheel", Config::InputBindings::GamePad::nextWheel },
+			   { { "Rotate Wheel", Config::InputBindings::GamePad::rotateWheel },
+				 { "Next Wheel", Config::InputBindings::GamePad::nextWheel },
 				 { "Previous Wheel", Config::InputBindings::GamePad::prevWheel },
 				 { "Next Item", Config::InputBindings::GamePad::nextItem },
 				 { "Previous Item", Config::InputBindings::GamePad::prevItem },
 				 { "Edit Hints", Config::InputBindings::GamePad::toggleEditHints } });
 		report("keyboard", Config::InputBindings::MKB::toggleWheel,
-			   { { "Next Wheel", Config::InputBindings::MKB::nextWheel },
+			   { { "Rotate Wheel", Config::InputBindings::MKB::rotateWheel },
+				 { "Next Wheel", Config::InputBindings::MKB::nextWheel },
 				 { "Previous Wheel", Config::InputBindings::MKB::prevWheel },
 				 { "Next Item", Config::InputBindings::MKB::nextItem },
 				 { "Previous Item", Config::InputBindings::MKB::prevItem },
@@ -5308,6 +5312,7 @@ void Config::ReadControlConfig()
 	GetBoolValue(ini, "Control.Wheel", "FavoritesSystem", Config::Control::Wheel::FavoritesSystem);
 	GetBoolValue(ini, "Control.Wheel", "LeftStickWheelControl", Config::Control::Wheel::LeftStickWheelControl);
 	GetBoolValue(ini, "Control.Wheel", "StopTimeWhileOpen", Config::Control::Wheel::StopTimeWhileOpen);
+	GetBoolValue(ini, "Control.Wheel", "SnapRotationToSlot", Config::Control::Wheel::SnapRotationToSlot);
 	GetBoolValue(ini, "Control.Wheel", "ShowAdvancedSettings", Config::Control::Wheel::ShowAdvancedSettings);
 	GetBoolValue(ini, "Control.Wheel", "ToggleKeyPassThrough", Config::Control::Wheel::ToggleKeyPassThrough);
 	GetBoolValue(ini, "Control.Wheel", "DpadHoldToToggle", Config::Control::Wheel::DpadHoldToToggle);

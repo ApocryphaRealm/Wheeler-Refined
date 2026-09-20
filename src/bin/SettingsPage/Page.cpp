@@ -553,6 +553,27 @@ namespace SettingsPage
 			// Does this row's control act in GAMEPLAY, rather than only while its own wheel is already
 			// open? Only the rows that OPEN a wheel do, and those are the ones that would genuinely
 			// fight over a button: two openers on one button is ambiguous at the moment it is pressed.
+			// Two rows that can never act at the same moment, so the page lets them share a button. R3 is
+			// the case this exists for: the edit-mode hints toggle only ever did anything IN the inventory,
+			// and picking a slot up is the meaning of that click everywhere else (the owner, 2026-09-20).
+			inline bool ContextExclusivePair(const Entry& a, const Entry& b)
+			{
+				auto key = [](const Entry& e) {
+					std::string k = e.iniKey;
+					std::transform(k.begin(), k.end(), k.begin(),
+						[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+					return k;
+				};
+				const std::string ka = key(a), kb = key(b);
+				static constexpr const char* kPairs[][2] = {
+					{ "toggleedithints", "pickupslot" },
+				};
+				for (const auto& pair : kPairs) {
+					if ((ka == pair[0] && kb == pair[1]) || (ka == pair[1] && kb == pair[0])) { return true; }
+				}
+				return false;
+			}
+
 			inline bool RowOpensAWheel(const Entry& a_entry)
 			{
 				std::string key = a_entry.iniKey;
@@ -605,6 +626,11 @@ namespace SettingsPage
 						const bool crossWheel =
 							(selfContext == BindContext::MainWheel && otherContext == BindContext::AmmoWheel) ||
 							(selfContext == BindContext::AmmoWheel && otherContext == BindContext::MainWheel);
+						if (ContextExclusivePair(a_self, entry)) {
+							logger::info("[SettingsPage] code {} is held by '{}', which never acts at the same moment "
+										 "as this row - allowed", a_code, entry.name.empty() ? entry.iniKey : entry.name);
+							return;
+						}
 						if (crossWheel && !(selfOpens && RowOpensAWheel(entry))) {
 							logger::info("[SettingsPage] code {} is held by '{}' in the other wheel's settings, "
 										 "which is never open at the same time - allowed",

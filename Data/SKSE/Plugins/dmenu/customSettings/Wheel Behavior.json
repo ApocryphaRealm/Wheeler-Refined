@@ -1086,16 +1086,16 @@
                             },
                             "default": false,
                             "ini": {
-                                "section": "Gamepad.Open",
-                                "id": "UseLastSelectionOnOpen"
+                                "id": "UseLastSelectionOnOpen",
+                                "section": "Gamepad.Open"
                             },
                             "text": {
-                                "name": "Use Last Selection On Open",
-                                "desc": "Gamepad open behavior: reopen on the previously selected slot."
+                                "desc": "Gamepad open behavior: reopen on the previously selected slot.",
+                                "name": "Use Last Selection On Open"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "checkbox"
                         }
@@ -2207,10 +2207,10 @@
                                 ]
                             },
                             "default": {
-                                "r": 1.0,
-                                "g": 0.4745098039215686,
+                                "a": 0.7843137254901961,
                                 "b": 0.0,
-                                "a": 0.7843137254901961
+                                "g": 0.4745098039215686,
+                                "r": 1.0
                             },
                             "ini": {
                                 "id": "ShoutStageColor1",
@@ -2238,10 +2238,10 @@
                                 ]
                             },
                             "default": {
-                                "r": 0.6235294117647059,
-                                "g": 0.19215686274509805,
+                                "a": 0.7843137254901961,
                                 "b": 0.0,
-                                "a": 0.7843137254901961
+                                "g": 0.19215686274509805,
+                                "r": 0.6235294117647059
                             },
                             "ini": {
                                 "id": "ShoutStageColor2",
@@ -2269,10 +2269,10 @@
                                 ]
                             },
                             "default": {
-                                "r": 0.4666666666666667,
-                                "g": 0.00784313725490196,
+                                "a": 0.7843137254901961,
                                 "b": 0.00784313725490196,
-                                "a": 0.7843137254901961
+                                "g": 0.00784313725490196,
+                                "r": 0.4666666666666667
                             },
                             "ini": {
                                 "id": "ShoutStageColor3",
@@ -2429,10 +2429,10 @@
                                 ]
                             },
                             "default": {
-                                "r": 1.0,
-                                "g": 0.996078431372549,
+                                "a": 1.0,
                                 "b": 0.20784313725490197,
-                                "a": 1.0
+                                "g": 0.996078431372549,
+                                "r": 1.0
                             },
                             "ini": {
                                 "id": "Color",
@@ -2460,10 +2460,10 @@
                                 ]
                             },
                             "default": {
-                                "r": 1.0,
-                                "g": 1.0,
+                                "a": 0.23137254901960785,
                                 "b": 1.0,
-                                "a": 0.23137254901960785
+                                "g": 1.0,
+                                "r": 1.0
                             },
                             "ini": {
                                 "id": "BackgroundColor",
@@ -2643,10 +2643,10 @@
                                         "failAction": "disable"
                                     },
                                     "default": {
-                                        "r": 1.0,
-                                        "g": 0.047058823529411764,
+                                        "a": 0.5490196078431373,
                                         "b": 0.047058823529411764,
-                                        "a": 0.5490196078431373
+                                        "g": 0.047058823529411764,
+                                        "r": 1.0
                                     },
                                     "ini": {
                                         "id": "Color",
@@ -2717,10 +2717,10 @@
                                 ]
                             },
                             "default": {
-                                "r": 1.0,
-                                "g": 1.0,
+                                "a": 0.7490196078431373,
                                 "b": 0.9372549019607843,
-                                "a": 0.7490196078431373
+                                "g": 1.0,
+                                "r": 1.0
                             },
                             "ini": {
                                 "id": "SelectedIndicatorTintColor",
@@ -2789,10 +2789,10 @@
                                         "failAction": "disable"
                                     },
                                     "default": {
-                                        "r": 1.0,
-                                        "g": 0.3176470588235294,
+                                        "a": 1.0,
                                         "b": 0.14901960784313725,
-                                        "a": 1.0
+                                        "g": 0.3176470588235294,
+                                        "r": 1.0
                                     },
                                     "ini": {
                                         "id": "Color",
@@ -2908,10 +2908,10 @@
                                         "failAction": "disable"
                                     },
                                     "default": {
-                                        "r": 0.396078431372549,
-                                        "g": 0.6549019607843137,
+                                        "a": 1.0,
                                         "b": 0.36470588235294116,
-                                        "a": 1.0
+                                        "g": 0.6549019607843137,
+                                        "r": 0.396078431372549
                                     },
                                     "ini": {
                                         "id": "Color",
@@ -3033,16 +3033,16 @@
                             },
                             "default": true,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "Enabled"
+                                "id": "Enabled",
+                                "section": "MainWheel.EditHints"
                             },
                             "text": {
-                                "name": "Enable Hints",
-                                "desc": "Show edit-mode key hints on screen while Wheeler is in edit mode."
+                                "desc": "Show edit-mode key hints on screen while Wheeler is in edit mode.",
+                                "name": "Enable Hints"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "checkbox"
                         },
@@ -3059,21 +3059,21 @@
                             },
                             "default": 0.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "DisplayMode"
+                                "id": "DisplayMode",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 3.0,
+                                "min": 0.0,
                                 "step": 1.0
                             },
                             "text": {
-                                "name": "Display Mode",
-                                "desc": "0=Auto(last input), 1=KB/M, 2=Gamepad, 3=Both."
+                                "desc": "0=Auto(last input), 1=KB/M, 2=Gamepad, 3=Both.",
+                                "name": "Display Mode"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3090,21 +3090,21 @@
                             },
                             "default": 0.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "GamepadIconSet"
+                                "id": "GamepadIconSet",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 1.0,
+                                "min": 0.0,
                                 "step": 1.0
                             },
                             "text": {
-                                "name": "Gamepad Icon Set",
-                                "desc": "0=Xbox icons, 1=PlayStation icons."
+                                "desc": "0=Xbox icons, 1=PlayStation icons.",
+                                "name": "Gamepad Icon Set"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3121,21 +3121,21 @@
                             },
                             "default": 0.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "AnchorX"
+                                "id": "AnchorX",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 3840.0,
+                                "min": 0.0,
                                 "step": 2.0
                             },
                             "text": {
-                                "name": "Position X",
-                                "desc": "Left offset in pixels from screen origin."
+                                "desc": "Left offset in pixels from screen origin.",
+                                "name": "Position X"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3152,21 +3152,21 @@
                             },
                             "default": 0.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "AnchorY"
+                                "id": "AnchorY",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 2160.0,
+                                "min": 0.0,
                                 "step": 2.0
                             },
                             "text": {
-                                "name": "Position Y",
-                                "desc": "Top offset in pixels from screen origin."
+                                "desc": "Top offset in pixels from screen origin.",
+                                "name": "Position Y"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3183,21 +3183,21 @@
                             },
                             "default": 65.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "FontSize"
+                                "id": "FontSize",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 10.0,
                                 "max": 80.0,
+                                "min": 10.0,
                                 "step": 1.0
                             },
                             "text": {
-                                "name": "Font Size",
-                                "desc": "Hint text size in pixels."
+                                "desc": "Hint text size in pixels.",
+                                "name": "Font Size"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3214,21 +3214,21 @@
                             },
                             "default": 48.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "HeaderFontSize"
+                                "id": "HeaderFontSize",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 10.0,
                                 "max": 80.0,
+                                "min": 10.0,
                                 "step": 1.0
                             },
                             "text": {
-                                "name": "Header Size",
-                                "desc": "Title text size in pixels."
+                                "desc": "Title text size in pixels.",
+                                "name": "Header Size"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3245,21 +3245,21 @@
                             },
                             "default": 80.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "IconSize"
+                                "id": "IconSize",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 10.0,
                                 "max": 120.0,
+                                "min": 10.0,
                                 "step": 1.0
                             },
                             "text": {
-                                "name": "Icon Size",
-                                "desc": "Button/key icon height in pixels."
+                                "desc": "Button/key icon height in pixels.",
+                                "name": "Icon Size"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3276,21 +3276,21 @@
                             },
                             "default": 376.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "LabelWidth"
+                                "id": "LabelWidth",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 80.0,
                                 "max": 700.0,
+                                "min": 80.0,
                                 "step": 2.0
                             },
                             "text": {
-                                "name": "Label Width",
-                                "desc": "Reserved width for action labels."
+                                "desc": "Reserved width for action labels.",
+                                "name": "Label Width"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3307,21 +3307,21 @@
                             },
                             "default": 0.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "RowSpacing"
+                                "id": "RowSpacing",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 60.0,
+                                "min": 0.0,
                                 "step": 0.5
                             },
                             "text": {
-                                "name": "Row Spacing",
-                                "desc": "Vertical gap between hint rows."
+                                "desc": "Vertical gap between hint rows.",
+                                "name": "Row Spacing"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3338,21 +3338,21 @@
                             },
                             "default": 0.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "KeyGap"
+                                "id": "KeyGap",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 100.0,
+                                "min": 0.0,
                                 "step": 0.5
                             },
                             "text": {
-                                "name": "Column Gap",
-                                "desc": "Horizontal spacing between label and key/button columns."
+                                "desc": "Horizontal spacing between label and key/button columns.",
+                                "name": "Column Gap"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3369,21 +3369,21 @@
                             },
                             "default": 11.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "PanelPaddingX"
+                                "id": "PanelPaddingX",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 80.0,
+                                "min": 0.0,
                                 "step": 0.5
                             },
                             "text": {
-                                "name": "Padding X",
-                                "desc": "Horizontal inner padding of the hint panel."
+                                "desc": "Horizontal inner padding of the hint panel.",
+                                "name": "Padding X"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3400,21 +3400,21 @@
                             },
                             "default": 0.0,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "PanelPaddingY"
+                                "id": "PanelPaddingY",
+                                "section": "MainWheel.EditHints"
                             },
                             "style": {
-                                "min": 0.0,
                                 "max": 80.0,
+                                "min": 0.0,
                                 "step": 0.5
                             },
                             "text": {
-                                "name": "Padding Y",
-                                "desc": "Vertical inner padding of the hint panel."
+                                "desc": "Vertical inner padding of the hint panel.",
+                                "name": "Padding Y"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "slider"
                         },
@@ -3431,16 +3431,16 @@
                             },
                             "default": true,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "ShowTitle"
+                                "id": "ShowTitle",
+                                "section": "MainWheel.EditHints"
                             },
                             "text": {
-                                "name": "Show Title",
-                                "desc": "Display Edit Mode Controls title above the hints."
+                                "desc": "Display Edit Mode Controls title above the hints.",
+                                "name": "Show Title"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "checkbox"
                         },
@@ -3458,16 +3458,16 @@
                             },
                             "default": true,
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "ShowBackground"
+                                "id": "ShowBackground",
+                                "section": "MainWheel.EditHints"
                             },
                             "text": {
-                                "name": "Show Background",
-                                "desc": "Draw a background panel under hints for readability."
+                                "desc": "Draw a background panel under hints for readability.",
+                                "name": "Show Background"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "checkbox"
                         },
@@ -3488,22 +3488,22 @@
                                 ]
                             },
                             "default": {
-                                "r": 0.0,
-                                "g": 0.0,
+                                "a": 0.6666666666666666,
                                 "b": 0.0,
-                                "a": 0.6666666666666666
+                                "g": 0.0,
+                                "r": 0.0
                             },
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "BackgroundColor"
+                                "id": "BackgroundColor",
+                                "section": "MainWheel.EditHints"
                             },
                             "text": {
-                                "name": "Background Color",
-                                "desc": "Background color/opacity of the hint panel."
+                                "desc": "Background color/opacity of the hint panel.",
+                                "name": "Background Color"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "color"
                         },
@@ -3519,22 +3519,22 @@
                                 ]
                             },
                             "default": {
-                                "r": 1.0,
-                                "g": 1.0,
+                                "a": 1.0,
                                 "b": 1.0,
-                                "a": 1.0
+                                "g": 1.0,
+                                "r": 1.0
                             },
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "TextColor"
+                                "id": "TextColor",
+                                "section": "MainWheel.EditHints"
                             },
                             "text": {
-                                "name": "Text Color",
-                                "desc": "Color used for hint labels and fallback key text."
+                                "desc": "Color used for hint labels and fallback key text.",
+                                "name": "Text Color"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "color"
                         },
@@ -3550,33 +3550,33 @@
                                 ]
                             },
                             "default": {
-                                "r": 0.792156862745098,
-                                "g": 0.4,
+                                "a": 1.0,
                                 "b": 0.043137254901960784,
-                                "a": 1.0
+                                "g": 0.4,
+                                "r": 0.792156862745098
                             },
                             "ini": {
-                                "section": "MainWheel.EditHints",
-                                "id": "HeaderColor"
+                                "id": "HeaderColor",
+                                "section": "MainWheel.EditHints"
                             },
                             "text": {
-                                "name": "Header Color",
-                                "desc": "Color used for panel header labels."
+                                "desc": "Color used for panel header labels.",
+                                "name": "Header Color"
                             },
                             "translation": {
-                                "name": "",
-                                "desc": ""
+                                "desc": "",
+                                "name": ""
                             },
                             "type": "color"
                         }
                     ],
                     "text": {
-                        "name": "Edit Mode Hints",
-                        "desc": "Read current Controls.ini bindings and show edit-mode actions as key/button hints on screen."
+                        "desc": "Read current Controls.ini bindings and show edit-mode actions as key/button hints on screen.",
+                        "name": "Edit Mode Hints"
                     },
                     "translation": {
-                        "name": "",
-                        "desc": ""
+                        "desc": "",
+                        "name": ""
                     },
                     "type": "group"
                 },
@@ -3869,41 +3869,6 @@
                     "text": {
                         "desc": "UI sounds for hover and activation events.",
                         "name": "Sound Feedback"
-                    },
-                    "translation": {
-                        "desc": "",
-                        "name": ""
-                    },
-                    "type": "group"
-                },
-                {
-                    "control": {
-                        "failAction": "disable"
-                    },
-                    "entries": [
-                        {
-                            "control": {
-                                "failAction": "disable"
-                            },
-                            "default": false,
-                            "ini": {
-                                "id": "AutoCenterRestSnap",
-                                "section": "Gamepad.Nav"
-                            },
-                            "text": {
-                                "desc": "When ON, releasing the stick to deadzone snaps cursor to center rest. When OFF, hovered slot stays latched until you move the stick.",
-                                "name": "Auto Center Rest Snap"
-                            },
-                            "translation": {
-                                "desc": "",
-                                "name": ""
-                            },
-                            "type": "checkbox"
-                        }
-                    ],
-                    "text": {
-                        "desc": "Controller center-rest behavior for main wheel navigation.",
-                        "name": "Gamepad Navigation"
                     },
                     "translation": {
                         "desc": "",

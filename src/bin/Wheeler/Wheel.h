@@ -88,6 +88,14 @@ public:
 	void ClearHeldEntry();
 	void SetDriveHover(int a_index) { _driveHoverIdx = a_index; }
 
+	// 1.3.6: HOW FAR THIS WHEEL IS TURNED, in radians, added to every slot's angle - drawn, hit-tested
+	// and cursor-placed alike. The slot ORDER never changes; the whole ring simply sits at a different
+	// angle, so the slot that was at the top can be put at the bottom. Saved with the wheel.
+	float GetRotation() const { return _rotationRad; }
+	void SetRotation(float a_radians);
+	// Turns it to the nearest slot boundary, so the ring ends where slots naturally sit.
+	void SnapRotationToSlot();
+
 	void SerializeIntoJsonObj(nlohmann::json& a_json);
 	static std::unique_ptr<Wheel> SerializeFromJsonObj(const nlohmann::json& a_json, SKSE::SerializationInterface* a_intfc);
 
@@ -117,6 +125,8 @@ public:
 	bool ClearEntryByIndex(int index);
 
 private:
+	float _rotationRad = 0.0f;   // 1.3.6, see GetRotation
+
 	struct MouseHoverState
 	{
 		bool initialized = false;

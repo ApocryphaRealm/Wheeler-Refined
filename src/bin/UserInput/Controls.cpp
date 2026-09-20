@@ -43,6 +43,12 @@ static void NoOpAction()
 {
 }
 
+// A SECOND edit-mode gate, in front of the actions' own. It is what silently dropped R3 outside the
+// inventory on 2026-09-20 after the action itself had been opened up - the input spy's one line,
+// "skip direct binding action=PickUpSlot reason=editModeOnly", found it after two readings of the
+// code had not. Picking a slot up and moving a wheel in the order now work wherever the wheel is
+// open (the owner: "make the click r3 to move slot an out of inventory function too"), and each of
+// those functions guards itself, so they are no longer listed here.
 static bool IsEditModeOnlyAction(Controls::Action action)
 {
 	using Action = Controls::Action;
@@ -51,9 +57,6 @@ static bool IsEditModeOnlyAction(Controls::Action action)
 	case Action::AddEmptyEntry:
 	case Action::MoveEntryForward:
 	case Action::MoveEntryBack:
-	case Action::PickUpSlot:
-	case Action::MoveWheelForward:
-	case Action::MoveWheelBack:
 	case Action::ToggleEditHints:
 		return true;
 	default:
@@ -87,6 +90,8 @@ static const char* ActionToString(Controls::Action action)
 		return "MoveWheelBack";
 	case Action::ToggleEditHints:
 		return "ToggleEditHints";
+	case Action::RotateWheel:
+		return "RotateWheel";
 	case Action::NextWheel:
 		return "NextWheel";
 	case Action::PrevWheel:
@@ -157,20 +162,30 @@ void Controls::bindInput(KeyId key, FunctionPtr func, Action action, bool isDown
 		return;
 	}
 
+	// Appended, not overwritten: a second action on the same key used to erase the first silently.
+	// The same function is never added twice, so a rebind that re-runs this cannot stack duplicates.
+	const auto append = [&](std::unordered_map<KeyId, std::vector<FunctionPtr>>& a_map) {
+		auto& list = a_map[key];
+		for (const FunctionPtr existing : list) {
+			if (existing == func) { return; }
+		}
+		list.push_back(func);
+	};
+
 	if (isDown) {
 		if (isGamePad) {
-			_keyFunctionMapDownGamepad[key] = func;
+			append(_keyFunctionMapDownGamepad);
 			_keyActionMapDownGamepad[key] = action;
 		} else {
-			_keyFunctionMapDown[key] = func;
+			append(_keyFunctionMapDown);
 			_keyActionMapDown[key] = action;
 		}
 	} else {
 		if (isGamePad) {
-			_keyFunctionMapUpGamepad[key] = func;
+			append(_keyFunctionMapUpGamepad);
 			_keyActionMapUpGamepad[key] = action;
 		} else {
-			_keyFunctionMapUp[key] = func;
+			append(_keyFunctionMapUp);
 			_keyActionMapUp[key] = action;
 		}
 	}
@@ -343,6 +358,7 @@ void Controls::BindAllInputsFromConfig()
 		bindInput(moveWheelForward, &Wheeler::MoveWheelForward, Action::MoveWheelForward, true, false);
 		bindInput(moveWheelBack, &Wheeler::MoveWheelBack, Action::MoveWheelBack, true, false);
 		bindInput(toggleEditHints, &Wheeler::ToggleEditModeHintsVisibility, Action::ToggleEditHints, true, false);
+		bindInput(rotateWheel, &Wheeler::ToggleWheelRotation, Action::RotateWheel, true, false);
 		bindInput(nextWheel, &Wheeler::NextWheel, Action::NextWheel, true, false);
 		bindInput(prevWheel, &Wheeler::PrevWheel, Action::PrevWheel, true, false);
 		bindInput(prevItem, &Wheeler::PrevItemInEntry, Action::PrevItem, true, false);
@@ -460,6 +476,7 @@ void Controls::BindAllInputsFromConfig()
 		bindGamepadInput(moveWheelForward, &Wheeler::MoveWheelForward, Action::MoveWheelForward, true);
 		bindGamepadInput(moveWheelBack, &Wheeler::MoveWheelBack, Action::MoveWheelBack, true);
 		bindGamepadInput(toggleEditHints, &Wheeler::ToggleEditModeHintsVisibility, Action::ToggleEditHints, true);
+		bindGamepadInput(rotateWheel, &Wheeler::ToggleWheelRotation, Action::RotateWheel, true);
 		bindGamepadInput(nextWheel, &Wheeler::NextWheel, Action::NextWheel, true);
 		bindGamepadInput(prevWheel, &Wheeler::PrevWheel, Action::PrevWheel, true);
 		bindGamepadInput(prevItem, &Wheeler::PrevItemInEntryGamepad, Action::PrevItem, true);
@@ -910,7 +927,7 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 				actionIt != actionMap.end() ? ActionToString(actionIt->second) : "None",
 				key);
 		}
-		it->second();
+		for (const FunctionPtr fn : it->second) { if (fn) { fn(); } }
 		return DispatchResult::HandledPassThrough;
 	}
 
@@ -1087,7 +1104,7 @@ Controls::DispatchResult Controls::Dispatch(KeyId key, bool isDown, bool isGameP
 			ActionToString(actionIt->second),
 			key);
 	}
-	it->second();
+	for (const FunctionPtr fn : it->second) { if (fn) { fn(); } }
 	return DispatchResult::HandledPassThrough;
 }
 

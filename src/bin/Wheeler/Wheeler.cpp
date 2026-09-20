@@ -391,7 +391,7 @@ namespace
 		EditHintActionBinding::Binding gamepad{};
 	};
 
-	constexpr std::size_t kEditHintActionCount = 17;   // the owner, 2026-09-13: more of the controls; 17 with Pick Up / Drop Slot (1.2.8)
+	constexpr std::size_t kEditHintActionCount = 18;   // the owner, 2026-09-13: more of the controls; 17 with Pick Up / Drop Slot (1.2.8), 18 with Rotate Wheel (1.3.6)
 	constexpr std::uint32_t kGamepadOffset = 266;
 	constexpr std::uint32_t kGamepadMax = kGamepadOffset + 15;
 
@@ -468,6 +468,7 @@ namespace
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionMoveWheelBack), { Config::InputBindings::MKB::moveWheelBack }, { Config::InputBindings::GamePad::moveWheelBack } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionSettingsDMenu), pageBindings.mkb, pageBindings.gamepad },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionExitWheel), { Config::InputBindings::MKB::closeWheel }, { Config::InputBindings::GamePad::exitWheel } },
+			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionRotateWheel), { Config::InputBindings::MKB::rotateWheel }, { Config::InputBindings::GamePad::rotateWheel } },
 			EditHintActionBinding{ Texts::GetText(Texts::TextType::EditHintActionToggleHints), { Config::InputBindings::MKB::toggleEditHints }, { Config::InputBindings::GamePad::toggleEditHints } }
 		};
 	}
@@ -2302,8 +2303,10 @@ namespace
 		if (Config::Styling::Wheel::InnerCircleRadius > 0.0f) {
 			innerSpacingRad = Config::Styling::Wheel::InnerSpacing / Config::Styling::Wheel::InnerCircleRadius / 2.0f;
 		}
-		float entryInnerAngleMin = entryArcSpan * (entryIdx - 0.5f) + innerSpacingRad + IM_PI / 2.0f;
-		float entryInnerAngleMax = entryArcSpan * (entryIdx + 0.5f) - innerSpacingRad + IM_PI / 2.0f;
+		// 1.3.6: the wheel's own turn, so a cursor placed on slot i lands where slot i is DRAWN.
+		const float rotation = Wheeler::GetActiveWheelRotation();
+		float entryInnerAngleMin = entryArcSpan * (entryIdx - 0.5f) + innerSpacingRad + IM_PI / 2.0f + rotation;
+		float entryInnerAngleMax = entryArcSpan * (entryIdx + 0.5f) - innerSpacingRad + IM_PI / 2.0f + rotation;
 		if (entryInnerAngleMax > IM_PI * 2.0f) {
 			entryInnerAngleMin -= IM_PI * 2.0f;
 			entryInnerAngleMax -= IM_PI * 2.0f;
@@ -7726,6 +7729,29 @@ void Wheeler::Update(float a_deltaTime)
 
 		float cursorAngle = atan2f(_cursorPos.y, _cursorPos.x);  // where the cursor is pointing to
 
+		// 1.3.6: the mouse turns the ring by DRAGGING, and only in the inventory. An armed left press
+		// becomes a turn once the cursor has moved far enough to mean it - below that it is still the
+		// click that adds an item. The threshold is in wheel space, where the cursor is measured from
+		// the centre, so it is the same gesture at any wheel size.
+		constexpr float kTurnDragThreshold = 18.0f;
+		if (_editPrimaryArmed && !IsLastInputGamepad()) {
+			const float dx = _cursorPos.x - _editPrimaryPressPos.x;
+			const float dy = _cursorPos.y - _editPrimaryPressPos.y;
+			if (std::sqrt(dx * dx + dy * dy) >= kTurnDragThreshold) {
+				_editPrimaryArmed = false;
+				_editPrimaryBecameTurn = true;
+				_rotatingWheel = true;
+				_rotationGrabbed = false;
+				logger::info("[Rotate] the inventory's left button became a turn");
+			}
+		}
+		// While the ring is held - by the drag here, or by the Rotate Wheel button - the cursor turns it.
+		// A mouse with no button down never turns anything, which is what keeps plain hovering plain.
+		if (_rotatingWheel && !IsLastInputGamepad() && (_editPrimaryBecameTurn || Controls::IsMkbKeyHeld(Config::InputBindings::MKB::activatePrimary))) {
+			const float cursorRadius = std::sqrt(_cursorPos.x * _cursorPos.x + _cursorPos.y * _cursorPos.y);
+			if (cursorRadius > 1.0f) { FeedRotationAngle(cursorAngle); }
+		}
+
 		if (_wheels.empty()) {
 			Drawer::draw_text(wheelCenter.x, wheelCenter.y, Texts::GetText(Texts::TextType::NoWheelPresent), C_SKYRIMWHITE, 40.F, drawArgs);
 		} else {
@@ -9185,6 +9211,9 @@ void Wheeler::OpenWheeler()
 
 void Wheeler::CloseWheeler()
 {
+	// 1.3.6: a ring that was being turned is let go of here, which is also what settles and saves it.
+	EndWheelRotation();
+
 	g_mainWheelInventorySnapshot.Invalidate();
 
 	// Cancel any in-progress hold-to-use input state when the wheel closes.
@@ -10213,6 +10242,16 @@ void Wheeler::OnConfirmDown()
 	
 	// In edit mode, use immediate activation (add item to wheel)
 	if (_editMode) {
+		// 1.3.6: on the MOUSE the press only arms. Move the mouse while it is held and the wheel turns
+		// instead (the owner, 2026-09-20: "i want the left click to rotate on only in the inventory");
+		// let go without moving and the add happens then. The controller's primary is untouched - there
+		// is nothing to drag with, so it adds on the press as it always has.
+		if (!IsLastInputGamepad()) {
+			_editPrimaryArmed = true;
+			_editPrimaryBecameTurn = false;
+			_editPrimaryPressPos = _cursorPos;
+			return;
+		}
 		std::unique_lock<std::shared_mutex> wheelDataLock(_wheelDataLock);
 		if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "OnConfirmDown")) {
 			return;
@@ -10255,6 +10294,25 @@ void Wheeler::OnConfirmDown()
 
 void Wheeler::OnConfirmUp()
 {
+	// 1.3.6: the inventory's left button. A press that turned the wheel ends the turn and adds nothing;
+	// a press that never moved is the add, done here instead of on the way down.
+	if (_editPrimaryArmed || _editPrimaryBecameTurn) {
+		const bool wasTurn = _editPrimaryBecameTurn;
+		_editPrimaryArmed = false;
+		_editPrimaryBecameTurn = false;
+		if (wasTurn) {
+			EndWheelRotation();
+			return;
+		}
+		if (_state == WheelState::KOpened && _editMode) {
+			std::unique_lock<std::shared_mutex> wheelDataLock(_wheelDataLock);
+			if (EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "OnConfirmUp")) {
+				_wheels[_activeWheelIdx]->ActivateHoveredEntryPrimary(true);
+			}
+		}
+		return;
+	}
+
 	if (!_confirmHeld) {
 		return;
 	}
@@ -11299,6 +11357,97 @@ bool Wheeler::GetInstantSpellState(int& outEntryIdx, float& outElapsed, float& o
 	return true;
 }
 
+float Wheeler::GetActiveWheelRotation()
+{
+	if (_activeWheelIdx < 0 || _activeWheelIdx >= static_cast<int>(_wheels.size()) || !_wheels[_activeWheelIdx]) {
+		return 0.0f;
+	}
+	return _wheels[_activeWheelIdx]->GetRotation();
+}
+
+void Wheeler::ToggleWheelRotation()
+{
+	// Only with the wheel up. It WAS also refused in edit mode, because L3 shipped as the edit-hints
+	// toggle and the two would have fought; the hints toggle ships unbound on the pad since 1.3.6, so
+	// the ring can be turned in the inventory as well - by this button, or by dragging with the left
+	// one. Moving wheels in the ORDER stays on the left stick's left and right, which keep working
+	// whenever a turn is not in progress.
+	if (_state == WheelState::KClosed) {
+		logger::info("[Rotate] ignored: the wheel is closed");
+		return;
+	}
+	if (_rotatingWheel) {
+		EndWheelRotation();
+		return;
+	}
+	if (_activeWheelIdx < 0 || _activeWheelIdx >= static_cast<int>(_wheels.size()) || !_wheels[_activeWheelIdx]) {
+		return;
+	}
+	_rotatingWheel = true;
+	_rotationGrabbed = false;
+	_rotationAtGrab = _wheels[_activeWheelIdx]->GetRotation();
+	logger::info("[Rotate] holding wheel {} at {:.3f} rad", _activeWheelIdx, _rotationAtGrab);
+}
+
+bool Wheeler::IsRotatingWheel()
+{
+	return _rotatingWheel;
+}
+
+void Wheeler::EndWheelRotation()
+{
+	if (!_rotatingWheel) {
+		return;
+	}
+	_rotatingWheel = false;
+	_rotationGrabbed = false;
+	_editPrimaryArmed = false;
+	_editPrimaryBecameTurn = false;
+	if (_activeWheelIdx >= 0 && _activeWheelIdx < static_cast<int>(_wheels.size()) && _wheels[_activeWheelIdx]) {
+		if (Config::Control::Wheel::SnapRotationToSlot) {
+			_wheels[_activeWheelIdx]->SnapRotationToSlot();
+		}
+		logger::info("[Rotate] let go of wheel {} at {:.3f} rad", _activeWheelIdx, _wheels[_activeWheelIdx]->GetRotation());
+	}
+}
+
+void Wheeler::FeedRotationAngle(float a_angleRad)
+{
+	if (!_rotatingWheel || _activeWheelIdx < 0 || _activeWheelIdx >= static_cast<int>(_wheels.size()) || !_wheels[_activeWheelIdx]) {
+		return;
+	}
+	if (!_rotationGrabbed) {
+		// Where the turn starts from, so the ring does not jump to meet the stick: it turns BY what the
+		// hand turns, from wherever the hand happened to be.
+		_rotationGrabbed = true;
+		_rotationGrabAngle = a_angleRad;
+		_rotationAtGrab = _wheels[_activeWheelIdx]->GetRotation();
+		return;
+	}
+	float delta = a_angleRad - _rotationGrabAngle;
+	while (delta > IM_PI) { delta -= 2.0f * IM_PI; }
+	while (delta < -IM_PI) { delta += 2.0f * IM_PI; }
+	_wheels[_activeWheelIdx]->SetRotation(_rotationAtGrab + delta);
+}
+
+bool Wheeler::FeedRotationStick(float a_x, float a_y)
+{
+	if (!_rotatingWheel) {
+		return false;
+	}
+	const float mag = std::sqrt(a_x * a_x + a_y * a_y);
+	if (mag < 0.35f) {
+		// Let go of the grab when the stick comes home, so the next push starts a fresh turn instead of
+		// snapping the ring to wherever the thumb lands.
+		_rotationGrabbed = false;
+		return true;
+	}
+	// Screen y grows downward while the engine reports the stick's up as positive, and the wheel's
+	// angles are measured the screen's way - so the sample is flipped once, here.
+	Wheeler::FeedRotationAngle(std::atan2(-a_y, a_x));
+	return true;
+}
+
 void Wheeler::ToggleEditModeHintsVisibility()
 {
 	if (!_editMode || _state == WheelState::KClosed || !Config::MainWheel::EditHints::Enabled) {
@@ -11627,8 +11776,21 @@ void Wheeler::MoveEntryBackInCurrentWheel()
 void Wheeler::PickUpOrDropSlot()
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
-	if (!_editMode || _state == WheelState::KClosed) {
+	// 1.3.6 (the owner, 2026-09-20: "lets make the click r3 to move slot an out of inventory function
+	// too"): moving a slot is no longer edit-mode-only - the wheel being open is enough, INSIDE the
+	// inventory as it always was and outside it as well. It was briefly refused in the inventory so the
+	// hints toggle could have R3 there; that cost the very thing the button is for ("now i cant move the
+	// slot to a different position"), so the hints toggle moved to its own button instead.
+	if (_state == WheelState::KClosed) {
+		logger::info("[Wheeler] PickUpOrDropSlot: ignored, the wheel is closed");
 		return;
+	}
+	if (_rotatingWheel) {
+		// A ring still held from an earlier L3 must not silently swallow this press: R3 means "move this
+		// slot", so the turn is settled first and the pick-up happens in the same press. Nothing is lost -
+		// the angle is saved exactly as letting go with L3 would save it.
+		logger::info("[Wheeler] PickUpOrDropSlot: the ring was still held; letting go of it first");
+		EndWheelRotation();
 	}
 	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "PickUpOrDropSlot")) {
 		return;
@@ -11641,7 +11803,7 @@ void Wheeler::PickUpOrDropSlot()
 		}
 	}
 	const char* what = _wheels[_activeWheelIdx]->PickUpOrDropHoveredEntry();
-	logger::info("[Wheeler] PickUpOrDropSlot: {} (wheel {}, hovered {}, held {})", what, _activeWheelIdx,
+	logger::info("[Wheeler] PickUpOrDropSlot: {} (wheel {}, editMode={}, hovered {}, held {})", what, _activeWheelIdx, _editMode,
 		_wheels[_activeWheelIdx]->GetHoveredEntryIndex(), _wheels[_activeWheelIdx]->GetHeldEntryIndex());
 }
 
@@ -11713,8 +11875,17 @@ std::vector<std::string> Wheeler::DescribeCurrentWheelSlots()
 void Wheeler::MoveWheelForward()
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
-	if (!_editMode || _state == WheelState::KClosed) {
+	// 1.3.6 (the owner, 2026-09-20: "i still cant change the wheel order back and forth with the left
+	// stick"): moving a wheel in the ORDER is no longer edit-mode-only - the wheel being open is enough,
+	// the same way picking a slot up became an out-of-inventory thing. The refusal says why, because a
+	// silent return is indistinguishable from an input that never arrived.
+	if (_state == WheelState::KClosed) {
+		logger::info("[Wheeler] MoveWheelForward: ignored, the wheel is closed");
 		return;
+	}
+	if (_rotatingWheel) {
+		logger::info("[Wheeler] MoveWheelForward: the ring was still held; letting go of it first");
+		EndWheelRotation();
 	}
 	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "MoveWheelForward")) {
 		return;
@@ -11749,8 +11920,17 @@ void Wheeler::MoveWheelForward()
 void Wheeler::MoveWheelBack()
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
-	if (!_editMode || _state == WheelState::KClosed) {
+	// 1.3.6 (the owner, 2026-09-20: "i still cant change the wheel order back and forth with the left
+	// stick"): moving a wheel in the ORDER is no longer edit-mode-only - the wheel being open is enough,
+	// the same way picking a slot up became an out-of-inventory thing. The refusal says why, because a
+	// silent return is indistinguishable from an input that never arrived.
+	if (_state == WheelState::KClosed) {
+		logger::info("[Wheeler] MoveWheelBack: ignored, the wheel is closed");
 		return;
+	}
+	if (_rotatingWheel) {
+		logger::info("[Wheeler] MoveWheelBack: the ring was still held; letting go of it first");
+		EndWheelRotation();
 	}
 	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "MoveWheelBack")) {
 		return;

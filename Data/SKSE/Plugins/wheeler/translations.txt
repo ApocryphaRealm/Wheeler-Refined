@@ -1,4 +1,4 @@
-; Wheeler Translation File
+﻿; Wheeler Translation File
 ; Format: Key = Translated Text
 ; Lines starting with ; or # are comments.
 ;
@@ -16,8 +16,8 @@ NoWheelPresent = No wheel layout is available. Enter edit mode and add a wheel f
 EditHintTitle = Edit Mode Controls
 EditHintDeviceHeaderMkb = KB/M
 EditHintDeviceHeaderGamepad = Gamepad
-EditHintActionUsePlaceItem = Use / Place Item
-EditHintActionRemoveItemWheel = Remove Item / Wheel
+EditHintActionUsePlaceItem = Add
+EditHintActionRemoveItemWheel = Remove
 EditHintActionAddEmptySlot = Add Empty Slot
 EditHintActionAddWheel = Add Wheel
 EditHintActionNextWheel = Next Wheel
@@ -62,6 +62,7 @@ SettingsLiveInFramework = Wheeler: the settings are in the Apocrypha Menu Framew
 EditHintActionToggleWheel = Open / Close Wheel
 EditHintActionNextItem = Next Item
 EditHintActionPreviousItem = Previous Item
+EditHintActionRotateWheel = Rotate Wheel
 EditHintActionToggleHints = Show / Hide These Hints
 WheelCountLabel = Number of wheels
 WheelCountHelp = How many wheels you have (1 to 100). Growing adds empty wheels with the same number of slots; shrinking removes wheels from the end and stops at the first wheel that still holds an item.

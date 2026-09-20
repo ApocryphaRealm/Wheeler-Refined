@@ -783,10 +783,31 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 			const bool wheelerOpen = Wheeler::IsWheelerOpen();
 			const bool ammoWheelOpen = Wheeler::IsAmmoWheelOpen();
 			RE::ThumbstickEvent* thumbstick = static_cast<RE::ThumbstickEvent*>(event);
+			// 1.3.6 diagnostic (the owner, 2026-09-20: "i still cant change the wheel order back and forth
+			// with the left stick", and not one [LeftStick] line in the log). Says once per second whether a
+			// stick sample reaches this point at all and which of the four gates turns it away, because
+			// reading the code twice has not found the fault.
+			{
+				static double s_lastStickLog = 0.0;
+				const double now = ImGui::GetTime();
+				const float mag = (std::max)((std::abs)(thumbstick->xValue), (std::abs)(thumbstick->yValue));
+				if (mag > 0.4f && now - s_lastStickLog > 1.0) {
+					s_lastStickLog = now;
+					logger::info("[StickProbe] sample x={:.2f} y={:.2f} left={} wheelOpen={} brokerBlocked={} stickControl={} rotating={}",
+						thumbstick->xValue, thumbstick->yValue, thumbstick->IsLeft(), wheelerOpen, brokerOwnerBlocked,
+						Config::Control::Wheel::LeftStickWheelControl, Wheeler::IsRotatingWheel());
+				}
+			}
 			if (wheelerOpen && !brokerOwnerBlocked && thumbstick->IsLeft() && Config::Control::Wheel::LeftStickWheelControl) {
 				// 1.3.1: the left stick is a wheel control - consumed (the character stops), its directions dispatched
 				// as the buttons 282-285 (LeftStick.h), where Move Wheel Forward / Back live by default.
-				const std::uint32_t edge = LeftStick::Feed(thumbstick->xValue, thumbstick->yValue);
+				// 1.3.6: while the ring is held for turning, the stick TURNS it and is not offered to the
+				// direction buttons - otherwise the same push would move the highlight at the same time.
+				// The event is consumed either way - the character must not move while the wheel is up -
+				// so the turn only decides whether the sample ALSO becomes a direction press.
+				const bool turning = Wheeler::FeedRotationStick(thumbstick->xValue, thumbstick->yValue);
+				if (turning) { LeftStick::Reset(); }
+				const std::uint32_t edge = turning ? 0u : LeftStick::Feed(thumbstick->xValue, thumbstick->yValue);
 				consumeEvent = true;
 				spyDevice = RE::INPUT_DEVICE::kGamepad;
 				spyAnalogValue = (std::max)((std::abs)(thumbstick->xValue), (std::abs)(thumbstick->yValue));
@@ -1009,7 +1030,15 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 						!isDownEdge &&
 						(resolvedAction == Controls::Action::ActivatePrimary ||
 						 resolvedAction == Controls::Action::ActivateSecondary);
-					if (resolvedAction == Controls::Action::ExitWheel &&
+					// 1.3.6: the exit button lets go of a ring being TURNED before it closes anything - the
+					// press a player makes to stop turning should not also put the wheel away.
+					if (resolvedAction == Controls::Action::ExitWheel && isDown && Wheeler::IsRotatingWheel()) {
+						Wheeler::EndWheelRotation();
+						consumeEvent = true;
+						spyCandidates = "MainWheelRotate";
+						spyWinner = "MainWheel";
+						spyResult = "LetGoOfTheRing";
+					} else if (resolvedAction == Controls::Action::ExitWheel &&
 						isDown &&
 						Wheeler::IsWheelerOpen() &&
 						!Wheeler::IsAmmoWheelOpen()) {

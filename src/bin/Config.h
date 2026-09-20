@@ -352,13 +352,19 @@ namespace Config
 	{
 		namespace GamePad
 		{                                       // right thumb
-			inline uint32_t nextWheel = 281;          // right trigger
-			inline uint32_t prevWheel = 0;    // unmapped
+			inline uint32_t nextWheel = 269;          // D-pad right (the owner, 2026-09-20: the D-pad changes wheel)
+			inline uint32_t prevWheel = 268;          // D-pad left (the owner, 2026-09-20)
 			inline uint32_t toggleWheel = 267;        // D-pad down (the owner, 2026-09-12; DEFAULT-KEYS.md)
-			inline uint32_t toggleEditHints = 272;    // left stick click
+			// 1.3.6: L3 holds the wheel for turning, so the edit-mode hints toggle moved off it. R3 was
+			// tried and taken back the same evening - R3 picks a slot up, in the inventory as much as
+			// outside it, and sharing meant losing that. X is free on the wheel: nothing else binds it.
+			// The toggle still only does anything in the inventory, where the hints are.
+			inline uint32_t toggleEditHints = 278;    // X, in the inventory
+			// 1.3.6: take hold of the wheel and turn it with the left stick. L3.
+			inline uint32_t rotateWheel = 272;        // left stick click
 			inline uint32_t toggleWheelModifier = 0;  // optional toggle modifier
-			inline uint32_t nextItem = 269;           // DPAD right (wheel open only; the ammo toggle uses it with the wheel closed - no overlap)
-			inline uint32_t prevItem = 268;      // DPAD left
+			inline uint32_t nextItem = 281;           // right trigger (the owner, 2026-09-20: the triggers step slots)
+			inline uint32_t prevItem = 280;           // left trigger (the owner, 2026-09-20)
 			inline uint32_t activatePrimary = 275;  // right shoulder
 			inline uint32_t activateSecondary = 274;  // left shoulder
 			inline uint32_t addWheel = 0;             // unmapped
@@ -366,8 +372,12 @@ namespace Config
 			inline uint32_t moveEntryForward = 0;     // unmapped
 			inline uint32_t moveEntryBack = 0;        // unmapped
 			inline uint32_t pickUpSlot = 273;         // R3 (1.2.8, the owner's shape: click the slot with R3, move to the position, click to release)
-			inline uint32_t moveWheelForward = 0;     // unmapped
-			inline uint32_t moveWheelBack = 0;        // unmapped
+			// 1.3.6: the left stick's own left and right, which is where the shipped Controls.ini has had
+			// them since 1.3.1 - the compiled defaults said 0 and disagreed with it (rule 16). The owner,
+			// 2026-09-20: "we need to make it so that you can still use l3 to move wheels back and
+			// foreword in order with l3 left and l3 right while the rotation event is not active".
+			inline uint32_t moveWheelForward = 285;   // left stick right
+			inline uint32_t moveWheelBack = 284;      // left stick left
 
 			inline uint32_t toggleWheelIfInInventory = 0;  // unmapped
 			inline uint32_t toggleWheelIfInInventoryModifier = 0;  // optional toggle modifier
@@ -380,6 +390,7 @@ namespace Config
 			inline uint32_t nextWheel = 0x12;  // e
 			inline uint32_t prevWheel = 0x10;  // q
 			inline uint32_t toggleWheel = 34;  // G - matches Controls.defaults.ini (was 58/capslock, which the shipped INI never used)
+			inline uint32_t rotateWheel = 0;         // 1.3.6: unbound on the keyboard; the mouse turns the ring while it is held
 			inline uint32_t toggleEditHints = 35;  // h
 			inline uint32_t closeWheel = 15;  // tab
 			inline uint32_t closeWheelAlt = 1;  // esc
@@ -565,7 +576,14 @@ namespace Config
 			inline bool LeftStickWheelControl = true;
 			// 1.3.1: stop time completely while the wheel is open (the vanilla pause path, as SlowTimeScale = 0 does),
 			// whatever SlowTimeScale says (the owner: "a toggle for fully stopping time while in menu"). Default OFF.
-			inline bool StopTimeWhileOpen = false;
+			// Default ON since 1.3.5 (the owner, 2026-09-20: "lets also ship it at time stopped all the
+			// way while wheeler is open"). It is also the one path that never touches the global time
+			// multiplier - the slow-motion path shrinks the physics step, which is the standing suspect
+			// for iSlyy0's report of corpses flying when the wheel opens near them.
+			inline bool StopTimeWhileOpen = true;
+			// 1.3.6: when the wheel is let go of after turning, settle it on the nearest slot boundary so
+			// the ring ends where slots naturally sit. Off leaves it exactly where it was let go.
+			inline bool SnapRotationToSlot = true;
 			// The owner, 2026-09-13: an Advanced settings toggle on Wheeler Controls / General; off hides every
 			// section after the first three (Wheeler Controls, Wheel Behavior, Ammo Wheel). Default on.
 			inline bool ShowAdvancedSettings = true;
@@ -1176,7 +1194,9 @@ namespace Config
 				inline bool HasHysteresisDegrees = false;
 				// If true, stick returning to deadzone hard-snaps cursor to center rest.
 				// If false, cursor holds the last slot until user moves it.
-				inline bool AutoCenterRestSnap = false;
+				// 1.3.6: ON by default (the owner, 2026-09-20). Letting the stick come home puts the cursor
+				// back at the centre, so nothing stays highlighted from a push the hand has already finished.
+				inline bool AutoCenterRestSnap = true;
 				inline bool HasAutoCenterRestSnap = false;
 			}
 

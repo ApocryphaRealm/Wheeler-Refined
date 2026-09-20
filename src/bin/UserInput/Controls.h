@@ -34,6 +34,7 @@ public:
 		MoveWheelForward,
 		MoveWheelBack,
 		ToggleEditHints,
+		RotateWheel,
 		NextWheel,
 		PrevWheel,
 		Toggle,
@@ -166,10 +167,14 @@ private:
 	static bool IsModifierHeld(KeyId key, bool isGamePad);
 	static bool ToggleBindingsAllowNormalFallback(const std::vector<ToggleBindingCandidate>& candidates);
 
-	static inline std::unordered_map<KeyId, FunctionPtr> _keyFunctionMapDown;
-	static inline std::unordered_map<KeyId, FunctionPtr> _keyFunctionMapUp;
-	static inline std::unordered_map<KeyId, FunctionPtr> _keyFunctionMapDownGamepad;
-	static inline std::unordered_map<KeyId, FunctionPtr> _keyFunctionMapUpGamepad;
+	// 1.3.6: a LIST per key, not one function. Two actions that can never act at the same moment may
+	// share a button - R3 picks a slot up outside the inventory and shows the hints inside it - and each
+	// one's own context guard decides which of them does anything. Every entry is called, in the order
+	// it was bound; the ones that do not apply return at once.
+	static inline std::unordered_map<KeyId, std::vector<FunctionPtr>> _keyFunctionMapDown;
+	static inline std::unordered_map<KeyId, std::vector<FunctionPtr>> _keyFunctionMapUp;
+	static inline std::unordered_map<KeyId, std::vector<FunctionPtr>> _keyFunctionMapDownGamepad;
+	static inline std::unordered_map<KeyId, std::vector<FunctionPtr>> _keyFunctionMapUpGamepad;
 
 	static inline std::unordered_map<KeyId, Action> _keyActionMapDown;
 	static inline std::unordered_map<KeyId, Action> _keyActionMapUp;

@@ -335,12 +335,17 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 		}
 		float cursorIndicatorAngle = a_cursorAngle;
 
+		// 1.3.6: while the ring is being TURNED, the highlight holds still. The stick and the cursor are
+		// saying where the ring should point, not which slot is wanted, and a highlight chasing them
+		// around the circle would make the turn unreadable. The driving tool's hover (below) still works.
+		const bool turningThisFrame = Wheeler::IsRotatingWheel();
+
 		const bool isMouseInput = !Wheeler::IsLastInputGamepad();
 		const bool mouseStabilizeEnabled = isMouseInput && Config::MainWheel::MouseStabilization::Enabled;
 		const float cursorRadiusRaw = std::sqrt(a_cursorPos.x * a_cursorPos.x + a_cursorPos.y * a_cursorPos.y);
 		// Legacy behavior: clear hovered entry when cursor is centered.
 		if (!mouseStabilizeEnabled && a_cursorCentered) {
-			_hoveredEntryIdx = -1;
+			if (!turningThisFrame && !(_heldEntryIdx >= 0 && _heldEntryIdx < static_cast<int>(_entries.size()))) { _hoveredEntryIdx = -1; }
 		}
 
 		// draw entries
@@ -353,6 +358,9 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 		std::vector<EntryRuntimeData> entryRuntimeDataVec;
 		const int numEntries = static_cast<int>(_entries.size());
 		const float entryArcSpan = 2.0f * IM_PI / numEntries;
+		// 1.3.6: the whole ring turned by this wheel's own angle. Added to the draw slices, the hit
+		// slices and nothing else, so what is seen and what is selected can never disagree.
+		const float rotation = _rotationRad;
 		const float innerSpacingRadRaw = InnerSpacing / InnerCircleRadius / 2;
 		// Keep visual spacing stable, but clamp to avoid inverted slice geometry at high slot counts.
 		const float innerSpacingRadDraw = std::clamp(innerSpacingRadRaw, 0.0f, entryArcSpan * 0.49f);
@@ -387,10 +395,10 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 		std::vector<EntryAngleInfo> entryAnglesDraw(numEntries);
 		std::vector<EntryAngleInfo> entryAnglesHit(numEntries);
 		for (int i = 0; i < numEntries; ++i) {
-			entryAnglesDraw[i].innerMin = entryArcSpan * (i - 0.5f) + innerSpacingRadDraw + IM_PI / 2;
-			entryAnglesDraw[i].innerMax = entryArcSpan * (i + 0.5f) - innerSpacingRadDraw + IM_PI / 2;
-			entryAnglesDraw[i].outerMin = entryArcSpan * (i - 0.5f) + innerSpacingRadDraw * (InnerCircleRadius / OuterCircleRadius) + IM_PI / 2;
-			entryAnglesDraw[i].outerMax = entryArcSpan * (i + 0.5f) - innerSpacingRadDraw * (InnerCircleRadius / OuterCircleRadius) + IM_PI / 2;
+			entryAnglesDraw[i].innerMin = entryArcSpan * (i - 0.5f) + innerSpacingRadDraw + IM_PI / 2 + rotation;
+			entryAnglesDraw[i].innerMax = entryArcSpan * (i + 0.5f) - innerSpacingRadDraw + IM_PI / 2 + rotation;
+			entryAnglesDraw[i].outerMin = entryArcSpan * (i - 0.5f) + innerSpacingRadDraw * (InnerCircleRadius / OuterCircleRadius) + IM_PI / 2 + rotation;
+			entryAnglesDraw[i].outerMax = entryArcSpan * (i + 0.5f) - innerSpacingRadDraw * (InnerCircleRadius / OuterCircleRadius) + IM_PI / 2 + rotation;
 			entryAnglesDraw[i].centerAngle = (entryAnglesDraw[i].innerMin + entryAnglesDraw[i].innerMax) / 2.0f;
 			if (entryAnglesDraw[i].innerMax > IM_PI * 2) {
 				entryAnglesDraw[i].innerMin -= IM_PI * 2;
@@ -402,8 +410,8 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 				entryAnglesDraw[i].outerMax -= IM_PI * 2;
 			}
 
-			entryAnglesHit[i].innerMin = entryArcSpan * (i - 0.5f) + IM_PI / 2;
-			entryAnglesHit[i].innerMax = entryArcSpan * (i + 0.5f) + IM_PI / 2;
+			entryAnglesHit[i].innerMin = entryArcSpan * (i - 0.5f) + IM_PI / 2 + rotation;
+			entryAnglesHit[i].innerMax = entryArcSpan * (i + 0.5f) + IM_PI / 2 + rotation;
 			entryAnglesHit[i].outerMin = entryAnglesHit[i].innerMin;
 			entryAnglesHit[i].outerMax = entryAnglesHit[i].innerMax;
 			entryAnglesHit[i].centerAngle = (entryAnglesHit[i].innerMin + entryAnglesHit[i].innerMax) / 2.0f;
@@ -446,7 +454,11 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 			Config::MainWheel::MouseStabilization::CenterHoldRadius > 0.0f &&
 			cursorRadiusNorm <= Config::MainWheel::MouseStabilization::CenterHoldRadius;
 		// Center can act as a neutral rest zone (no hovered slot) to avoid instant opposite-slot flips.
-		const bool centerRestActive = a_cursorCentered || centerHoldActive;
+		// 1.3.6: not while a slot is in hand. Picking a slot up and carrying it to another one means the
+		// stick passes through the middle, and with Auto Center Rest Snap on that would drop the
+		// highlight - leaving the press that should have dropped the slot with nothing under it.
+		const bool holdingASlot = _heldEntryIdx >= 0 && _heldEntryIdx < static_cast<int>(_entries.size());
+		const bool centerRestActive = (a_cursorCentered || centerHoldActive) && !holdingASlot;
 
 		const int lastIdx = _hoveredEntryIdx;
 		const bool validLast = (lastIdx >= 0 && lastIdx < numEntries);
@@ -554,7 +566,7 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 			if (centerRestActive) {
 				finalIdx = -1;
 				guardReason = "CENTER_REST";
-				_hoveredEntryIdx = finalIdx;
+				if (!turningThisFrame) { _hoveredEntryIdx = finalIdx; }
 				committedThisFrame = true;
 			} else {
 				finalIdx = candidateIdx;
@@ -589,17 +601,17 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 						}
 					}
 				}
-				_hoveredEntryIdx = finalIdx;
+				if (!turningThisFrame) { _hoveredEntryIdx = finalIdx; }
 				committedThisFrame = true;
 			}
 		} else if (!mouseStabilizeEnabled) {
 			if (centerRestActive) {
 				finalIdx = -1;
-				_hoveredEntryIdx = finalIdx;
+				if (!turningThisFrame) { _hoveredEntryIdx = finalIdx; }
 				committedThisFrame = true;
 			} else {
 				finalIdx = candidateIdx;
-				_hoveredEntryIdx = finalIdx;
+				if (!turningThisFrame) { _hoveredEntryIdx = finalIdx; }
 				committedThisFrame = true;
 			}
 		} else {
@@ -667,7 +679,7 @@ void Wheel::Draw(ImVec2 a_wheelCenter, ImVec2 a_cursorPos, float a_cursorAngle, 
 				}
 			}
 
-			_hoveredEntryIdx = finalIdx;
+			if (!turningThisFrame) { _hoveredEntryIdx = finalIdx; }
 			committedThisFrame = true;
 
 			if (finalIdx >= 0) {
@@ -2078,6 +2090,25 @@ void Wheel::MoveHoveredEntryBack()
 	std::swap(this->_entries[_hoveredEntryIdx], this->_entries[target]);
 }
 
+void Wheel::SetRotation(float a_radians)
+{
+	// Kept inside one turn so the saved number stays readable and the snap below has no drift to fight.
+	constexpr float kTwoPi = 2.0f * IM_PI;
+	while (a_radians >= kTwoPi) { a_radians -= kTwoPi; }
+	while (a_radians < 0.0f) { a_radians += kTwoPi; }
+	_rotationRad = a_radians;
+}
+
+void Wheel::SnapRotationToSlot()
+{
+	const int n = GetNumEntries();
+	if (n <= 0) {
+		return;
+	}
+	const float step = 2.0f * IM_PI / static_cast<float>(n);
+	SetRotation(std::roundf(_rotationRad / step) * step);
+}
+
 void Wheel::SerializeIntoJsonObj(nlohmann::json& j_wheel)
 {
 	if (!_clientTag.empty()) {
@@ -2085,6 +2116,9 @@ void Wheel::SerializeIntoJsonObj(nlohmann::json& j_wheel)
 	}
 	if (!_role.empty()) {
 		j_wheel["role"] = _role;
+	}
+	if (_rotationRad != 0.0f) {
+		j_wheel["rotation"] = _rotationRad;
 	}
 	j_wheel["entries"] = nlohmann::json::array();
 	for (const std::unique_ptr<WheelEntry>& entry : this->_entries) {
@@ -2104,6 +2138,9 @@ std::unique_ptr<Wheel> Wheel::SerializeFromJsonObj(const nlohmann::json& j_wheel
 	}
 	if (j_wheel.contains("role") && j_wheel["role"].is_string()) {
 		wheel->SetRole(j_wheel["role"].get<std::string>());
+	}
+	if (j_wheel.contains("rotation") && j_wheel["rotation"].is_number()) {
+		wheel->SetRotation(j_wheel["rotation"].get<float>());
 	}
 	if (!j_wheel.contains("entries") || !j_wheel["entries"].is_array()) {
 		logger::warn("Deserialize: wheel missing 'entries' array, creating empty wheel");

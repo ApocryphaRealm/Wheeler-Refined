@@ -225,8 +225,8 @@
                                         "section": "InputBindings.MKB"
                                     },
                                     "text": {
-                                        "name": "Toggle Wheel Modifier (optional)",
-                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings."
+                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings.",
+                                        "name": "Toggle Wheel Modifier (optional)"
                                     },
                                     "translation": {
                                         "desc": "",
@@ -320,8 +320,8 @@
                                         "section": "InputBindings.MKB"
                                     },
                                     "text": {
-                                        "desc": "Activate the item using the \"primary\" input;\nThis usually equips the item to your right hand.\n\nUnder edit mode, this functions as the add button.",
-                                        "name": "Activate Primary"
+                                        "desc": "Adds: in edit mode this puts the highlighted item into the slot.\n\nOutside edit mode it activates the item, which usually equips it to your right hand.",
+                                        "name": "Add"
                                     },
                                     "translation": {
                                         "desc": "",
@@ -340,7 +340,7 @@
                                     },
                                     "text": {
                                         "desc": "Activate the item using the \"secondary\" input;\nThis usually equips the item to your right hand.\n\nUnder edit mode, this functions as the delete button.",
-                                        "name": "Activate Secondary"
+                                        "name": "Remove"
                                     },
                                     "translation": {
                                         "desc": "",
@@ -501,6 +501,25 @@
                                     "control": {
                                         "failAction": "disable"
                                     },
+                                    "default": true,
+                                    "ini": {
+                                        "id": "AutoCenterRestSnap",
+                                        "section": "Gamepad.Nav"
+                                    },
+                                    "text": {
+                                        "desc": "On: letting the stick come back to the middle puts the cursor at the wheel's centre, so no slot stays highlighted from a push you have finished. Off: the slot you last pushed towards stays highlighted until you push again.",
+                                        "name": "Auto Center Rest Snap"
+                                    },
+                                    "translation": {
+                                        "desc": "",
+                                        "name": ""
+                                    },
+                                    "type": "checkbox"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "disable"
+                                    },
                                     "default": 267,
                                     "ini": {
                                         "id": "toggleWheel",
@@ -564,8 +583,8 @@
                                         "section": "InputBindings.GamePad"
                                     },
                                     "text": {
-                                        "name": "Toggle Wheel Modifier (optional)",
-                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings."
+                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings.",
+                                        "name": "Toggle Wheel Modifier (optional)"
                                     },
                                     "translation": {
                                         "desc": "",
@@ -602,8 +621,8 @@
                                         "section": "InputBindings.GamePad"
                                     },
                                     "text": {
-                                        "name": "Toggle Wheel In Inventory Modifier (optional)",
-                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings."
+                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings.",
+                                        "name": "Toggle Wheel In Inventory Modifier (optional)"
                                     },
                                     "translation": {
                                         "desc": "",
@@ -640,8 +659,8 @@
                                         "section": "InputBindings.GamePad"
                                     },
                                     "text": {
-                                        "name": "Toggle Wheel Out Of Inventory Modifier (optional)",
-                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings."
+                                        "desc": "Optional modifier for chord input. Hold modifier + this key/button to trigger the action (for example RB+X or Shift+Q). Leave unbound (0) to keep current behavior. When a Toggle Modifier is set, the base key can be reused for other Wheeler bindings.",
+                                        "name": "Toggle Wheel Out Of Inventory Modifier (optional)"
                                     },
                                     "translation": {
                                         "desc": "",
@@ -735,8 +754,8 @@
                                         "section": "InputBindings.GamePad"
                                     },
                                     "text": {
-                                        "desc": "Activate the item using the \"primary\" input;\nThis usually equips the item to your right hand.\n\nUnder edit mode, this functions as the add button.",
-                                        "name": "Activate Primary"
+                                        "desc": "Adds: in edit mode this puts the highlighted item into the slot.\n\nOutside edit mode it activates the item, which usually equips it to your right hand.",
+                                        "name": "Add"
                                     },
                                     "translation": {
                                         "desc": "",
@@ -755,7 +774,7 @@
                                     },
                                     "text": {
                                         "desc": "Activate the item using the \"secondary\" input;\nThis usually equips the item to your right hand.\n\nUnder edit mode, this functions as the delete button.",
-                                        "name": "Activate Secondary"
+                                        "name": "Remove"
                                     },
                                     "translation": {
                                         "desc": "",

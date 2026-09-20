@@ -10,6 +10,77 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.3.6 - 2026-09-20 - untested
+
+### Added
+- **The wheel can be turned.** The owner, 2026-09-20: *"make a way to rotate a wheel ... press L3 to rotate the wheel
+  with the left stick so that the slots order stays the same but rotates visually around the center so if slot 0 is at
+  the top then you could rotate the wheel as a whole to make it on the bottom"*. Open the wheel, press **Rotate Wheel**
+  (L3 by default) and the ring is held; the left stick then turns it like a knob - grab it where the stick points, turn,
+  and the ring follows. On keyboard and mouse the cursor does the same. Press the button again, press the exit button,
+  or close the wheel to let go.
+
+  Only the ANGLE moves. No slot changes place in the order, nothing is swapped, and the turn is saved with the wheel,
+  so it is still where you left it next time. While the ring is held the highlight stays put, because the stick is
+  saying where the ring should point rather than which slot is wanted. `SnapRotationToSlot` (on by default) settles the
+  ring on the nearest slot boundary when you let go; turn it off to leave it exactly where it was.
+
+  **On keyboard and mouse the gesture is the left button, and only in the inventory** (the owner, same day). In edit
+  mode the left button already adds the hovered item, so the press now only arms: move the mouse while it is held and
+  the wheel turns instead, let go without moving and it is the add it always was. Outside the inventory the left button
+  is the item's own activation and is left alone, and the controller's primary still adds on the press.
+
+  Rotate Wheel is a binding like any other - keyboard row and gamepad row on the Controls page, and a line in the
+  edit-mode hints. Because it takes L3, the edit-mode hints toggle now ships unbound on the controller; it only ever
+  worked inside edit mode, where the hints are shown by default, and it can be bound to any free button.
+
+### Changed
+- **Move Wheel Forward and Back ship on the left stick's right and left** (285 / 284). The shipped `Controls.ini` has
+  said so since 1.3.1 while the compiled defaults still said "unmapped", which is a rule-16 disagreement and meant a
+  fresh install had no way to reorder wheels with the pad. The owner, 2026-09-20: *"we need to make it so that you can
+  still use l3 to move wheels back and foreword in order with l3 left and l3 right while the rotation event is not
+  active"* - and they do: the stick only turns the ring while a turn is in progress, and moves wheels in the order the
+  rest of the time.
+- **R3 carries two meanings, one per context** (the owner, 2026-09-20: *"lets make the click r3 to move slot an out of
+  inventory function too and move hints toggle to r3 in the inventory only"*). Outside the inventory R3 picks a slot up
+  and puts it down - moving slots is no longer an edit-mode-only thing, the wheel being open is enough. Inside the
+  inventory the same click shows and hides the edit-mode hints, which is where that toggle now lives. The two can never
+  answer at once, so they share the button; the settings page allows the pair rather than refusing it.
+
+  A key may now hold more than one action generally: bindings are appended to a list per key instead of the second one
+  silently erasing the first, and each action's own context guard decides whether it does anything.
+- **The ring can be turned in the inventory too.** Turning was refused in edit mode because L3 shipped as the edit-mode
+  hints toggle and the two would have fought over the button; the hints toggle ships unbound on the controller now, so
+  the refusal is gone.
+- **Auto Center Rest Snap is on by default, and lives on the Controls page's Gamepad tab** (the owner, 2026-09-20). It
+  is a controller navigation setting, so it belongs beside the controller's bindings rather than in Wheel Behavior.
+  Letting the stick come home now puts the cursor back at the centre, so no slot stays highlighted from a push the hand
+  has already finished.
+
+## 1.3.5 - 2026-09-20 - untested
+
+### Changed
+- **Time stops completely while the wheel is open, by default.** The owner, 2026-09-20: *"lets also ship it at time
+  stopped all the way while wheeler is open"*. `StopTimeWhileOpen` now ships ON, which takes the vanilla pause path
+  (`kPausesGame`) and never touches the global time multiplier. That is also the one path clear of the standing
+  suspicion behind iSlyy0's report of corpses flying when the wheel is opened near them: the slow-motion path shrinks
+  the physics step Havok is tuned for, and this one does not step physics at all.
+- **Activate Primary and Activate Secondary are now Add and Remove**, on the Controls page and in the edit-mode hint
+  panel, in all eleven languages. The descriptions lead with what the button does in edit mode - add the item to the
+  slot, take it out again - and mention the equip behaviour second, which is the order a player meets them in.
+- **New controller defaults:** the D-pad changes WHEEL (right = Next Wheel, left = Previous Wheel) and the triggers
+  step SLOTS (RT = Next Item, LT = Previous Item). They were the other way round. An existing `Controls.ini` keeps
+  whatever it already has; this is the fresh-install shape.
+
+### Fixed
+- **A second edit-mode gate in the input dispatcher** (`IsEditModeOnlyAction`) silently dropped R3 and the wheel-order
+  moves in gameplay even after the actions themselves had been opened up - the action's own log never fired because the
+  press never reached it. Found by the input spy's one line, `skip direct binding action=PickUpSlot reason=editModeOnly`,
+  after two readings of the code had not; those three actions guard themselves and are off that list.
+- A ring still held from an earlier L3 swallowed R3 and the wheel-order moves without a word; they now settle the ring
+  first and act in the same press.
+- `Controls.defaults.ini` carried `LeftStickWheelControl` and `StopTimeWhileOpen` twice, one block after the other.
+
 ## 1.3.4 - 2026-09-19 - untested
 
 ### Fixed

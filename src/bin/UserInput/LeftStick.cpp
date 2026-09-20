@@ -2,6 +2,8 @@
 
 #include "bin/UserInput/Controls.h"
 
+#include "bin/Utilities/Utils.h"
+
 #include <cmath>
 
 namespace LeftStick
@@ -34,6 +36,9 @@ namespace LeftStick
 		const std::uint32_t code = CodeFor(a_x, a_y);
 		if (code == 0) { return 0; }
 		g_held = code;
+		// 1.3.6: the edge is logged. "I pushed the stick and nothing happened" has two very different
+		// causes - the press never arrived, or it arrived and the action refused - and this separates them.
+		logger::info("[LeftStick] direction {} pressed (x={:.2f}, y={:.2f})", code, a_x, a_y);
 		Controls::Dispatch(code, true, true);
 		return code;
 	}
