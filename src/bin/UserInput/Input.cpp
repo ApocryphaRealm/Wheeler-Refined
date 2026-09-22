@@ -209,7 +209,7 @@ static bool IsGameplayContextForPassThrough()
 		RE::BarterMenu::MENU_NAME, RE::FavoritesMenu::MENU_NAME, RE::CraftingMenu::MENU_NAME,
 		RE::GiftMenu::MENU_NAME, RE::JournalMenu::MENU_NAME, RE::MapMenu::MENU_NAME,
 		RE::TweenMenu::MENU_NAME, RE::Console::MENU_NAME, RE::MainMenu::MENU_NAME,
-		"LootMenu", "LootMenuCF"
+		"LootMenu", "LootMenuCF", "LootMenuIE"
 	};
 	for (std::string_view name : kListMenus) {
 		if (ui->IsMenuOpen(name)) {
@@ -392,6 +392,7 @@ static std::string GetMenuContextTag()
 	appendMenu(RE::FavoritesMenu::MENU_NAME, "Favorites");
 	appendMenu("LootMenu", "LootMenu");
 	appendMenu("LootMenuCF", "LootMenuCF");
+	appendMenu("LootMenuIE", "LootMenuIE");
 
 	const std::string tags = oss.str();
 	if (tags.empty()) {
@@ -408,13 +409,14 @@ struct MenuActivationContextEntry
 
 static bool IsMenuActivationContextOpen(RE::UI* ui, std::string* outContext = nullptr)
 {
-	static constexpr std::array<MenuActivationContextEntry, 6> activationMenus{ {
+	static constexpr std::array<MenuActivationContextEntry, 7> activationMenus{ {
 		{ RE::InventoryMenu::MENU_NAME, "InventoryMenu" },
 		{ RE::ContainerMenu::MENU_NAME, "ContainerMenu" },
 		{ RE::MagicMenu::MENU_NAME, "MagicMenu" },
 		{ RE::FavoritesMenu::MENU_NAME, "FavoritesMenu" },
 		{ "LootMenu", "LootMenu" },
-		{ "LootMenuCF", "LootMenuCF" }
+		{ "LootMenuCF", "LootMenuCF" },
+		{ "LootMenuIE", "LootMenuIE" }
 	} };
 
 	if (outContext) {

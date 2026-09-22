@@ -305,7 +305,8 @@ namespace
 			RE::TweenMenu::MENU_NAME,
 			RE::JournalMenu::MENU_NAME,
 			"LootMenu",
-			"LootMenuCF"
+			"LootMenuCF",
+			"LootMenuIE"
 		};
 
 		// Wheeler's own settings page is not an RE::UI menu; it blocks the ammo wheel the way dMenu did.
@@ -1697,6 +1698,7 @@ bool AmmoWheel::CanOpen() const
 		RE::ContainerMenu::MENU_NAME,
 		"LootMenu",
 		"LootMenuCF",
+		"LootMenuIE",
 		"BestiaryMenu",
 		"CustomMenu",
 		"RaceMenu",

@@ -284,10 +284,12 @@ namespace
 
 	bool IsBoundWeaponSpell(RE::SpellItem* spell);
 
-	constexpr std::array<std::string_view, 3> kLootOverrideMenus{
+	constexpr std::array<std::string_view, 4> kLootOverrideMenus{
 		RE::ContainerMenu::MENU_NAME,
-		"LootMenu",   // QuickLoot / QuickLoot RE
-		"LootMenuCF"  // QuickLoot EE (Container First)
+		"LootMenu",    // QuickLoot / QuickLoot RE
+		"LootMenuCF",  // QuickLoot EE (Container First)
+		"LootMenuIE"   // QuickLoot IE (1.3.7 - the fork registers its own menu name; without it neither the
+		               // block nor the hide applied and the wheel opened over an open loot menu)
 	};
 
 	bool SetMenuMovieVisibility(RE::UI* ui, std::string_view menuName, bool visible)

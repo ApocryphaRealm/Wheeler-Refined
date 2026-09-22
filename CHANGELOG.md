@@ -13,6 +13,13 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 ## 1.3.7 - 2026-09-22 - untested
 
 ### Changed
+- **QuickLoot IE's loot menu is recognised.** Wheeler knew `LootMenu` (QuickLoot / RE) and `LootMenuCF` (EE Container
+  First) but not `LootMenuIE`, so neither of its loot-menu behaviours applied to QuickLoot IE: with
+  `LootMenuOverride = false` the wheel was supposed to refuse to open while a loot menu is up, and with it on the
+  menu is hidden first. Instead the wheel opened over the open loot menu and pushed the vanilla pause, and the game
+  stopped responding (the owner, 2026-09-22: *"Wheeler worked but now the game is not responding after activating it
+  in a quickloot popup"*). The name is now in every list that names the loot menus - the open gate, the input
+  tracking, the activation context and the ammo wheel's.
 - **LT can be the wheel's modifier and LB the button that opens it** on a controller (reported to the owner,
   2026-09-22: *"I couldn't use LT as modifier and LB as wheeler button"*). The settings page refused both: LT is
   Previous Item and LB is Activate Secondary, and it treated those as taken. They only act while the wheel is open,

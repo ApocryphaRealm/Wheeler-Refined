@@ -148,6 +148,7 @@ static void GetInputDebugMenuFlags(bool& dmenuOpen, bool& trackedMenuOpen)
 	                  ui->IsMenuOpen(RE::FavoritesMenu::MENU_NAME) ||
 	                  ui->IsMenuOpen("LootMenu") ||
 	                  ui->IsMenuOpen("LootMenuCF") ||
+	                  ui->IsMenuOpen("LootMenuIE") ||
 	                  dmenuOpen;
 }
 
@@ -1124,7 +1125,7 @@ bool Controls::IsMenuContextOpen()
 		RE::BarterMenu::MENU_NAME, RE::FavoritesMenu::MENU_NAME, RE::CraftingMenu::MENU_NAME,
 		RE::GiftMenu::MENU_NAME, RE::JournalMenu::MENU_NAME, RE::MapMenu::MENU_NAME,
 		RE::TweenMenu::MENU_NAME, RE::Console::MENU_NAME, RE::MainMenu::MENU_NAME,
-		"LootMenu", "LootMenuCF"
+		"LootMenu", "LootMenuCF", "LootMenuIE"
 	};
 	for (std::string_view name : kMenus) {
 		if (ui->IsMenuOpen(name)) {
