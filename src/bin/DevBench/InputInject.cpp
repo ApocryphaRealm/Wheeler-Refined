@@ -30,7 +30,10 @@ namespace InputInject
 			// 2026-09-13: the top context alone answered '').
 			std::string_view name{};
 			if (controlMap) {
-				const auto& stack = controlMap->contextPriorityStack;
+				// GetRuntimeData(), not the member: CommonLibSSE-NG lays ControlMap's runtime members at AE's offsets in a
+				// SE+AE build, so the direct access reads garbage on SE 1.5.97 (Back Pocket For Controller crashed on it,
+				// 2026-09-22).
+				const auto& stack = controlMap->GetRuntimeData().contextPriorityStack;
 				for (std::uint32_t i = stack.size(); i > 0 && name.empty(); --i) {
 					name = controlMap->GetUserEventName(a_code, a_device, stack[i - 1]);
 				}
