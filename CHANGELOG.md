@@ -10,6 +10,27 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.3.7 - 2026-09-22 - untested
+
+### Changed
+- **LT can be the wheel's modifier and LB the button that opens it** on a controller (reported to the owner,
+  2026-09-22: *"I couldn't use LT as modifier and LB as wheeler button"*). The settings page refused both: LT is
+  Previous Item and LB is Activate Secondary, and it treated those as taken. They only act while the wheel is open,
+  and the opener and its modifier act while it is closed, so the page now lets an opener's modifier share a button
+  with an in-wheel action, and lets an opener share one when that opener has a modifier set (a bare opener on LB
+  would close the wheel every time Activate Secondary was meant - set the modifier first). At run time nothing
+  changes: a chorded opener that opens or closes the wheel already returns before the button's in-wheel action
+  runs, and without the modifier held the button does its in-wheel job.
+- **The wheel opens on Q on the keyboard**, the vanilla Favorites key, since the wheel takes the Favorites menu's place.
+  The owner, 2026-09-22: *"wheeler should be defaulted to the vanilla favorites menu key which is q in the next update"*.
+  Was G.
+- **Items cycle on R (next) and E (previous)** while the wheel is open - Q, which was Previous Item, is the toggle now
+  (the owner: *"r for next, e for previous"*).
+- The compiled keyboard defaults now match `Controls.defaults.ini`: the compiled values had wheel cycling on E/Q and item
+  cycling on the mouse wheel, the reverse of the file players get, so Restore Defaults could land somewhere a fresh
+  install never does (rule 16). Both now say: toggle Q, next/previous item R/E, next/previous wheel mouse wheel up/down.
+- A saved `Controls.ini` keeps its own keys; the new defaults reach a fresh install and Restore Defaults.
+
 ## 1.3.6 - 2026-09-20 - untested
 
 ### Added

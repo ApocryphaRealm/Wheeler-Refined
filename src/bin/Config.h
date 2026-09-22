@@ -387,16 +387,16 @@ namespace Config
 		}
 		namespace MKB
 		{
-			inline uint32_t nextWheel = 0x12;  // e
-			inline uint32_t prevWheel = 0x10;  // q
-			inline uint32_t toggleWheel = 34;  // G - matches Controls.defaults.ini (was 58/capslock, which the shipped INI never used)
+			inline uint32_t nextWheel = 264;  // mouse wheel up - matches Controls.defaults.ini (the compiled E/Q pair disagreed with it before 1.3.7)
+			inline uint32_t prevWheel = 265;  // mouse wheel down
+			inline uint32_t toggleWheel = 16;  // Q - the vanilla Favorites key, since the wheel takes the Favorites menu's place (the owner, 2026-09-22; was G)
 			inline uint32_t rotateWheel = 0;         // 1.3.6: unbound on the keyboard; the mouse turns the ring while it is held
 			inline uint32_t toggleEditHints = 35;  // h
 			inline uint32_t closeWheel = 15;  // tab
 			inline uint32_t closeWheelAlt = 1;  // esc
 			inline uint32_t toggleWheelModifier = 0;  // optional toggle modifier
-			inline uint32_t prevItem = 264;    // mouse wheel up
-			inline uint32_t nextItem = 265;    // mouse wheel down
+			inline uint32_t prevItem = 18;     // E (the owner, 2026-09-22: "r for next, e for previous" - Q is the toggle now)
+			inline uint32_t nextItem = 19;     // R
 			inline uint32_t activatePrimary = 256;  // left mouse button
 			inline uint32_t activateSecondary = 257;  // right mouse button
 			inline uint32_t addWheel = 49;            // N

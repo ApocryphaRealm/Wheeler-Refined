@@ -584,6 +584,75 @@ namespace SettingsPage
 					   key == "togglekeymkb" || key == "togglemousebutton";
 			}
 
+			// 1.3.7 - A GAMEPLAY ROW AND AN IN-WHEEL ROW NEVER ACT TOGETHER. Reported to the owner, 2026-09-22 (borokoshow):
+			// "I couldn't use LT as modifier and LB as wheeler button." Both were refused: LT is Previous Item and LB is
+			// Activate Secondary by default, and those only do anything while the wheel is OPEN, whereas the opener's
+			// modifier and a chorded opener act while it is CLOSED. The dispatcher already keeps them apart at run time -
+			// a chorded opener that opens or closes the wheel returns before any plain binding on that button runs, and
+			// without the modifier held the button falls through to its in-wheel action - so the page now allows:
+			//   * an opener's MODIFIER on a button an in-wheel action uses (always);
+			//   * an OPENER on a button an in-wheel action uses, but only when that opener has a modifier set - a bare
+			//     opener on LB would close the wheel every time Activate Secondary was meant.
+			inline std::string LowerKey(const Entry& e)
+			{
+				std::string k = e.iniKey;
+				std::transform(k.begin(), k.end(), k.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+				return k;
+			}
+
+			// main-wheel actions that only do anything while the wheel is open
+			inline bool RowActsOnlyInWheel(const Entry& a_entry)
+			{
+				static constexpr const char* kInWheel[] = {
+					"nextitem", "previtem", "activateprimary", "activatesecondary", "nextwheel", "prevwheel",
+					"rotatewheel", "movewheelforward", "movewheelback", "addwheel", "addemptyentry",
+					"moveentryforward", "moveentryback", "pickupslot",
+				};
+				const std::string k = LowerKey(a_entry);
+				for (const char* name : kInWheel) {
+					if (k == name) { return true; }
+				}
+				return false;
+			}
+
+			// the modifier row that belongs to an opener row ("toggleWheel" -> "toggleWheelModifier")
+			inline bool RowIsOpenerModifier(const Entry& a_entry)
+			{
+				const std::string k = LowerKey(a_entry);
+				return k == "togglewheelmodifier" || k == "togglewheelifininventorymodifier" ||
+					   k == "togglewheelifnotininventorymodifier";
+			}
+
+			inline std::uint32_t StoredCodeOf(const Panel& a_panel, const std::string& a_section, const std::string& a_lowerKey)
+			{
+				const auto& store = ValueStore::GetSingleton();
+				std::uint32_t found = 0u;
+				std::function<void(const Entry&)> walk = [&](const Entry& e) {
+					for (const Entry& child : e.entries) { walk(child); }
+					if (e.type == EntryType::Keymap && e.HasIniTarget() && e.iniSection == a_section && LowerKey(e) == a_lowerKey) {
+						found = static_cast<std::uint32_t>(store.Get(a_panel, e).AsNumber(e.defaultNumber.value_or(0.0)));
+					}
+				};
+				for (const Entry& e : a_panel.entries) { walk(e); }
+				return found;
+			}
+
+			// may a_gameplay (an opener or its modifier) share a button with a_inWheel (an in-wheel action)?
+			inline bool GameplayAndInWheelMayShare(const Panel& a_gameplayPanel, const Entry& a_gameplay, const Entry& a_inWheel)
+			{
+				if (!RowActsOnlyInWheel(a_inWheel) || ContextOfPanel(a_gameplayPanel) != BindContext::MainWheel) {
+					return false;
+				}
+				if (RowIsOpenerModifier(a_gameplay)) {
+					return true;
+				}
+				const std::string k = LowerKey(a_gameplay);
+				if (k == "togglewheel" || k == "togglewheelifininventory" || k == "togglewheelifnotininventory") {
+					return StoredCodeOf(a_gameplayPanel, a_gameplay.iniSection, k + "modifier") != 0u;
+				}
+				return false;
+			}
+
 			// The owner, 2026-09-12: "within the mod ... two separate functions cannot be bound to the same
 			// key". Every keymap row in every descriptor is checked, on the SAME device as the row being
 			// bound (a gamepad code and a keyboard code can never collide - the stored ranges differ).
@@ -626,6 +695,14 @@ namespace SettingsPage
 						const bool crossWheel =
 							(selfContext == BindContext::MainWheel && otherContext == BindContext::AmmoWheel) ||
 							(selfContext == BindContext::AmmoWheel && otherContext == BindContext::MainWheel);
+						const bool sameWheelFile = ContextOfPanel(panel) == selfContext;
+						if (sameWheelFile && (GameplayAndInWheelMayShare(a_selfPanel, a_self, entry) ||
+												 GameplayAndInWheelMayShare(panel, entry, a_self))) {
+							logger::info("[SettingsPage] code {} is held by '{}', which only acts while the wheel is open - "
+										 "the opener's chord acts while it is closed - allowed",
+								a_code, entry.name.empty() ? entry.iniKey : entry.name);
+							return;
+						}
 						if (ContextExclusivePair(a_self, entry)) {
 							logger::info("[SettingsPage] code {} is held by '{}', which never acts at the same moment "
 										 "as this row - allowed", a_code, entry.name.empty() ? entry.iniKey : entry.name);
