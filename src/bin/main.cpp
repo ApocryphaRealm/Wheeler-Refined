@@ -317,13 +317,16 @@ namespace
 		*path /= fmt::format("{}.log"sv, Plugin::NAME);
 		auto baseSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 		// 1.1.4 (project rule: ship at trace): the level comes from Data\SKSE\Plugins\wheeler\debug.ini
-		// [Log] uLogLevel, 0 = trace ... 6 = off, default 0. Upstream pinned release builds to info.
-		auto level = spdlog::level::trace;
+		// [Log] uLogLevel, 0 = trace ... 6 = off, default 2 (info - every INI of ours ships at info, 2026-09-26). Upstream pinned release builds to info.
+		// 1.3.8: forward slashes. The path was written with single backslashes ("Data\SKSE\..."), which C++ reads as
+		// unknown escapes - the file name became "DataSKSEPluginswheelerdebug.ini", debug.ini was never found and the
+		// log ran at trace whatever uLogLevel said. Info when the file is missing.
+		auto level = spdlog::level::info;
 		{
 			CSimpleIniA dbg;
 			dbg.SetUnicode();
-			if (dbg.LoadFile("Data\SKSE\Plugins\wheeler\debug.ini") >= 0) {
-				const long v = dbg.GetLongValue("Log", "uLogLevel", 0);
+			if (dbg.LoadFile("Data/SKSE/Plugins/wheeler/debug.ini") >= 0) {
+				const long v = dbg.GetLongValue("Log", "uLogLevel", 2);
 				const long clamped = v < 0 ? 0 : (v > 6 ? 6 : v);
 				level = static_cast<spdlog::level::level_enum>(clamped);
 			}

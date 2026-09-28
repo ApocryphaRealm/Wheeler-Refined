@@ -10,6 +10,16 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.3.9 - 2026-09-27 - working
+
+1.3.8 was never posted; this is the release of its change plus:
+
+### Fixed
+- **The log level setting works.** debug.ini was opened from a path written with single backslashes, which C++ reads
+  as escape characters, so the file was never found and wheeler.log ran at trace whatever `uLogLevel` said (since
+  1.1.4). The path is fixed, the shipped `uLogLevel` is 2 (info) like every other mod of ours, and info is also the
+  level when the file is missing.
+
 ## 1.3.8 - 2026-09-27 - working
 
 ### Changed
