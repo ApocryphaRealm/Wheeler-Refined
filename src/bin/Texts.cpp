@@ -126,6 +126,8 @@ namespace
 			return "KeymapReservedByFramework";
 		case Texts::TextType::KeymapAlreadyBoundTo:
 			return "KeymapAlreadyBoundTo";
+		case Texts::TextType::KeymapSetModifierFirst:
+			return "KeymapSetModifierFirst";
 		case Texts::TextType::KeymapUnbindButton:
 			return "KeymapUnbindButton";
 		case Texts::TextType::KeymapWrongDevice:

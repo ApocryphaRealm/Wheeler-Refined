@@ -725,6 +725,42 @@ namespace SettingsPage
 				return holder;
 			}
 
+			// Would a_self (an opener of the main wheel, with no modifier stored) be allowed on a_code once it had a modifier?
+			// True when every other holder of the code in the main wheel's settings is an action that only acts while the
+			// wheel is open - the case GameplayAndInWheelMayShare allows for a chorded opener.
+			bool OpenerCouldShareWithModifier(const Panel& a_panel, const Entry& a_self, bool a_gamepad, std::uint32_t a_code)
+			{
+				if (ContextOfPanel(a_panel) != BindContext::MainWheel) {
+					return false;
+				}
+				const std::string k = LowerKey(a_self);
+				if (k != "togglewheel" && k != "togglewheelifininventory" && k != "togglewheelifnotininventory") {
+					return false;
+				}
+				if (StoredCodeOf(a_panel, a_self.iniSection, k + "modifier") != 0u) {
+					return false;
+				}
+				const auto& store = ValueStore::GetSingleton();
+				bool any = false;
+				bool onlyInWheel = true;
+				std::function<void(const Entry&)> walk = [&](const Entry& e) {
+					for (const Entry& child : e.entries) { walk(child); }
+					if (e.type != EntryType::Keymap || !e.HasIniTarget() || LooksLikeGamepad(e) != a_gamepad) {
+						return;
+					}
+					if (e.iniSection == a_self.iniSection && e.iniKey == a_self.iniKey) {
+						return;
+					}
+					const auto held = static_cast<std::uint32_t>(store.Get(a_panel, e).AsNumber(e.defaultNumber.value_or(0.0)));
+					if (held != 0u && held == a_code) {
+						any = true;
+						if (!RowActsOnlyInWheel(e)) { onlyInWheel = false; }
+					}
+				};
+				for (const Entry& e : a_panel.entries) { walk(e); }
+				return any && onlyInWheel;
+			}
+
 			// Takes whatever capture produced for this row and, if it is a real code, writes it.
 			//
 			// Shared by the widget and the devbench driver ON PURPOSE: a driven rebind must run the
@@ -796,6 +832,13 @@ namespace SettingsPage
 					logger::info("[SettingsPage] rebind of {} refused: code {} is already bound to '{}'", a_entry.iniKey, captured, holder);
 					g_rowNoticeKey = CaptureId(a_entry);
 					g_rowNotice = std::string(Texts::GetText(Texts::TextType::KeymapAlreadyBoundTo)) + " " + holder;
+					// An opener with no modifier refused on a key only in-wheel actions use would be ALLOWED with a modifier
+					// (GameplayAndInWheelMayShare), so say so - "already used by Remove" alone read as "LT + LB is impossible"
+					// (borokoshow, 2026-09-28: "I couldn't use LT as modifier and LB as wheeler button").
+					if (OpenerCouldShareWithModifier(a_panel, a_entry, LooksLikeGamepad(a_entry), captured)) {
+						g_rowNotice += " ";
+						g_rowNotice += Texts::GetText(Texts::TextType::KeymapSetModifierFirst);
+					}
 					return CaptureOutcome::InUse;
 				}
 
@@ -1327,7 +1370,10 @@ namespace SettingsPage
 							R"(","consumed":)" + (injected ? "true" : "false") +
 							R"(,"code":)" + std::to_string(a_command.code) +
 							R"(,"raw":")" + JsonEscape(after.raw) +
-							R"(","source":")" + ValueSourceName(after.source) + R"("})";
+							R"(","source":")" + ValueSourceName(after.source) +
+							// the text the row shows the player after this capture (2026-09-28: a refusal's hint had to be
+							// read back without the page on screen)
+							R"(","notice":")" + JsonEscape(g_rowNoticeKey == CaptureId(*entry) ? g_rowNotice : std::string()) + R"("})";
 					}
 					break;
 
@@ -1419,8 +1465,8 @@ namespace SettingsPage
 			}
 
 			if (ini.GetBoolValue("SettingsPage", "ShowOnLoad", false)) {
-				g_open = true;
-				INFO("[SettingsPage] Page opened at load ([SettingsPage] ShowOnLoad = true).");
+				// 1.4.0: there is no standalone page to show; the settings are on the framework's page.
+				INFO("[SettingsPage] ShowOnLoad is set, but Wheeler's own settings window was removed in 1.4.0 - open the Apocrypha Menu Framework menu instead.");
 			}
 		}
 
@@ -1431,6 +1477,13 @@ namespace SettingsPage
 
 		void SetOpen(bool a_open)
 		{
+			// Opening means the framework's page now (1.4.0): the standalone window no longer exists.
+			if (a_open) {
+				if (!AMFLaunch::OpenFrameworkMenuOnUs()) {
+					Utils::NotificationMessage(Texts::GetText(Texts::TextType::SettingsLiveInFramework));
+				}
+				return;
+			}
 			if (g_open == a_open) {
 				return;
 			}
@@ -1597,97 +1650,11 @@ namespace SettingsPage
 			// Above the early-out on purpose - see DrainDriveQueue.
 			DrainDriveQueue();
 
-			if (!g_open) {
-				return;
-			}
-			if (!Catalog::GetSingleton().IsLoaded() || !PageModel::GetSingleton().IsBuilt()) {
-				return;
-			}
-
-			ImGui::SetNextWindowSize(ImVec2(980.0f, 640.0f), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowBgAlpha(0.94f);
-
-			// Begin wants a bool* for the title-bar close button, which an atomic cannot provide.
-			// Mirroring it through a local also closes a real gap: passing &g_open wrote the flag
-			// DIRECTLY, so clicking the X skipped SetOpen and therefore PageInput::OnPageClosed,
-			// leaving the input queue and held-button state stale on the one close path that does
-			// not go through the toggle key.
-			bool stillOpen = g_open.load(std::memory_order_relaxed);
-
-			if (ImGui::Begin("Wheeler Settings", &stillOpen)) {
-				// Labels shown whole, the bar scrolling when they overflow, and a tab-list button so
-				// every tab is reachable without scrolling - the house convention, not ImGui's
-				// default shrink-to-fit.
-				if (ImGui::BeginTabBar("panels",
-						ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_TabListPopupButton)) {
-					int panelIndex = -1;
-					for (const auto& panelTab : PageModel::GetSingleton().Panels()) {
-						++panelIndex;
-						if (!panelTab.panel) {
-							continue;
-						}
-						// Advanced settings off (the owner, 2026-09-13): only the first three sections show.
-						if (panelIndex >= 3 && !Config::Control::Wheel::ShowAdvancedSettings) {
-							continue;
-						}
-						// A pending selection is consumed the frame it is honoured, so a driven
-						// selecttab MOVES the page once rather than pinning it there against the
-						// player's own clicks for every later frame.
-						ImGuiTabItemFlags panelFlags = ImGuiTabItemFlags_None;
-						if (!g_pendingPanelTab.empty() && g_pendingPanelTab == panelTab.label) {
-							panelFlags = ImGuiTabItemFlags_SetSelected;
-							g_pendingPanelTab.clear();
-						}
-						if (ImGui::BeginTabItem(panelTab.label.c_str(), nullptr, panelFlags)) {
-							// M7 - slots per wheel. A LIVE control, not a descriptor entry: it acts on the wheel
-							// currently loaded (Wheeler::SetCurrentWheelSlotCount, tail-only shrink that refuses to
-							// discard a filled slot), so it cannot be an INI value and lives above the Wheel
-							// Behavior panel's tabs, where the wheel's structure is configured. The design call
-							// (2026-09-12, auto sort mode): a slider 1..64 applied on release, mirroring the live
-							// count whenever it is not being dragged; refusals arrive through the existing
-							// notification path.
-							if (panelTab.label.find("Wheel Behavior") != std::string::npos) {
-								DrawLiveSlotCount();
-							}
-							if (ImGui::BeginTabBar("tabs",
-									ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_TabListPopupButton)) {
-								for (const auto& tab : panelTab.tabs) {
-									ImGuiTabItemFlags tabFlags = ImGuiTabItemFlags_None;
-									if (!g_pendingTab.empty() && g_pendingTab == tab.label) {
-										tabFlags = ImGuiTabItemFlags_SetSelected;
-										g_pendingTab.clear();
-									}
-									if (ImGui::BeginTabItem(tab.label.c_str(), nullptr, tabFlags)) {
-										ImGui::BeginChild("body", ImVec2(0, 0), false);
-										if (panelTab.label.find("Wheeler Controls") != std::string::npos && &tab == &panelTab.tabs.front()) {
-											DrawPresetsPanel();   // General tab, above the descriptor's own controls
-										}
-										DrawTab(*panelTab.panel, tab);
-										ImGui::EndChild();
-										ImGui::EndTabItem();
-									}
-								}
-								ImGui::EndTabBar();
-							}
-							ImGui::EndTabItem();
-						}
-					}
-					ImGui::EndTabBar();
-				}
-			}
-			ImGui::End();
-
-			// The title-bar close button, routed through SetOpen so the queue and held-button
-			// state are reset exactly as they are for the toggle key.
-			if (!stillOpen) {
-				SetOpen(false);
-			}
-
-			// Sampled inside the frame, for the controller scheme: ImGui drives both navigation
-			// and value-tweaking from the same nav axes, so exactly one stick may be wired to them
-			// per frame - the left while nothing is held, the right once an item is taken hold of.
-			// The input side cannot know which without being told from in here.
-			PageInput::SetItemActive(ImGui::IsAnyItemActive());
+			// 1.4.0 (the owner, 2026-09-28): "we should remove the standalone Wheeler page and just use the AMF one".
+			// Wheeler's own ImGui window is gone - the settings live only on the Apocrypha Menu Framework page
+			// (AmfPage.cpp), which draws the same panels through the Shared functions below. Draw() stays as the
+			// per-frame pump for DevBench's wheeler.page requests (get / set / rebind / unbind), which run the same
+			// capture and write code the framework page does.
 		}
 
 		// ---- M9: the framework-hosted page (AmfPage.cpp) reaches the shared logic through these ----

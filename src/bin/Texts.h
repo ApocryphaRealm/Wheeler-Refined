@@ -59,6 +59,7 @@ public:
 		SlotCountAtMaximum,
 		KeymapReservedByFramework,   // a rebind landed on a key the menu framework reserves
 		KeymapAlreadyBoundTo,        // a rebind landed on a key another Wheeler action holds; the action's name follows
+		KeymapSetModifierFirst,      // appended when an opener without a modifier is refused on an in-wheel action's key
 		KeymapUnbindButton,          // the Unbind button beside Rebind on every keymap row
 		KeymapWrongDevice,           // a rebind captured a code from the wrong device for that row
 		SettingsLiveInFramework,     // the settings key was pressed while the framework hosts the page
@@ -169,6 +170,7 @@ private:
 		MAP_ENTRY(SlotCountAtMaximum, "Wheeler: 64 slots is the most a wheel can be saved with."),
 		MAP_ENTRY(KeymapReservedByFramework, "not bound - the menu framework reserves that key"),
 		MAP_ENTRY(KeymapAlreadyBoundTo, "not bound - that key is already used by"),
+		MAP_ENTRY(KeymapSetModifierFirst, "- set this row's modifier first, then the key opens the wheel while the modifier is held"),
 		MAP_ENTRY(KeymapUnbindButton, "Unbind"),
 		MAP_ENTRY(KeymapWrongDevice, "not bound - press a control on this row's own device"),
 		MAP_ENTRY(SettingsLiveInFramework, "Wheeler: the settings are in the Apocrypha Menu Framework menu - open it and choose Wheeler - Refined."),

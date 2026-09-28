@@ -58,6 +58,7 @@ AmfLaunchButton = Open the Wheeler settings page
 AmfLaunchPending = Ready - close this menu and the Wheeler page will open.
 KeymapReservedByFramework = not bound - the menu framework reserves that key
 KeymapAlreadyBoundTo = not bound - that key is already used by
+KeymapSetModifierFirst = - set this row's modifier first, then the key opens the wheel while the modifier is held
 SettingsLiveInFramework = Wheeler: the settings are in the Apocrypha Menu Framework menu - open it and choose Wheeler - Refined.
 EditHintActionToggleWheel = Open / Close Wheel
 EditHintActionNextItem = Next Item

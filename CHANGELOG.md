@@ -10,6 +10,15 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## Unreleased (next version from version-gate.ps1) - untested
+
+### Changed
+- **Keys are read again while the game runs** (the owner: *"Wheeler and back pocket should both read their keys at runtime ... So it doesnt need a restart"*). On every menu close Controls.ini's write time is compared; a newer file is read and every binding re-bound, so a key moved on Unbind Vanilla Controls' Controls page (or in the INI) works at once.
+- **Wheeler's own settings window is gone** (the owner, 2026-09-28: *"we should remove the standalone Wheeler page and just use the AMF one"*). The settings live only on the Apocrypha Menu Framework page, which draws the same panels; the settings key, DevBench's `wheeler.page open` and the ShowOnLoad flag now open the framework's menu on Wheeler's page. DevBench's get / set / rebind / unbind still run every frame without a window, through the same capture and write code the framework page uses; `rebind` now also returns the row's `notice`.
+
+### Fixed
+- **The settings page says how to put the wheel on a button an in-wheel action uses** (borokoshow, 2026-09-28: *"I couldn't use LT as modifier and LB as wheeler button"*). Since 1.3.7 the page allows an opener on such a button (LB is Activate Secondary, RB Activate Primary) once the opener has a modifier - but setting the button before the modifier was refused with only "not bound - that key is already used by Remove", which read as "impossible". That refusal now adds "- set this row's modifier first, then the key opens the wheel while the modifier is held", in all eleven languages. Proven in game: LT held + LB opens the wheel with a real controller (the owner) and with injected presses.
+
 ## 1.3.9 - 2026-09-27 - working
 
 1.3.8 was never posted; this is the release of its change plus:

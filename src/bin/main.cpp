@@ -35,6 +35,68 @@ namespace
 	std::atomic_bool g_coreInitDone{ false };
 	std::atomic_bool g_dataInitDone{ false };
 
+	// Controls.ini read at RUNTIME (the owner, 2026-09-28: "Wheeler and back pocket should both read their keys at runtime
+	// ... So it doesnt need a restart"). Another mod can write Wheeler's keys while the game runs - Unbind Vanilla
+	// Controls' Wheel Menu row on the game's Controls page does - and Wheeler read the file only at data load, so the new
+	// button did nothing until the next start. Every time a menu CLOSES (the Journal, after a Controls-page change) the
+	// file's write time is compared with the one last read; a newer file is read again and the inputs re-bound, the same
+	// two steps Wheeler's own settings page takes. A file changed by hand is picked up the same way.
+	class ControlsFileWatch : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+	{
+	public:
+		static ControlsFileWatch* GetSingleton()
+		{
+			static ControlsFileWatch s;
+			return &s;
+		}
+
+		void Register()
+		{
+			if (auto* ui = RE::UI::GetSingleton()) {
+				ui->AddEventSink<RE::MenuOpenCloseEvent>(this);
+				stamp_ = Stamp();
+				logger::info("[ControlsWatch] watching Controls.ini for changes made while the game runs");
+			} else {
+				logger::warn("[ControlsWatch] no UI singleton; Controls.ini is read at data load only");
+			}
+		}
+
+		RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
+		{
+			if (!a_event || a_event->opening) {
+				return RE::BSEventNotifyControl::kContinue;
+			}
+			const auto now = Stamp();
+			if (!now || now == stamp_) {
+				return RE::BSEventNotifyControl::kContinue;
+			}
+			stamp_ = now;
+			if (auto* tasks = SKSE::GetTaskInterface()) {
+				tasks->AddTask([]() {
+					Config::ReadControlConfig();
+					Controls::BindAllInputsFromConfig();
+					logger::info("[ControlsWatch] Controls.ini changed while the game ran; read again and re-bound (gamepad toggle {} + {}, keyboard toggle {} + {})",
+						Config::InputBindings::GamePad::toggleWheel, Config::InputBindings::GamePad::toggleWheelModifier,
+						Config::InputBindings::MKB::toggleWheel, Config::InputBindings::MKB::toggleWheelModifier);
+				});
+			}
+			return RE::BSEventNotifyControl::kContinue;
+		}
+
+	private:
+		static std::optional<std::filesystem::file_time_type> Stamp()
+		{
+			std::error_code ec;
+			const auto t = std::filesystem::last_write_time("Data/SKSE/Plugins/wheeler/Controls.ini", ec);
+			if (ec) {
+				return std::nullopt;
+			}
+			return t;
+		}
+
+		std::optional<std::filesystem::file_time_type> stamp_;
+	};
+
 	bool IsModuleLoaded(std::wstring_view dllName)
 	{
 		return dllName.empty() ? false : (::GetModuleHandleW(dllName.data()) != nullptr);
@@ -273,6 +335,7 @@ namespace
 		Config::OffsetSizingToViewport();
 		Config::OffsetAmmoWheelSizingToViewport();
 		Controls::BindAllInputsFromConfig();
+		ControlsFileWatch::GetSingleton()->Register();
 		Texture::Init();
 		Texts::LoadTranslations();
 		ActionHotkeysBridge::Init();
