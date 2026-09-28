@@ -514,8 +514,22 @@ namespace
 			return false;
 		}
 
+		// 1.3.8: KeepGears now defaults to true (the owner, 2026-09-27: "ship perfected Wheeler with keep missing items
+		// on by default") - a weapon a loadout puts away keeps its wheel slot and works again when it comes back. A
+		// config written before this has KeepGears = false from the old default and no DefaultsRevision, and the
+		// backfill below never changes an existing key, so it is upgraded once here; the marker stops it repeating,
+		// so a player who turns KeepGears off again keeps it off.
+		bool upgraded = false;
+		if (std::string_view(userPath).ends_with("wheelBehavior.ini") &&
+			!userIni.GetValue("WheelBehavior.KeepMissing", "DefaultsRevision", nullptr)) {
+			userIni.SetBoolValue("WheelBehavior.KeepMissing", "KeepGears", true);
+			userIni.SetLongValue("WheelBehavior.KeepMissing", "DefaultsRevision", 2);
+			upgraded = true;
+			logger::info("{}: '{}' upgraded to the 1.3.8 defaults (KeepGears = true)", logLabel, userPath);
+		}
+
 		const std::size_t missingKeysAdded = AddMissingIniValues(defaultsIni, userIni);
-		if (missingKeysAdded == 0) {
+		if (missingKeysAdded == 0 && !upgraded) {
 			return false;
 		}
 
@@ -2357,6 +2371,8 @@ namespace
 		out.SetBoolValue("WheelBehavior.KeepMissing", "KeepConsumables", snapshot.keepMissingConsumables);
 		out.SetBoolValue("WheelBehavior.KeepMissing", "KeepGears", snapshot.keepMissingGears);
 		out.SetBoolValue("WheelBehavior.KeepMissing", "KeepThrowableMods", snapshot.keepMissingThrowableMods);
+		// the 1.3.8 defaults marker: without it the next load would upgrade KeepGears to true again
+		out.SetLongValue("WheelBehavior.KeepMissing", "DefaultsRevision", 2);
 	out.SetBoolValue("WheelBehavior.HandMemory", "Enabled", snapshot.handMemoryEnabled);
 	out.SetBoolValue("WheelBehavior.HandMemory", "DebugLog", snapshot.handMemoryDebugLog);
 	out.SetDoubleValue("WheelBehavior.HandMemory", "RestoreDelaySeconds", snapshot.handMemoryRestoreDelaySeconds);

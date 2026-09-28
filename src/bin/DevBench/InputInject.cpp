@@ -30,12 +30,19 @@ namespace InputInject
 			// 2026-09-13: the top context alone answered '').
 			std::string_view name{};
 			if (controlMap) {
-				// GetRuntimeData(), not the member: CommonLibSSE-NG lays ControlMap's runtime members at AE's offsets in a
-				// SE+AE build, so the direct access reads garbage on SE 1.5.97 (Back Pocket For Controller crashed on it,
-				// 2026-09-22).
-				const auto& stack = controlMap->GetRuntimeData().contextPriorityStack;
-				for (std::uint32_t i = stack.size(); i > 0 && name.empty(); --i) {
-					name = controlMap->GetUserEventName(a_code, a_device, stack[i - 1]);
+				// This repo's CommonLibSSE-NG checkout has no GetRuntimeData() on ControlMap (the 2026-09-22 change to it
+				// never compiled here), so the member is read directly - but guarded the way Back Pocket For Controller
+				// learned to (it crashed reading this stack at the wrong offset on SE 1.5.97, 2026-09-22): the game pushes
+				// a handful of contexts, so a depth beyond 64 or an id past kTotal means a misread, and the stack is
+				// skipped for the plain lookup below instead of being indexed.
+				const auto& stack = controlMap->contextPriorityStack;
+				constexpr std::uint32_t kMaxContextDepth = 64;
+				if (stack.size() <= kMaxContextDepth) {
+					for (std::uint32_t i = stack.size(); i > 0 && name.empty(); --i) {
+						const auto context = stack[i - 1];
+						if (context >= RE::UserEvents::INPUT_CONTEXT_ID::kTotal) { continue; }
+						name = controlMap->GetUserEventName(a_code, a_device, context);
+					}
 				}
 				if (name.empty()) {
 					name = controlMap->GetUserEventName(a_code, a_device);

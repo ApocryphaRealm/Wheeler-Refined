@@ -10,6 +10,19 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.3.8 - 2026-09-27 - working
+
+### Changed
+- **Missing gear keeps its wheel slot by default** (`[WheelBehavior.KeepMissing] KeepGears = true`, was false). A
+  weapon, armour piece, torch or ammunition that leaves the inventory - put away by a loadout (Simple Loadout System
+  for Controller), carried by a follower - stays on the wheel shown as missing and works again when it comes back,
+  instead of being removed from the wheel. The owner, 2026-09-27: *"I'd rather just ship perfected Wheeler with keep
+  missing items on by default than add a special measure"*.
+- **Existing configs are upgraded once.** A wheelBehavior.ini written before 1.3.8 carries the old `KeepGears = false`
+  and the default backfill never changes an existing key, so a config without the new `DefaultsRevision` marker gets
+  `KeepGears = true` on first load, and the marker; the settings page writes the marker too, so a player who turns it
+  off again keeps it off.
+
 ## 1.3.7 - 2026-09-22 - untested
 
 ### Changed
