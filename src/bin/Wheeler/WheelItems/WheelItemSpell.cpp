@@ -556,7 +556,9 @@ bool WheelItemSpell::tryCastImmediate(bool allowNonInstant, RE::MagicSystem::Cas
 		return false;
 	}
 	auto pc = RE::PlayerCharacter::GetSingleton();
-	if (!pc) {
+	// 1.4.0: and placed in a cell - the singleton exists at the main menu with no character, and its actor values read
+	// there crash the game (logic library 2026-09-29, HUD Position Manager; gate or-player-actor-values-need-a-placed-player)
+	if (!pc || !pc->parentCell) {
 		return false;
 	}
 

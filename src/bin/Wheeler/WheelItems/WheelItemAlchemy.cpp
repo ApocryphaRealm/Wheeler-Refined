@@ -262,7 +262,7 @@ namespace
 		}
 
 		auto* pc = RE::PlayerCharacter::GetSingleton();
-		if (pc) {
+		if (pc && pc->parentCell) {   // 1.4.0: placed in a cell, or its actor values are not readable
 			auto* avOwner = pc->AsActorValueOwner();
 			logger::info(
 				"[AlchemyDescDiag] playerAV alchemy={:.2f} alchemyMod={:.2f} alchemyPowerMod={:.2f} restorationPowerMod={:.2f} alterationPowerMod={:.2f}",

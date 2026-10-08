@@ -5,6 +5,7 @@
 #include "PageLogic.h"
 #include "PageModel.h"
 #include "PageShared.h"
+#include "PreciseSlider.h"   // 1.4.0: rule 68 - a keyboard / D-pad nudge moves one unit of the shown digit
 #include "ValueStore.h"
 
 #include "bin/AMF/AMFLaunch.h"
@@ -390,14 +391,14 @@ namespace SettingsPage
 				bool changed = false;
 				if (integral) {
 					int shown = static_cast<int>(value);
-					changed = ImGui::SliderInt(a_entry.name.c_str(), &shown,
+					changed = precise::SliderInt(a_entry.name.c_str(), &shown,
 						static_cast<int>(minimum), static_cast<int>(maximum));
 					if (changed) {
 						value = static_cast<double>(shown);
 					}
 				} else {
 					float shown = static_cast<float>(value);
-					changed = ImGui::SliderFloat(a_entry.name.c_str(), &shown,
+					changed = precise::SliderFloat(a_entry.name.c_str(), &shown,
 						static_cast<float>(minimum), static_cast<float>(maximum), "%.3f");
 					if (changed) {
 						value = static_cast<double>(shown);
@@ -1141,7 +1142,7 @@ namespace SettingsPage
 					s_pending = live;
 				}
 				ImGui::SetNextItemWidth(220.0f);
-				ImGui::SliderInt(Texts::GetText(Texts::TextType::SlotCountLabel), &s_pending, 1, 64);
+				precise::SliderInt(Texts::GetText(Texts::TextType::SlotCountLabel), &s_pending, 1, 64);
 				s_dragging = ImGui::IsItemActive();
 				if (ImGui::IsItemDeactivatedAfterEdit() && s_pending != live) {
 					const int result = Wheeler::SetCurrentWheelSlotCount(s_pending);
@@ -1157,7 +1158,7 @@ namespace SettingsPage
 					s_pendingWheels = liveWheels;
 				}
 				ImGui::SetNextItemWidth(220.0f);
-				ImGui::SliderInt(Texts::GetText(Texts::TextType::WheelCountLabel), &s_pendingWheels, 1, 100);
+				precise::SliderInt(Texts::GetText(Texts::TextType::WheelCountLabel), &s_pendingWheels, 1, 100);
 				s_draggingWheels = ImGui::IsItemActive();
 				if (ImGui::IsItemDeactivatedAfterEdit() && s_pendingWheels != liveWheels) {
 					const int result = Wheeler::SetWheelCount(s_pendingWheels);

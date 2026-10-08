@@ -10,13 +10,16 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
-## Unreleased (next version from version-gate.ps1) - untested
+## 1.4.0 - 2026-10-08 - untested
 
 ### Changed
+- **Every slider on the settings page is a precise slider** (rule 68): a keyboard or D-pad nudge moves one unit of the shown digit instead of 1% of the range. The two count sliders (slots, wheels) and the generated setting rows.
+- **Spell casting, the summon refund check and the alchemy description log read the player's values only once the player is placed in the world** (the main-menu crash class found in HUD Position Manager, 2026-09-29). The wheel only opens in play, so nothing a player sees changes.
 - **Keys are read again while the game runs** (the owner: *"Wheeler and back pocket should both read their keys at runtime ... So it doesnt need a restart"*). On every menu close Controls.ini's write time is compared; a newer file is read and every binding re-bound, so a key moved on Unbind Vanilla Controls' Controls page (or in the INI) works at once.
 - **Wheeler's own settings window is gone** (the owner, 2026-09-28: *"we should remove the standalone Wheeler page and just use the AMF one"*). The settings live only on the Apocrypha Menu Framework page, which draws the same panels; the settings key, DevBench's `wheeler.page open` and the ShowOnLoad flag now open the framework's menu on Wheeler's page. DevBench's get / set / rebind / unbind still run every frame without a window, through the same capture and write code the framework page uses; `rebind` now also returns the row's `notice`.
 
 ### Fixed
+- **Chinese, Japanese and Korean names no longer show missing-character boxes on the wheel** (bsllyseye's Nexus bug report, 2026-10-08, "Issue of Character Mapping": 绊 in 绊索, Tripwire, drew as a box although the game's own menus show it). For those languages the wheel's font held only the 2,500 most common Chinese characters plus Wheeler's own text, and the wheel shows the game's names. It now also takes every character of the game's spell, scroll, shout, weapon, armour, ammunition, potion, ingredient, book, misc item and light names - including every mod's - when the game's data has loaded. The full CJK block would make the font texture too large; this adds only the characters that can appear.
 - **The settings page says how to put the wheel on a button an in-wheel action uses** (borokoshow, 2026-09-28: *"I couldn't use LT as modifier and LB as wheeler button"*). Since 1.3.7 the page allows an opener on such a button (LB is Activate Secondary, RB Activate Primary) once the opener has a modifier - but setting the button before the modifier was refused with only "not bound - that key is already used by Remove", which read as "impossible". That refusal now adds "- set this row's modifier first, then the key opens the wheel while the modifier is held", in all eleven languages. Proven in game: LT held + LB opens the wheel with a real controller (the owner) and with injected presses.
 
 ## 1.3.9 - 2026-09-27 - working

@@ -325,6 +325,42 @@ namespace
 
 	bool IsCjk(Script a_s) { return a_s == Script::Japanese || a_s == Script::Korean || a_s == Script::Chinese; }
 
+	// Every non-ASCII name the game gives the kinds of thing a wheel can hold. bsllyseye's Nexus bug report (2026-10-08,
+	// "Issue of Character Mapping"): 绊 in 绊索 (Tripwire) drew as a missing-glyph box on a Chinese game. The Chinese
+	// table above is ImGui's 2,500 common characters and the translation adds only Wheeler's own strings, while the wheel
+	// shows the GAME's names - so a rarer character in a spell, item or shout name was in neither. The full CJK block
+	// (21,000 glyphs at 64 px) is too large an atlas; these names are what the wheel can actually show - a few thousand
+	// distinct characters at most, including every mod's. Empty until the game's data is loaded; the atlas is rebuilt at
+	// kDataLoaded (Texts::Load -> RequestFontRebuild), by when every form exists.
+	std::string GameNameText()
+	{
+		std::string out;
+		auto* handler = RE::TESDataHandler::GetSingleton();
+		if (!handler) { return out; }
+		const auto add = [&out](const auto& a_forms) {
+			for (const auto* form : a_forms) {
+				const char* name = form ? form->GetName() : nullptr;
+				if (!name || !*name) { continue; }
+				// only names with a byte above ASCII: Latin names are already covered by the preset
+				for (const char* p = name; *p; ++p) {
+					if (static_cast<unsigned char>(*p) >= 0x80) { out += name; out += '\n'; break; }
+				}
+			}
+		};
+		add(handler->GetFormArray<RE::SpellItem>());
+		add(handler->GetFormArray<RE::ScrollItem>());
+		add(handler->GetFormArray<RE::TESShout>());
+		add(handler->GetFormArray<RE::TESObjectWEAP>());
+		add(handler->GetFormArray<RE::TESObjectARMO>());
+		add(handler->GetFormArray<RE::TESAmmo>());
+		add(handler->GetFormArray<RE::AlchemyItem>());
+		add(handler->GetFormArray<RE::IngredientItem>());
+		add(handler->GetFormArray<RE::TESObjectBOOK>());
+		add(handler->GetFormArray<RE::TESObjectMISC>());
+		add(handler->GetFormArray<RE::TESObjectLIGH>());
+		return out;
+	}
+
 	// System faces that carry each script, preferred first. Segoe UI already has Cyrillic and
 	// Vietnamese; Thai lives in Leelawadee UI and Tahoma.
 	std::vector<std::string> FallbackFaces(Script a_s)
@@ -457,6 +493,12 @@ void RenderManager::BuildFontAtlas()
 		}
 		const std::string translated = Texts::AllText();
 		builder.AddText(translated.c_str());
+		// CJK: also every character of the game's own names for what a wheel holds (GameNameText, above)
+		if (IsCjk(folderScript) || IsCjk(gameScript)) {
+			const std::string names = GameNameText();
+			builder.AddText(names.c_str());
+			INFO("[Font] Added the characters of {} bytes of the game's non-ASCII item / spell / shout names", names.size());
+		}
 		s_ranges.clear();
 		builder.BuildRanges(&s_ranges);
 	}

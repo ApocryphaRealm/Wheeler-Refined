@@ -8,6 +8,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "PreviewDrawer.h"
 #include "PreviewConfig.h"
+#include "../../src/bin/SettingsPage/PreciseSlider.h"   // rule 68: one unit of the shown digit per nudge
 
 // Data
 static ID3D11Device*            g_pd3dDevice = nullptr;
@@ -121,8 +122,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             
             // Simulation Controls
             if (ImGui::CollapsingHeader("Preview Simulation", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::SliderInt("Slot Count", &numSlots, 1, 20);
-                ImGui::SliderInt("Hovered Slot", &hoveredSlot, -1, numSlots - 1);
+                precise::SliderInt("Slot Count", &numSlots, 1, 20);
+                precise::SliderInt("Hovered Slot", &hoveredSlot, -1, numSlots - 1);
             }
             
             ImGui::Separator();
@@ -130,14 +131,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // Geometry Settings (editable)
             if (ImGui::CollapsingHeader("In-Game Geometry Settings [SAVES]", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "These settings affect the actual plugin:");
-                ImGui::SliderFloat("Wheel Radius", &PreviewConfig::AmmoWheel::WheelRadius, 50.0f, 500.0f, "%.0f");
-                ImGui::SliderFloat("Inner Ratio", &PreviewConfig::AmmoWheel::InnerRadiusRatio, -10.0f, 20.0f, "%.2f");
-                ImGui::SliderFloat("Slot Gap (deg)", &PreviewConfig::AmmoWheel::SlotGapDeg, 0.0f, 15.0f, "%.1f");
-                ImGui::SliderFloat("Start Angle", &PreviewConfig::AmmoWheel::ArcStartAngle, 0.0f, 360.0f, "%.0f");
+                precise::SliderFloat("Wheel Radius", &PreviewConfig::AmmoWheel::WheelRadius, 50.0f, 500.0f, "%.0f");
+                precise::SliderFloat("Inner Ratio", &PreviewConfig::AmmoWheel::InnerRadiusRatio, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("Slot Gap (deg)", &PreviewConfig::AmmoWheel::SlotGapDeg, 0.0f, 15.0f, "%.1f");
+                precise::SliderFloat("Start Angle", &PreviewConfig::AmmoWheel::ArcStartAngle, 0.0f, 360.0f, "%.0f");
                 
                 // Wheel shape as slider (0=Full, 1=Half, 2=Quarter)
                 static const char* wheelShapeNames[] = { "Full (360)", "Half (180)", "Quarter (90)" };
-                if (ImGui::SliderInt("Wheel Shape", &PreviewConfig::AmmoWheel::WheelShape, 0, 2)) {
+                if (precise::SliderInt("Wheel Shape", &PreviewConfig::AmmoWheel::WheelShape, 0, 2)) {
                     // Auto-update sweep angle based on shape
                     if (PreviewConfig::AmmoWheel::WheelShape == 0) PreviewConfig::AmmoWheel::ArcSweepAngle = 360.0f;
                     else if (PreviewConfig::AmmoWheel::WheelShape == 1) PreviewConfig::AmmoWheel::ArcSweepAngle = 180.0f;
@@ -155,18 +156,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 
                 // Slot shape (0=Arc, 1=Rounded, 2=Pill, 3=Circle)
                 static const char* slotShapeNames[] = { "Arc", "RoundedRect", "Pill", "Circle" };
-                ImGui::SliderInt("Slot Shape", &PreviewConfig::AmmoWheel::SlotShape, 0, 3);
+                precise::SliderInt("Slot Shape", &PreviewConfig::AmmoWheel::SlotShape, 0, 3);
                 ImGui::SameLine();
                 ImGui::Text("%s", slotShapeNames[PreviewConfig::AmmoWheel::SlotShape]);
                 
                 // Corner radius (only applicable for Rounded shape)
                 if (PreviewConfig::AmmoWheel::SlotShape == 1) {
-                    ImGui::SliderFloat("Corner Radius", &PreviewConfig::AmmoWheel::SlotCornerRadius, -10.0f, 20.0f, "%.0f");
+                    precise::SliderFloat("Corner Radius", &PreviewConfig::AmmoWheel::SlotCornerRadius, -10.0f, 20.0f, "%.0f");
                 }
                 
                 // Shape scale (for non-arc shapes)
                 if (PreviewConfig::AmmoWheel::SlotShape != 0) {
-                    ImGui::SliderFloat("Shape Scale", &PreviewConfig::AmmoWheel::SlotShapeScale, 0.5f, 1.2f, "%.2f");
+                    precise::SliderFloat("Shape Scale", &PreviewConfig::AmmoWheel::SlotShapeScale, 0.5f, 1.2f, "%.2f");
                 }
             }
             
@@ -180,40 +181,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 ImGui::Separator();
                 ImGui::Text("Background:");
                 ImGui::Checkbox("Background Enabled", &PreviewConfig::AmmoWheel::BackgroundEnabled);
-                ImGui::SliderFloat("BG Opacity", &PreviewConfig::AmmoWheel::BackgroundOpacity, 0.0f, 1.0f, "%.2f");
-                ImGui::SliderFloat("BG Radius Scale", &PreviewConfig::AmmoWheel::BackgroundRadiusScale, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("BG Opacity", &PreviewConfig::AmmoWheel::BackgroundOpacity, 0.0f, 1.0f, "%.2f");
+                precise::SliderFloat("BG Radius Scale", &PreviewConfig::AmmoWheel::BackgroundRadiusScale, -10.0f, 20.0f, "%.2f");
                 
                 ImGui::Separator();
                 ImGui::Text("Border (Arc-only):");
                 ImGui::Checkbox("Border Enabled", &PreviewConfig::AmmoWheel::BorderEnabled);
-                ImGui::SliderFloat("Border Inner Scale", &PreviewConfig::AmmoWheel::BorderInnerScale, -10.0f, 20.0f, "%.2f");
-                ImGui::SliderFloat("Border Outer Scale", &PreviewConfig::AmmoWheel::BorderOuterScale, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("Border Inner Scale", &PreviewConfig::AmmoWheel::BorderInnerScale, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("Border Outer Scale", &PreviewConfig::AmmoWheel::BorderOuterScale, -10.0f, 20.0f, "%.2f");
                 
                 ImGui::Separator();
                 ImGui::Text("Slot Shadow:");
                 ImGui::Checkbox("Shadow Enabled", &PreviewConfig::AmmoWheel::SlotShadowEnabled);
-                ImGui::SliderFloat("Shadow Offset X", &PreviewConfig::AmmoWheel::SlotShadowOffsetX, 0.0f, 10.0f, "%.1f");
-                ImGui::SliderFloat("Shadow Offset Y", &PreviewConfig::AmmoWheel::SlotShadowOffsetY, 0.0f, 10.0f, "%.1f");
-                ImGui::SliderInt("Shadow Alpha", &PreviewConfig::AmmoWheel::SlotShadowAlpha, 0, 255);
+                precise::SliderFloat("Shadow Offset X", &PreviewConfig::AmmoWheel::SlotShadowOffsetX, 0.0f, 10.0f, "%.1f");
+                precise::SliderFloat("Shadow Offset Y", &PreviewConfig::AmmoWheel::SlotShadowOffsetY, 0.0f, 10.0f, "%.1f");
+                precise::SliderInt("Shadow Alpha", &PreviewConfig::AmmoWheel::SlotShadowAlpha, 0, 255);
                 
                 ImGui::Separator();
                 ImGui::Text("Slot Highlight:");
                 ImGui::Checkbox("Highlight Enabled", &PreviewConfig::AmmoWheel::SlotHighlightEnabled);
-                ImGui::SliderFloat("Highlight Thickness", &PreviewConfig::AmmoWheel::SlotHighlightThickness, 0.5f, 5.0f, "%.1f");
-                ImGui::SliderInt("Highlight Alpha", &PreviewConfig::AmmoWheel::SlotHighlightAlpha, 0, 255);
+                precise::SliderFloat("Highlight Thickness", &PreviewConfig::AmmoWheel::SlotHighlightThickness, 0.5f, 5.0f, "%.1f");
+                precise::SliderInt("Highlight Alpha", &PreviewConfig::AmmoWheel::SlotHighlightAlpha, 0, 255);
             }
             
             // Animation Settings
             if (ImGui::CollapsingHeader("Animations [SAVES]")) {
                 ImGui::Text("Hover Pulse:");
                 ImGui::Checkbox("Pulse Enabled", &PreviewConfig::AmmoWheel::HoverPulseEnabled);
-                ImGui::SliderFloat("Pulse Speed", &PreviewConfig::AmmoWheel::HoverPulseSpeed, 1.0f, 10.0f, "%.1f");
-                ImGui::SliderFloat("Pulse Size", &PreviewConfig::AmmoWheel::HoverPulseSize, 1.0f, 15.0f, "%.1f");
+                precise::SliderFloat("Pulse Speed", &PreviewConfig::AmmoWheel::HoverPulseSpeed, 1.0f, 10.0f, "%.1f");
+                precise::SliderFloat("Pulse Size", &PreviewConfig::AmmoWheel::HoverPulseSize, 1.0f, 15.0f, "%.1f");
                 
                 ImGui::Separator();
                 ImGui::Text("Slot Dividers (Arc-only):");
                 ImGui::Checkbox("Dividers Enabled", &PreviewConfig::AmmoWheel::SlotDividersEnabled);
-                ImGui::SliderFloat("Divider Thickness", &PreviewConfig::AmmoWheel::SlotDividerThickness, 0.5f, 5.0f, "%.1f");
+                precise::SliderFloat("Divider Thickness", &PreviewConfig::AmmoWheel::SlotDividerThickness, 0.5f, 5.0f, "%.1f");
             }
             
             ImGui::Separator();
@@ -240,23 +241,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 }
                 
                 ImGui::Text("Begin (Inner):");
-                if (ImGui::SliderInt("Alpha##UB", &uA1, 0, 255)) 
+                if (precise::SliderInt("Alpha##UB", &uA1, 0, 255)) 
                     PreviewConfig::Colors::UnhoveredColorBegin = (uA1 << 24) | (uR1 << 16) | (uG1 << 8) | uB1;
-                if (ImGui::SliderInt("Red##UB", &uR1, 0, 255))
+                if (precise::SliderInt("Red##UB", &uR1, 0, 255))
                     PreviewConfig::Colors::UnhoveredColorBegin = (uA1 << 24) | (uR1 << 16) | (uG1 << 8) | uB1;
-                if (ImGui::SliderInt("Green##UB", &uG1, 0, 255))
+                if (precise::SliderInt("Green##UB", &uG1, 0, 255))
                     PreviewConfig::Colors::UnhoveredColorBegin = (uA1 << 24) | (uR1 << 16) | (uG1 << 8) | uB1;
-                if (ImGui::SliderInt("Blue##UB", &uB1, 0, 255))
+                if (precise::SliderInt("Blue##UB", &uB1, 0, 255))
                     PreviewConfig::Colors::UnhoveredColorBegin = (uA1 << 24) | (uR1 << 16) | (uG1 << 8) | uB1;
                 
                 ImGui::Text("End (Outer):");
-                if (ImGui::SliderInt("Alpha##UE", &uA2, 0, 255))
+                if (precise::SliderInt("Alpha##UE", &uA2, 0, 255))
                     PreviewConfig::Colors::UnhoveredColorEnd = (uA2 << 24) | (uR2 << 16) | (uG2 << 8) | uB2;
-                if (ImGui::SliderInt("Red##UE", &uR2, 0, 255))
+                if (precise::SliderInt("Red##UE", &uR2, 0, 255))
                     PreviewConfig::Colors::UnhoveredColorEnd = (uA2 << 24) | (uR2 << 16) | (uG2 << 8) | uB2;
-                if (ImGui::SliderInt("Green##UE", &uG2, 0, 255))
+                if (precise::SliderInt("Green##UE", &uG2, 0, 255))
                     PreviewConfig::Colors::UnhoveredColorEnd = (uA2 << 24) | (uR2 << 16) | (uG2 << 8) | uB2;
-                if (ImGui::SliderInt("Blue##UE", &uB2, 0, 255))
+                if (precise::SliderInt("Blue##UE", &uB2, 0, 255))
                     PreviewConfig::Colors::UnhoveredColorEnd = (uA2 << 24) | (uR2 << 16) | (uG2 << 8) | uB2;
                 
                 // Preview color box
@@ -287,23 +288,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 }
                 
                 ImGui::Text("Begin (Inner):");
-                if (ImGui::SliderInt("Alpha##HB", &hA1, 0, 255))
+                if (precise::SliderInt("Alpha##HB", &hA1, 0, 255))
                     PreviewConfig::Colors::HoveredColorBegin = (hA1 << 24) | (hR1 << 16) | (hG1 << 8) | hB1;
-                if (ImGui::SliderInt("Red##HB", &hR1, 0, 255))
+                if (precise::SliderInt("Red##HB", &hR1, 0, 255))
                     PreviewConfig::Colors::HoveredColorBegin = (hA1 << 24) | (hR1 << 16) | (hG1 << 8) | hB1;
-                if (ImGui::SliderInt("Green##HB", &hG1, 0, 255))
+                if (precise::SliderInt("Green##HB", &hG1, 0, 255))
                     PreviewConfig::Colors::HoveredColorBegin = (hA1 << 24) | (hR1 << 16) | (hG1 << 8) | hB1;
-                if (ImGui::SliderInt("Blue##HB", &hB1, 0, 255))
+                if (precise::SliderInt("Blue##HB", &hB1, 0, 255))
                     PreviewConfig::Colors::HoveredColorBegin = (hA1 << 24) | (hR1 << 16) | (hG1 << 8) | hB1;
                 
                 ImGui::Text("End (Outer):");
-                if (ImGui::SliderInt("Alpha##HE", &hA2, 0, 255))
+                if (precise::SliderInt("Alpha##HE", &hA2, 0, 255))
                     PreviewConfig::Colors::HoveredColorEnd = (hA2 << 24) | (hR2 << 16) | (hG2 << 8) | hB2;
-                if (ImGui::SliderInt("Red##HE", &hR2, 0, 255))
+                if (precise::SliderInt("Red##HE", &hR2, 0, 255))
                     PreviewConfig::Colors::HoveredColorEnd = (hA2 << 24) | (hR2 << 16) | (hG2 << 8) | hB2;
-                if (ImGui::SliderInt("Green##HE", &hG2, 0, 255))
+                if (precise::SliderInt("Green##HE", &hG2, 0, 255))
                     PreviewConfig::Colors::HoveredColorEnd = (hA2 << 24) | (hR2 << 16) | (hG2 << 8) | hB2;
-                if (ImGui::SliderInt("Blue##HE", &hB2, 0, 255))
+                if (precise::SliderInt("Blue##HE", &hB2, 0, 255))
                     PreviewConfig::Colors::HoveredColorEnd = (hA2 << 24) | (hR2 << 16) | (hG2 << 8) | hB2;
                     
                 ImVec4 previewH1 = ImVec4(hR1/255.0f, hG1/255.0f, hB1/255.0f, hA1/255.0f);
@@ -321,71 +322,71 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (ImGui::CollapsingHeader("Popup Settings [SAVES]")) {
                 ImGui::Checkbox("Popup Enabled", &PreviewConfig::AmmoWheel::PopupEnabled);
                 ImGui::Checkbox("Circular Bubble", &PreviewConfig::AmmoWheel::PopupCircular);
-                ImGui::SliderFloat("Bubble Radius", &PreviewConfig::AmmoWheel::PopupBubbleRadius, 40.0f, 150.0f, "%.0f px");
-                ImGui::SliderFloat("Offset from Wheel", &PreviewConfig::AmmoWheel::PopupOffsetPx, 20.0f, 150.0f, "%.0f px");
-                ImGui::SliderFloat("Padding", &PreviewConfig::AmmoWheel::PopupPaddingPx, 5.0f, 30.0f, "%.0f px");
+                precise::SliderFloat("Bubble Radius", &PreviewConfig::AmmoWheel::PopupBubbleRadius, 40.0f, 150.0f, "%.0f px");
+                precise::SliderFloat("Offset from Wheel", &PreviewConfig::AmmoWheel::PopupOffsetPx, 20.0f, 150.0f, "%.0f px");
+                precise::SliderFloat("Padding", &PreviewConfig::AmmoWheel::PopupPaddingPx, 5.0f, 30.0f, "%.0f px");
                 
                 ImGui::Separator();
                 ImGui::Text("Popup Fonts:");
-                ImGui::SliderFloat("Popup Icon Size", &PreviewConfig::AmmoWheel::PopupIconSizePx, 32.0f, 200.0f, "%.0f px");
-                ImGui::SliderFloat("Name Font", &PreviewConfig::AmmoWheel::PopupNameFontPx, 16.0f, 48.0f, "%.0f px");
-                ImGui::SliderFloat("Count Font", &PreviewConfig::AmmoWheel::PopupCountFontPx, 12.0f, 36.0f, "%.0f px");
+                precise::SliderFloat("Popup Icon Size", &PreviewConfig::AmmoWheel::PopupIconSizePx, 32.0f, 200.0f, "%.0f px");
+                precise::SliderFloat("Name Font", &PreviewConfig::AmmoWheel::PopupNameFontPx, 16.0f, 48.0f, "%.0f px");
+                precise::SliderFloat("Count Font", &PreviewConfig::AmmoWheel::PopupCountFontPx, 12.0f, 36.0f, "%.0f px");
             }
             
             // Popup Animation Settings
             if (ImGui::CollapsingHeader("Popup Animation [SAVES]")) {
                 ImGui::Checkbox("Animation Enabled", &PreviewConfig::AmmoWheel::PopupAnimEnabled);
-                ImGui::SliderFloat("Hover In (ms)", &PreviewConfig::AmmoWheel::PopupAnimHoverInMs, 50.0f, 300.0f, "%.0f");
-                ImGui::SliderFloat("Hover Out (ms)", &PreviewConfig::AmmoWheel::PopupAnimHoverOutMs, 30.0f, 200.0f, "%.0f");
-                ImGui::SliderFloat("Scale From", &PreviewConfig::AmmoWheel::PopupAnimScaleFrom, 0.5f, 1.0f, "%.2f");
-                ImGui::SliderFloat("Scale To", &PreviewConfig::AmmoWheel::PopupAnimScaleTo, 0.8f, 1.2f, "%.2f");
+                precise::SliderFloat("Hover In (ms)", &PreviewConfig::AmmoWheel::PopupAnimHoverInMs, 50.0f, 300.0f, "%.0f");
+                precise::SliderFloat("Hover Out (ms)", &PreviewConfig::AmmoWheel::PopupAnimHoverOutMs, 30.0f, 200.0f, "%.0f");
+                precise::SliderFloat("Scale From", &PreviewConfig::AmmoWheel::PopupAnimScaleFrom, 0.5f, 1.0f, "%.2f");
+                precise::SliderFloat("Scale To", &PreviewConfig::AmmoWheel::PopupAnimScaleTo, 0.8f, 1.2f, "%.2f");
                 
                 static const char* easingNames[] = { "Linear", "OutCubic", "OutBack (Overshoot)" };
                 ImGui::Combo("Easing", &PreviewConfig::AmmoWheel::PopupAnimEasing, easingNames, 3);
                 
                 ImGui::Separator();
                 ImGui::Text("Border & Background:");
-                ImGui::SliderFloat("Border Thickness", &PreviewConfig::AmmoWheel::PopupAnimBorderThickness, 0.5f, 5.0f, "%.1f");
-                ImGui::SliderFloat("Border Opacity", &PreviewConfig::AmmoWheel::PopupAnimBorderOpacity, 0.0f, 1.0f, "%.2f");
-                ImGui::SliderFloat("Background Opacity", &PreviewConfig::AmmoWheel::PopupAnimBackgroundOpacity, 0.0f, 1.0f, "%.2f");
-                ImGui::SliderFloat("Animation Speed", &PreviewConfig::AmmoWheel::PopupAnimationSpeed, 1.0f, 20.0f, "%.1f");
+                precise::SliderFloat("Border Thickness", &PreviewConfig::AmmoWheel::PopupAnimBorderThickness, 0.5f, 5.0f, "%.1f");
+                precise::SliderFloat("Border Opacity", &PreviewConfig::AmmoWheel::PopupAnimBorderOpacity, 0.0f, 1.0f, "%.2f");
+                precise::SliderFloat("Background Opacity", &PreviewConfig::AmmoWheel::PopupAnimBackgroundOpacity, 0.0f, 1.0f, "%.2f");
+                precise::SliderFloat("Animation Speed", &PreviewConfig::AmmoWheel::PopupAnimationSpeed, 1.0f, 20.0f, "%.1f");
             }
             
             // Display Settings
             if (ImGui::CollapsingHeader("Display Settings [SAVES]")) {
                 ImGui::Text("Ammo Count:");
                 ImGui::Checkbox("Show Ammo Count", &PreviewConfig::AmmoWheel::ShowAmmoCount);
-                ImGui::SliderFloat("Count Font Size", &PreviewConfig::AmmoWheel::CountFontSize, 10.0f, 32.0f, "%.0f px");
+                precise::SliderFloat("Count Font Size", &PreviewConfig::AmmoWheel::CountFontSize, 10.0f, 32.0f, "%.0f px");
                 
                 ImGui::Separator();
                 ImGui::Text("Icons:");
                 ImGui::Checkbox("Show Icons", &PreviewConfig::AmmoWheel::ShowIcons);
-                ImGui::SliderFloat("Icon Size", &PreviewConfig::AmmoWheel::IconSize, 24.0f, 200.0f, "%.0f px");
-                ImGui::SliderFloat("Icon Radius Ratio", &PreviewConfig::AmmoWheel::IconRadiusRatio, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("Icon Size", &PreviewConfig::AmmoWheel::IconSize, 24.0f, 200.0f, "%.0f px");
+                precise::SliderFloat("Icon Radius Ratio", &PreviewConfig::AmmoWheel::IconRadiusRatio, -10.0f, 20.0f, "%.2f");
                 ImGui::Checkbox("Icon Hover Glow", &PreviewConfig::AmmoWheel::IconHoverGlow);
             }
             
             // Label Settings
             if (ImGui::CollapsingHeader("Label Settings [SAVES]")) {
                 ImGui::Checkbox("Show Labels", &PreviewConfig::AmmoWheel::LabelShow);
-                ImGui::SliderInt("Truncate Length", &PreviewConfig::AmmoWheel::LabelTruncateLength, 5, 30);
+                precise::SliderInt("Truncate Length", &PreviewConfig::AmmoWheel::LabelTruncateLength, 5, 30);
                 ImGui::Checkbox("Use Abbreviations", &PreviewConfig::AmmoWheel::LabelAbbreviate);
                 ImGui::Checkbox("Multi-Line Labels", &PreviewConfig::AmmoWheel::LabelMultiLine);
-                ImGui::SliderFloat("Max Arc Ratio", &PreviewConfig::AmmoWheel::LabelMaxSlotArcRatio, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("Max Arc Ratio", &PreviewConfig::AmmoWheel::LabelMaxSlotArcRatio, -10.0f, 20.0f, "%.2f");
             }
             
             // Text Settings
             if (ImGui::CollapsingHeader("Text Settings [SAVES]")) {
-                ImGui::SliderFloat("Name Font (px)", &PreviewConfig::AmmoWheel::NameFontPx, 10.0f, 48.0f, "%.0f");
-                ImGui::SliderFloat("Count Font (px)", &PreviewConfig::AmmoWheel::CountFontPx, 10.0f, 36.0f, "%.0f");
-                ImGui::SliderFloat("Name Text Scale", &PreviewConfig::AmmoWheel::NameTextScale, 0.5f, 2.0f, "%.2f");
+                precise::SliderFloat("Name Font (px)", &PreviewConfig::AmmoWheel::NameFontPx, 10.0f, 48.0f, "%.0f");
+                precise::SliderFloat("Count Font (px)", &PreviewConfig::AmmoWheel::CountFontPx, 10.0f, 36.0f, "%.0f");
+                precise::SliderFloat("Name Text Scale", &PreviewConfig::AmmoWheel::NameTextScale, 0.5f, 2.0f, "%.2f");
                 
                 ImGui::Separator();
                 ImGui::Text("Text Shadow:");
                 ImGui::Checkbox("Shadow Enabled", &PreviewConfig::AmmoWheel::TextShadowEnabled);
-                ImGui::SliderInt("Shadow Layers", &PreviewConfig::AmmoWheel::TextShadowLayers, 1, 3);
-                ImGui::SliderInt("Shadow Alpha", &PreviewConfig::AmmoWheel::TextShadowAlpha, 0, 255);
-                ImGui::SliderFloat("Shadow Offset", &PreviewConfig::AmmoWheel::TextShadowOffset, 0.5f, 4.0f, "%.1f");
+                precise::SliderInt("Shadow Layers", &PreviewConfig::AmmoWheel::TextShadowLayers, 1, 3);
+                precise::SliderInt("Shadow Alpha", &PreviewConfig::AmmoWheel::TextShadowAlpha, 0, 255);
+                precise::SliderFloat("Shadow Offset", &PreviewConfig::AmmoWheel::TextShadowOffset, 0.5f, 4.0f, "%.1f");
                 ImGui::Checkbox("Hover Glow", &PreviewConfig::AmmoWheel::TextHoverGlowEnabled);
             }
             
@@ -393,39 +394,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (ImGui::CollapsingHeader("Center Panel [SAVES]")) {
                 ImGui::Checkbox("Center Panel Enabled", &PreviewConfig::AmmoWheel::CenterEnabled);
                 ImGui::Checkbox("Background Enabled##CP", &PreviewConfig::AmmoWheel::CenterBgEnabled);
-                ImGui::SliderFloat("BG Opacity##CP", &PreviewConfig::AmmoWheel::CenterBgOpacity, 0.0f, 1.0f, "%.2f");
-                ImGui::SliderFloat("Padding (px)", &PreviewConfig::AmmoWheel::CenterPaddingPx, 0.0f, 40.0f, "%.0f");
-                ImGui::SliderFloat("Max Width Ratio", &PreviewConfig::AmmoWheel::CenterMaxWidthRatio, -10.0f, 20.0f, "%.2f");
-                ImGui::SliderFloat("Line Spacing", &PreviewConfig::AmmoWheel::CenterLineSpacingPx, -10.0f, 20.0f, "%.0f");
-                ImGui::SliderFloat("Font Size##CP", &PreviewConfig::AmmoWheel::CenterFontPx, 10.0f, 36.0f, "%.0f");
+                precise::SliderFloat("BG Opacity##CP", &PreviewConfig::AmmoWheel::CenterBgOpacity, 0.0f, 1.0f, "%.2f");
+                precise::SliderFloat("Padding (px)", &PreviewConfig::AmmoWheel::CenterPaddingPx, 0.0f, 40.0f, "%.0f");
+                precise::SliderFloat("Max Width Ratio", &PreviewConfig::AmmoWheel::CenterMaxWidthRatio, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("Line Spacing", &PreviewConfig::AmmoWheel::CenterLineSpacingPx, -10.0f, 20.0f, "%.0f");
+                precise::SliderFloat("Font Size##CP", &PreviewConfig::AmmoWheel::CenterFontPx, 10.0f, 36.0f, "%.0f");
                 
                 ImGui::Separator();
                 ImGui::Text("Panel Shape:");
                 static const char* shapeNames[] = { "Auto", "Rectangle", "Circle", "RoundedRect" };
                 ImGui::Combo("Shape##CP", &PreviewConfig::AmmoWheel::CenterPanelShapeIndex, shapeNames, 4);
                 if (PreviewConfig::AmmoWheel::CenterPanelShapeIndex == 3) {
-                    ImGui::SliderFloat("Corner Rounding##CP", &PreviewConfig::AmmoWheel::CenterPanelCornerRounding, 0.0f, 30.0f, "%.0f");
+                    precise::SliderFloat("Corner Rounding##CP", &PreviewConfig::AmmoWheel::CenterPanelCornerRounding, 0.0f, 30.0f, "%.0f");
                 }
-                ImGui::SliderFloat("Border Thickness##CP", &PreviewConfig::AmmoWheel::CenterPanelBorderThickness, -10.0f, 20.0f, "%.1f");
-                ImGui::SliderFloat("Border Alpha##CP", &PreviewConfig::AmmoWheel::CenterPanelBorderAlpha, -10.0f, 20.0f, "%.2f");
+                precise::SliderFloat("Border Thickness##CP", &PreviewConfig::AmmoWheel::CenterPanelBorderThickness, -10.0f, 20.0f, "%.1f");
+                precise::SliderFloat("Border Alpha##CP", &PreviewConfig::AmmoWheel::CenterPanelBorderAlpha, -10.0f, 20.0f, "%.2f");
                 
                 ImGui::Separator();
                 ImGui::Text("Frame Decoration:");
                 ImGui::Checkbox("Frame Enabled", &PreviewConfig::AmmoWheel::CenterFrameEnabled);
                 ImGui::Checkbox("Frame Pulse", &PreviewConfig::AmmoWheel::CenterFramePulse);
-                ImGui::SliderFloat("Pulse Speed##CP", &PreviewConfig::AmmoWheel::CenterFramePulseSpeed, 0.5f, 5.0f, "%.1f");
+                precise::SliderFloat("Pulse Speed##CP", &PreviewConfig::AmmoWheel::CenterFramePulseSpeed, 0.5f, 5.0f, "%.1f");
             }
             
             // Indicator Settings
             if (ImGui::CollapsingHeader("Indicators [SAVES]")) {
                 ImGui::Text("Low Ammo Warning:");
                 ImGui::Checkbox("Low Ammo Indicator", &PreviewConfig::AmmoWheel::LowAmmoIndicatorEnabled);
-                ImGui::SliderInt("Threshold", &PreviewConfig::AmmoWheel::LowAmmoThreshold, 1, 50);
-                ImGui::SliderFloat("Indicator Thickness##LA", &PreviewConfig::AmmoWheel::LowAmmoIndicatorThickness, 1.0f, 5.0f, "%.1f");
+                precise::SliderInt("Threshold", &PreviewConfig::AmmoWheel::LowAmmoThreshold, 1, 50);
+                precise::SliderFloat("Indicator Thickness##LA", &PreviewConfig::AmmoWheel::LowAmmoIndicatorThickness, 1.0f, 5.0f, "%.1f");
                 
                 ImGui::Separator();
                 ImGui::Text("Selected Indicator:");
-                ImGui::SliderFloat("Thickness##SI", &PreviewConfig::AmmoWheel::SelectedIndicatorThickness, 1.0f, 8.0f, "%.1f");
+                precise::SliderFloat("Thickness##SI", &PreviewConfig::AmmoWheel::SelectedIndicatorThickness, 1.0f, 8.0f, "%.1f");
             }
             
             ImGui::Separator();

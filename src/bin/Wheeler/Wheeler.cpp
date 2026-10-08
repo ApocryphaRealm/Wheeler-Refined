@@ -5995,7 +5995,7 @@ void Wheeler::ProcessPendingActions()
 		auto& pending = *_pendingSpellActivation;
 
 		RE::PlayerCharacter* pc = RE::PlayerCharacter::GetSingleton();
-		if (!pc) {
+		if (!pc || !pc->parentCell) {   // 1.4.0: a player not placed in a cell has no readable actor values
 			logger::warn("[SpellPipe] pending activation failed: no player");
 			_pendingSpellActivation.reset();
 		} else {
@@ -7348,7 +7348,7 @@ void Wheeler::ProcessPendingActions()
 			bool shouldRefund = false;
 			float refundAmount = 0.0f;
 			
-			if (pc) {
+			if (pc && pc->parentCell) {   // 1.4.0: placed in a cell, or its actor values are not readable
 				// Check if active effect count increased (new summon spawned)
 				int effectCountNow = Utils::Magic::CountActiveEffectsFromSpell(check.spellFormID);
 				float currentMagicka = pc->AsActorValueOwner()->GetActorValue(RE::ActorValue::kMagicka);
