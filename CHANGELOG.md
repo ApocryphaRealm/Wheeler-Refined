@@ -10,7 +10,7 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
-## 1.4.0 - 2026-10-08 - untested
+## 1.4.0 - 2026-10-08 - working
 
 ### Changed
 - **Every slider on the settings page is a precise slider** (rule 68): a keyboard or D-pad nudge moves one unit of the shown digit instead of 1% of the range. The two count sliders (slots, wheels) and the generated setting rows.
