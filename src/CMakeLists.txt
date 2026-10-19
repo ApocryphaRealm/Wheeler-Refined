@@ -122,6 +122,8 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 		PRIVATE
 			"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
 			"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+			# Rule 45: the debug directory records only the PDB's file name, not the build machine's path
+			"/PDBALTPATH:%_PDB%"
 	)
 endif()
 target_include_directories(
