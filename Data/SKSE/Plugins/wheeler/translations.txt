@@ -53,9 +53,9 @@ AmmoWheelFactoryDefaultsFailed = Wheeler: Failed to restore Ammo Wheel factory d
 ; Utils::NotificationMessage from Wheeler.cpp when a slot-count change is refused.
 SlotCountBlockedByFilledSlot = Wheeler: stopped - the next slot still holds an item. Empty it first.
 SlotCountAtMaximum = Wheeler: 64 slots is the most a wheel can be saved with.
-AmfLaunchExplain = Wheeler draws its settings page in its own overlay, not inside this menu. Press the button, then close this menu: the Wheeler page opens as soon as it is gone.
+AmfLaunchExplain = Wheeler's settings are on its own page in this menu. Press the button, then close this menu: it opens again on Wheeler's page.
 AmfLaunchButton = Open the Wheeler settings page
-AmfLaunchPending = Ready - close this menu and the Wheeler page will open.
+AmfLaunchPending = Ready - close this menu and it will open again on Wheeler's page.
 KeymapReservedByFramework = not bound - the menu framework reserves that key
 KeymapAlreadyBoundTo = not bound - that key is already used by
 KeymapSetModifierFirst = - set this row's modifier first, then the key opens the wheel while the modifier is held
