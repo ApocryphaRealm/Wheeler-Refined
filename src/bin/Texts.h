@@ -92,6 +92,9 @@ public:
 		PresetNotFound,
 		PresetAlreadyExists,
 		AdvancedSettingsHidden,
+		// 1.4.1: the Weapon Type Slots row on the settings page (its descriptor names these keys under "translation").
+		WeaponTypeSlotsName,
+		WeaponTypeSlotsDesc,
 
 		Total
 	};
@@ -109,6 +112,9 @@ public:
 	static const std::string& LanguageFile();
 	static int LanguageEntries();
 	static const char* GetText(TextType a_textType);
+	// 1.4.1: the text in force for a key given by its name ("WeaponTypeSlotsName" or "$WeaponTypeSlotsName"), or
+	// nullptr when no TextType carries that key - lets a settings-page descriptor row name its translation keys.
+	static const char* GetTextByKey(const std::string& a_key);
 
 private:
 #define MAP_ENTRY(textTypeName, defaultText) \
@@ -203,6 +209,8 @@ private:
 		MAP_ENTRY(PresetNotFound, "No such preset:"),
 		MAP_ENTRY(PresetAlreadyExists, "A preset already has that name:"),
 		MAP_ENTRY(AdvancedSettingsHidden, "Advanced settings are off. Turn them on under Wheeler Controls / General to show this section."),
+		MAP_ENTRY(WeaponTypeSlotsName, "Weapon Type Slots"),
+		MAP_ENTRY(WeaponTypeSlotsDesc, "The Inventory Wheel holds weapons only, one weapon type per slot: a favorited weapon joins the slot that already holds its type (swords with swords, war axes with war axes, battleaxes and warhammers apart) or takes the first empty slot. Other items are not added; the shout and power slots and the Magic Wheel work as before. Off by default."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsRestored, "Wheeler: Ammo Wheel restored to factory defaults."),
 		MAP_ENTRY(AmmoWheelFactoryDefaultsFailed, "Wheeler: Failed to restore Ammo Wheel factory defaults."),
 		MAP_ENTRY(InsufficientMagickaForInstantCast, "Not enough magicka for instant cast.")

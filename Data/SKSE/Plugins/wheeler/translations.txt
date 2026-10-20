@@ -93,3 +93,5 @@ PresetInvalidName = Use a name of 1 to 40 letters, digits, spaces, - _ ( ) or .
 PresetNotFound = No such preset:
 PresetAlreadyExists = A preset already has that name:
 AdvancedSettingsHidden = Advanced settings are off. Turn them on under Wheeler Controls / General to show this section.
+WeaponTypeSlotsName = Weapon Type Slots
+WeaponTypeSlotsDesc = The Inventory Wheel holds weapons only, one weapon type per slot: a favorited weapon joins the slot that already holds its type (swords with swords, war axes with war axes, battleaxes and warhammers apart) or takes the first empty slot. Other items are not added; the shout and power slots and the Magic Wheel work as before. Off by default.

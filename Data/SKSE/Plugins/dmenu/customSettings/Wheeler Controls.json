@@ -969,7 +969,8 @@
         },
         {
             "control": {
-                "failAction": "disable"
+                "failAction": "disable",
+                "id": "wheeler_favorites_system"
             },
             "default": true,
             "ini": {
@@ -983,6 +984,32 @@
             "translation": {
                 "desc": "",
                 "name": ""
+            },
+            "type": "checkbox"
+        },
+        {
+            "control": {
+                "failAction": "disable",
+                "requirements": [
+                    {
+                        "id": "wheeler_favorites_system",
+                        "type": "checkbox",
+                        "value": true
+                    }
+                ]
+            },
+            "default": false,
+            "ini": {
+                "id": "WeaponTypeSlots",
+                "section": "Control.Wheel"
+            },
+            "text": {
+                "desc": "The Inventory Wheel holds weapons only, one weapon type per slot: a favorited weapon joins the slot that already holds its type (swords with swords, war axes with war axes, battleaxes and warhammers apart) or takes the first empty slot. Other items are not added; the shout and power slots and the Magic Wheel work as before. Off by default.",
+                "name": "Weapon Type Slots"
+            },
+            "translation": {
+                "desc": "$WeaponTypeSlotsDesc",
+                "name": "$WeaponTypeSlotsName"
             },
             "type": "checkbox"
         },

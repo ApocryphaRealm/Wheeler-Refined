@@ -93,6 +93,8 @@ public:
 	void PushItem(std::shared_ptr<WheelItem> item);
 	// 1.3.0: whether any item in this entry is the given form.
 	bool ContainsForm(RE::FormID a_formID);
+	// 1.4.1: the form id of every item in this entry, in order (Weapon Type Slots reads a slot's weapon types).
+	std::vector<RE::FormID> GetFormIDs();
 
 	std::shared_ptr<WheelItem> GetSelectedItem();
 	int GetSelectedItemIndex();

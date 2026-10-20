@@ -81,6 +81,10 @@ namespace SettingsPage
 		std::string id;    // control.id - the handle requirements refer to. Often empty.
 		std::string name;  // text.name
 		std::string desc;  // text.desc
+		// 1.4.1: translation.name / translation.desc - a "$Key" the page looks up in Wheeler's language files
+		// (Texts::GetTextByKey); empty or unknown keeps the English text above.
+		std::string nameKey;
+		std::string descKey;
 
 		std::string iniSection;  // ini.section
 		std::string iniKey;      // ini.id

@@ -98,6 +98,23 @@ namespace FavoritesToSlots
 	// locked slots - the bottom (index 0) is always Powers, the top (index count/2) always Shouts.
 	Category EffectiveCategory(int a_table, int a_slot, int a_slotCount);
 
+	// 1.4.1 WEAPON TYPE SLOTS (Config::Control::Wheel::WeaponTypeSlots, Controls.ini, default off; only while the
+	// favorites system is on). The owner, 2026-10-20: "each slot on the inventory wheel is only keyed to a single weapons
+	// type and the wheel is only the weapons category so favoriting an item in the weapons tab will send axes to the
+	// same slot and swords to a different slot". The Oblivion wheel's method: no fixed slot per type - a new weapon
+	// favourite goes to the first inventory-wheel slot already holding a weapon of the SAME type with room (Max Items
+	// Per Slot), else the first EMPTY slot, else nowhere (logged). The two locked slots (Powers bottom, Shouts top)
+	// stay locked and are skipped; every other position takes weapons whatever its category setting says. Non-weapon
+	// inventory favourites (apparel, shields, potions, food, scrolls, ingredients, misc, ammo) are not added; spells,
+	// powers and shouts route exactly as before, except that on the inventory wheel only the locked slots take them.
+	constexpr std::uint32_t kWeaponKeyWarhammer = 0x200u;
+	// True for a category that comes from the inventory side (everything but spells, schools, powers and shouts).
+	bool IsInventorySide(Category a_c);
+	// The weapon type a form is grouped by: 0x100 + RE::WEAPON_TYPE, or kWeaponKeyWarhammer for a two-handed axe
+	// carrying the WeapTypeWarhammer keyword; 0 for anything that is not a weapon.
+	std::uint32_t WeaponTypeKey(RE::TESForm* a_form);
+	const char* WeaponTypeName(std::uint32_t a_key);
+
 	// Called every frame from Wheeler::Update (render thread). Cheap when the feature is off or no
 	// item menu is open; otherwise queues a scan on the game thread every few frames.
 	void Tick();

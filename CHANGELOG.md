@@ -10,6 +10,16 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.4.1 - 2026-10-20 - untested
+
+### Added
+- **Weapon Type Slots** (the owner, 2026-10-20: *"each slot on the inventory wheel is only keyed to a single weapons type ... axes to the same slot and swords to a different slot and so on separating by type"*). A new switch on the settings page, Wheeler Controls > General, right under "Perfected Wheeler Favorites System" (`[Control.Wheel] WeaponTypeSlots` in Controls.ini, **off by default**; it only does anything while the favorites system is on). Switched on, the Inventory Wheel becomes a weapons wheel:
+  - A weapon you favorite goes into the first slot that already holds a weapon of the same type and still has room (Max Items Per Slot); if there is none, into the first empty slot; if there is no empty slot either, it is not added and the HUD says the slot is full. Swords, daggers, war axes, maces, greatswords, battleaxes, warhammers, bows, crossbows, staffs and fist weapons each keep to their own slots - battleaxes and warhammers are told apart by the game's warhammer keyword. The type is read from what is already in each slot, so you can still move slots around freely.
+  - Anything that is not a weapon (armour, shields, clothing, jewellery, potions, food, scrolls, ingredients, torches and other misc items, ammo) is not added to the wheel when you favorite it.
+  - The shout slot (top) and power slot (bottom) stay locked and keep taking shouts and powers; spells still go to the Magic Wheel. The category set for each other Inventory Wheel slot is ignored while the switch is on, and used again when you switch it off.
+  - Off, nothing changes from 1.4.0.
+- The switch's name and tooltip are in all eleven languages; setting-page rows can now name translation keys in their descriptor.
+
 ## 1.4.0 - 2026-10-08 - working
 
 ### Changed

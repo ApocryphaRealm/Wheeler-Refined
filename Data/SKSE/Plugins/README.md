@@ -1,6 +1,6 @@
 # Wheeler Refined
 
-**Perfected Wheeler - Apocrypha Menu Framework, version 1.4.0** - this build's own version number; the original Wheeler
+**Perfected Wheeler - Apocrypha Menu Framework, version 1.4.1** - this build's own version number; the original Wheeler
 by dTry/D7ry numbers its releases separately.
 
 Most, if not all modern RPG games have some sort of wheel menu for quick actions. GTA5's wheel allows the player to quickly browse their military arsenal, Witcher's wheel allows to switch between magic signs and consumables, and Bethesda's own title, Fallout4, has a wheel for favorited item access. This mod aims to integrate this modern UI paradigm into Skyrim, and hopefully make its players' life easier.

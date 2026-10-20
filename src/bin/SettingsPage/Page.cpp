@@ -961,6 +961,17 @@ namespace SettingsPage
 
 			void DrawEntry(const Panel& a_panel, const Entry& a_entry)
 			{
+				// 1.4.1 (rule 66): a row whose descriptor names translation keys draws them in the game's language;
+				// a key no language file carries keeps the descriptor's English.
+				if (!a_entry.nameKey.empty() || !a_entry.descKey.empty()) {
+					Entry translated = a_entry;
+					translated.nameKey.clear();
+					translated.descKey.clear();
+					if (const char* t = Texts::GetTextByKey(a_entry.nameKey); t && *t) { translated.name = t; }
+					if (const char* t = Texts::GetTextByKey(a_entry.descKey); t && *t) { translated.desc = t; }
+					DrawEntry(a_panel, translated);
+					return;
+				}
 				// A group reaching here was small enough to be flattened inline, so it keeps its
 				// heading and its children follow in order.
 				if (a_entry.type == EntryType::Group) {

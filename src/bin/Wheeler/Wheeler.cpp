@@ -12180,6 +12180,16 @@ int Wheeler::GetSlotCountOfWheel(int a_wheel)
 	return _wheels[a_wheel]->GetNumEntries();
 }
 
+std::vector<RE::FormID> Wheeler::GetSlotFormIDs(int a_wheel, int a_slot)
+{
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	if (a_wheel < 0 || a_wheel >= static_cast<int>(_wheels.size()) || !_wheels[a_wheel]) { return {}; }
+	auto* wheel = _wheels[a_wheel].get();
+	if (a_slot < 0 || a_slot >= wheel->GetNumEntries()) { return {}; }
+	WheelEntry* entry = wheel->GetEntry(a_slot);
+	return entry ? entry->GetFormIDs() : std::vector<RE::FormID>{};
+}
+
 std::string Wheeler::WheelDisplayName(int a_wheel)
 {
 	if (!Config::Control::Wheel::FavoritesSystem) { return {}; }

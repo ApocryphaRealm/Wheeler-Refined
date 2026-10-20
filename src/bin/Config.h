@@ -569,6 +569,13 @@ namespace Config
 			// opened matching the menu). Off, the mod behaves as 1.2.9 did (the owner, 2026-09-17: "so it doesn't
 			// bleed into the non favorites wheeler"). Default ON. Lives in Controls.ini, which the presets cover.
 			inline bool FavoritesSystem = true;
+			// 1.4.1: Weapon Type Slots (the owner, 2026-10-20: "each slot on the inventory wheel is only keyed to a single
+			// weapons type and the wheel is only the weapons category ... axes to the same slot and swords to a different
+			// slot"). On (and only while FavoritesSystem is on): a favourited weapon goes to the first Inventory Wheel slot
+			// already holding a weapon of its type with room, else the first empty slot, else nowhere; the slot categories
+			// are ignored there except the locked Powers and Shouts slots; non-weapon items are not added; the Magic Wheel
+			// and spells / powers / shouts are unchanged. Default OFF. Controls.ini, which the presets cover.
+			inline bool WeaponTypeSlots = false;
 			// 1.3.1: while the wheel is open the left stick stops moving the character and its four directions are
 			// gamepad buttons (Left Stick Up/Down/Left/Right, codes 282-285) the wheel's actions bind to; Move Wheel
 			// Forward / Back ship on Right / Left. The owner, 2026-09-17: "The whole point of dropping left stick

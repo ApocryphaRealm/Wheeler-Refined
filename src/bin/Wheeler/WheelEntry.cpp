@@ -860,6 +860,15 @@ bool WheelEntry::ContainsForm(RE::FormID a_formID)
 	return false;
 }
 
+std::vector<RE::FormID> WheelEntry::GetFormIDs()
+{
+	std::vector<RE::FormID> out;
+	std::shared_lock<std::shared_mutex> lock(this->_lock);
+	out.reserve(this->_items.size());
+	for (const auto& it : this->_items) { out.push_back(it ? it->GetFormID() : 0); }
+	return out;
+}
+
 void WheelEntry::PushItem(std::shared_ptr<WheelItem> item)
 {
 	std::unique_lock<std::shared_mutex> lock(this->_lock);

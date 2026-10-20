@@ -44,6 +44,11 @@ namespace SettingsPage
 			const auto& text = a_node["text"];
 			a_entry.name = AsString(text, "name");
 			a_entry.desc = AsString(text, "desc");
+			if (a_node.contains("translation") && a_node["translation"].is_object()) {
+				const auto& tr = a_node["translation"];
+				a_entry.nameKey = AsString(tr, "name");
+				a_entry.descKey = AsString(tr, "desc");
+			}
 		}
 
 		void ParseIniTarget(const nlohmann::json& a_node, Entry& a_entry)

@@ -192,6 +192,10 @@ namespace
 			return "WheelCountHelp";
 		case Texts::TextType::WheelCountBlockedByFilledWheel:
 			return "WheelCountBlockedByFilledWheel";
+		case Texts::TextType::WeaponTypeSlotsName:
+			return "WeaponTypeSlotsName";
+		case Texts::TextType::WeaponTypeSlotsDesc:
+			return "WeaponTypeSlotsDesc";
 		default:
 			return "";
 		}
@@ -416,4 +420,15 @@ int Texts::LanguageEntries() { return _languageEntries; }
 const char* Texts::GetText(TextType a_textType)
 {
 	return _textData[a_textType].data();
+}
+
+const char* Texts::GetTextByKey(const std::string& a_key)
+{
+	const std::string key = (!a_key.empty() && a_key[0] == '$') ? a_key.substr(1) : a_key;
+	if (key.empty()) { return nullptr; }
+	for (auto& [textType, text] : _textData) {
+		const char* id = GetKeyForTextType(textType);
+		if (id && key == id) { return text.data(); }
+	}
+	return nullptr;
 }

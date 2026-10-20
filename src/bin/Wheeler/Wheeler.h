@@ -460,6 +460,8 @@ public:
 	/// 1.3.0: the wheel carrying a role ("inventory" / "magic"), or -1; and a wheel's slot count, or -1.
 	static int FindWheelIndexByRole(const std::string& a_role);
 	static int GetSlotCountOfWheel(int a_wheel);
+	/// 1.4.1: the form ids held by one slot of a wheel (empty for an empty slot or a wheel/slot that does not exist).
+	static std::vector<RE::FormID> GetSlotFormIDs(int a_wheel, int a_slot);
 	/// 1.3.0: the name drawn under the wheel indicator - the role's translated name, or empty.
 	static std::string WheelDisplayName(int a_wheel);
 	/// 1.3.0: opened inside the Magic menu the magic wheel shows, inside the Inventory menu the inventory wheel.
