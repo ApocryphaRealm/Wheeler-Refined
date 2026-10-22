@@ -10,7 +10,10 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
-## 1.4.1 - 2026-10-20 - untested
+## 1.4.1 - 2026-10-20 - untested (first in-game test 2026-10-21 recorded failed; see Fixed)
+
+### Fixed
+- 2026-10-22: the first test of this build reported the Weapon Type Slots switch missing from the settings page. The build was not at fault: an older test copy of another menu mod, enabled above Perfected Wheeler in the test profile, carried a 2026-09 copy of Wheeler's settings-page files, and that stale copy was the one the game read (the log's page census counted 56 rows, the old file, against 57 in this build). With that copy out of the way the switch shows. The settings page in the Apocrypha Menu Framework now also draws the switch's name and tooltip in the game's language (before, only the legacy page did; the framework page showed English).
 
 ### Added
 - **Weapon Type Slots** (the owner, 2026-10-20: *"each slot on the inventory wheel is only keyed to a single weapons type ... axes to the same slot and swords to a different slot and so on separating by type"*). A new switch on the settings page, Wheeler Controls > General, right under "Perfected Wheeler Favorites System" (`[Control.Wheel] WeaponTypeSlots` in Controls.ini, **off by default**; it only does anything while the favorites system is on). Switched on, the Inventory Wheel becomes a weapons wheel:
