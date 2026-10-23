@@ -10,7 +10,7 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
-## 1.4.1 - 2026-10-20 - untested (first in-game test 2026-10-21 recorded failed; see Fixed)
+## 1.5.0 - 2026-10-23 - untested (numbered 1.4.1 until the owner chose 1.5.0 on 2026-10-23 - Weapon Type Slots is a new feature; the first in-game test of the 1.4.1 build, 2026-10-21, was recorded failed; see Fixed)
 
 ### Fixed
 - 2026-10-23: **the inventory's 3D item stayed on screen while the wheel was open in a menu** (the owner, long-standing:

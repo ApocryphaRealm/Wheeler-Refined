@@ -460,7 +460,7 @@ public:
 	/// 1.3.0: the wheel carrying a role ("inventory" / "magic"), or -1; and a wheel's slot count, or -1.
 	static int FindWheelIndexByRole(const std::string& a_role);
 	static int GetSlotCountOfWheel(int a_wheel);
-	/// 1.4.1: the form ids held by one slot of a wheel (empty for an empty slot or a wheel/slot that does not exist).
+	/// 1.5.0: the form ids held by one slot of a wheel (empty for an empty slot or a wheel/slot that does not exist).
 	static std::vector<RE::FormID> GetSlotFormIDs(int a_wheel, int a_slot);
 	/// 1.3.0: the name drawn under the wheel indicator - the role's translated name, or empty.
 	static std::string WheelDisplayName(int a_wheel);
@@ -977,7 +977,7 @@ private:
 
 	// The inventory's 3D item is drawn by Inventory3DManager, not by the menu's movie, so hiding the movie left the
 	// focused item floating over the wheel (the owner, long-standing). Its loaded models are culled while edit mode
-	// hides the menus, and exactly those are shown again when the menus come back or edit mode ends (1.4.1).
+	// hides the menus, and exactly those are shown again when the menus come back or edit mode ends (1.5.0).
 	static void hideEditModeInventory3D();
 	static void showEditModeInventory3D(const char* a_reason);
 	static inline std::vector<RE::NiPointer<RE::NiAVObject>> _editModeCulled3D;
