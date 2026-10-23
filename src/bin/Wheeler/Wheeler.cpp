@@ -12278,6 +12278,40 @@ void Wheeler::hideEditModeVanillaMenus(RE::UI* a_ui)
 			uiMovie->SetVisible(false);
 		}
 	}
+	hideEditModeInventory3D();
+}
+
+void Wheeler::hideEditModeInventory3D()
+{
+	// Every frame while the menus are hidden: the player can change the focused item, and the game then loads a new
+	// model, which would be drawn again.
+	auto* manager = RE::Inventory3DManager::GetSingleton();
+	if (!manager) {
+		return;
+	}
+	for (auto& loaded : manager->GetRuntimeData().loadedModels) {
+		RE::NiAVObject* model = loaded.spModel.get();
+		if (!model || model->GetAppCulled()) {
+			continue;  // nothing drawn, or culled by the game itself - not ours to show again
+		}
+		model->SetAppCulled(true);
+		_editModeCulled3D.emplace_back(model);
+		logger::debug("[Wheeler] edit mode: the inventory's 3D item hidden ({} model(s) hidden so far)", _editModeCulled3D.size());
+	}
+}
+
+void Wheeler::showEditModeInventory3D(const char* a_reason)
+{
+	if (_editModeCulled3D.empty()) {
+		return;
+	}
+	for (auto& model : _editModeCulled3D) {
+		if (model) {
+			model->SetAppCulled(false);
+		}
+	}
+	logger::debug("[Wheeler] edit mode: {} inventory 3D model(s) shown again ({})", _editModeCulled3D.size(), a_reason);
+	_editModeCulled3D.clear();
 }
 
 void Wheeler::showEditModeVanillaMenus(RE::UI* a_ui)
@@ -12300,6 +12334,7 @@ void Wheeler::showEditModeVanillaMenus(RE::UI* a_ui)
 			uiMovie->SetVisible(true);
 		}
 	}
+	showEditModeInventory3D("the wheel closed in a menu");
 }
 
 void Wheeler::enterEditMode()
@@ -12330,6 +12365,8 @@ void Wheeler::exitEditMode()
 		return;
 	}
 	_editMode = false;
+	// The menu closed under the wheel: whatever 3D model edit mode hid is shown again (and released) here too.
+	showEditModeInventory3D("edit mode ended");
 	// Whatever was picked up is put back where it was (1.2.8).
 	for (auto& w : _wheels) {
 		if (w) { w->SetDriveHover(-1); if (w->GetHeldEntryIndex() >= 0) { w->ClearHeldEntry(); } }

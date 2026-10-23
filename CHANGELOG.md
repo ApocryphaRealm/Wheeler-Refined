@@ -13,6 +13,13 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 ## 1.4.1 - 2026-10-20 - untested (first in-game test 2026-10-21 recorded failed; see Fixed)
 
 ### Fixed
+- 2026-10-23: **the inventory's 3D item stayed on screen while the wheel was open in a menu** (the owner, long-standing:
+  opening the wheel in the inventory hid the menus, but the model of the focused item kept rendering where it was). The
+  item is drawn by the game's Inventory3DManager, not by the menu's movie, so hiding the movie never reached it. While
+  edit mode hides the menus, the manager's loaded models are now culled each frame (a model the game loads for a new
+  selection is caught the next frame), and exactly the models the wheel hid are shown again when the wheel closes in
+  the menu or the menu closes under it. A model the game itself had culled is left alone. With "Hide the game's UI in
+  edit mode" off, nothing is hidden, as before.
 - 2026-10-22: the first test of this build reported the Weapon Type Slots switch missing from the settings page. The build was not at fault: an older test copy of another menu mod, enabled above Perfected Wheeler in the test profile, carried a 2026-09 copy of Wheeler's settings-page files, and that stale copy was the one the game read (the log's page census counted 56 rows, the old file, against 57 in this build). With that copy out of the way the switch shows. The settings page in the Apocrypha Menu Framework now also draws the switch's name and tooltip in the game's language (before, only the legacy page did; the framework page showed English).
 
 ### Added

@@ -975,6 +975,13 @@ private:
 	static void hideEditModeVanillaMenus(RE::UI* a_ui);
 	static void showEditModeVanillaMenus(RE::UI* a_ui);
 
+	// The inventory's 3D item is drawn by Inventory3DManager, not by the menu's movie, so hiding the movie left the
+	// focused item floating over the wheel (the owner, long-standing). Its loaded models are culled while edit mode
+	// hides the menus, and exactly those are shown again when the menus come back or edit mode ends (1.4.1).
+	static void hideEditModeInventory3D();
+	static void showEditModeInventory3D(const char* a_reason);
+	static inline std::vector<RE::NiPointer<RE::NiAVObject>> _editModeCulled3D;
+
 	static void enterEditMode();
 	static void exitEditMode();
 
