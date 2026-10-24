@@ -1,10 +1,30 @@
 #include "Utils.h"
 #include "HavokStepCore.h"
 #include <chrono>
+#include <fstream>
 #include <string_view>
 
 namespace
 {
+	// SSE Display Tweaks with [HAVOK] DynamicMaxTimeScaling on sets fMaxTime:HAVOK every frame (HavokStepCore.h). Its
+	// _custom.ini overrides the main one, as Display Tweaks itself reads them.
+	bool DisplayTweaksOwnsMaxTime()
+	{
+		if (!GetModuleHandleW(L"SSEDisplayTweaks")) {
+			return false;
+		}
+		std::optional<bool> on;
+		for (const char* path : { "Data/SKSE/Plugins/SSEDisplayTweaks.ini", "Data/SKSE/Plugins/SSEDisplayTweaks_custom.ini" }) {
+			std::ifstream in(path);
+			if (in) {
+				if (const auto v = havokstep::ReadDynamicMaxTimeScaling(in)) {
+					on = v;
+				}
+			}
+		}
+		return on.value_or(false);
+	}
+
 	template <class Fn>
 	bool InvokeWithSehGuard(Fn&& a_fn)
 	{
@@ -128,12 +148,29 @@ namespace Utils
 			// (iSlyy0, Nexus 2026-09-19; HavokStepCore.h has the mechanism). Every SGTM - the wheel's and the ammo
 			// wheel's, opening and closing - goes through here.
 			static havokstep::Gate s_havokGate;
+			static const bool s_displayTweaks = [] {
+				const bool owns = DisplayTweaksOwnsMaxTime();
+				if (owns) {
+					s_havokGate.StandDown();
+					logger::info("[Time] SSE Display Tweaks sets fMaxTime:HAVOK every frame ([HAVOK] DynamicMaxTimeScaling) - "
+								 "Wheeler leaves Havok's step to it and does not scale it while time is slowed");
+				}
+				return owns;
+			}();
 			if (auto* ini = RE::INISettingCollection::GetSingleton()) {
 				if (auto* maxTime = ini->GetSetting("fMaxTime:HAVOK")) {
 					const float before = maxTime->data.f;
+					const bool wasStandingDown = s_havokGate.StandingDown();
 					if (const auto next = s_havokGate.OnTimeScale(a_in, before)) {
 						maxTime->data.f = *next;
 						logger::debug("[Time] fMaxTime:HAVOK {:.6f} -> {:.6f} (time scale {:.3f})", before, *next, a_in);
+					} else if (s_havokGate.LastCloseLost()) {
+						logger::debug("[Time] fMaxTime:HAVOK left at {:.6f} on the way back to time scale {:.3f} - another mod "
+									  "changed it while time was slowed, so it is that mod's value now", before, a_in);
+						if (!wasStandingDown && s_havokGate.StandingDown() && !s_displayTweaks) {
+							logger::info("[Time] fMaxTime:HAVOK was changed by another mod on {} closes in a row - it sets it "
+										 "every frame, so Wheeler stops scaling it for this session", havokstep::kLostInRow);
+						}
 					}
 				}
 			}

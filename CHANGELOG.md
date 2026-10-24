@@ -28,6 +28,12 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
   0.5 ms) and put back when time runs normally again - for the wheel and the ammo wheel alike. A value another mod
   wrote meanwhile (Havok Fix retunes it from the frame rate) is left as that mod set it. Stop Time While Open never
   slowed time this way and is unchanged. tools\havok_step_check.bat checks the rules off-game.
+  2026-10-24 (test ac90: corpses still everywhere, but no restore line on close): **with SSE Display Tweaks' [HAVOK]
+  DynamicMaxTimeScaling on, Wheeler leaves fMaxTime to it.** Display Tweaks sets fMaxTime from the frame time every
+  frame, so the value at each close was already its own and the restore was skipped without a word. Wheeler now reads
+  SSEDisplayTweaks.ini (and its _custom.ini) when Display Tweaks is loaded, logs once that it leaves Havok's step to it,
+  and writes nothing; any other mod found changing the value on three closes in a row is treated the same way for the
+  session. A close that finds another mod's value is now logged (debug) instead of passing in silence. 31 of 31 off-game.
 - 2026-10-23: **the inventory's 3D item stayed on screen while the wheel was open in a menu** (the owner, long-standing:
   opening the wheel in the inventory hid the menus, but the model of the focused item kept rendering where it was). The
   item is drawn by the game's Inventory3DManager, not by the menu's movie, so hiding the movie never reached it. While

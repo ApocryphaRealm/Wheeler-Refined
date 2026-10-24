@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 namespace
@@ -64,6 +65,56 @@ int main()
 		Gate g;
 		Check(!g.OnTimeScale(0.2f, 0.0f), "no fMaxTime setting (0): nothing is written");
 		Check(!g.OnTimeScale(0.0f, njord) && !g.Active(), "a scale of 0 (the pause path never calls this) writes nothing");
+	}
+
+	// SSE Display Tweaks' DynamicMaxTimeScaling (ac90): a per-frame writer owns fMaxTime, the gate stands down.
+	{
+		Gate g;
+		g.StandDown();
+		Check(!g.OnTimeScale(0.2f, njord) && !g.Active(), "standing down (Display Tweaks found): the wheel opening writes nothing");
+		Check(!g.OnTimeScale(1.0f, njord) && !g.LastCloseLost(), "... and its close writes nothing and is not counted as lost");
+	}
+	{
+		Gate g;
+		g.OnTimeScale(0.2f, njord);
+		g.StandDown();   // decided while a write of ours is in place
+		auto v = g.OnTimeScale(1.0f, njord * 0.2f);
+		Check(v && Near(*v, njord), "standing down with our value in place: the close still puts the original back");
+		Check(!g.OnTimeScale(0.2f, njord), "... and the next opening writes nothing");
+	}
+	{
+		Gate g;
+		const float dt[] = { 0.0166f, 0.0171f, 0.0169f };   // a per-frame writer: a different value at every close
+		for (int i = 0; i < kLostInRow; ++i)
+		{
+			g.OnTimeScale(0.2f, dt[i]);
+			g.OnTimeScale(1.0f, dt[i] + 0.001f);
+			Check(g.LastCloseLost(), "close " + std::to_string(i + 1) + " found another mod's value (LastCloseLost)");
+			Check(g.StandingDown() == (i + 1 >= kLostInRow), "... standing down only from close " + std::to_string(kLostInRow));
+		}
+		Check(!g.OnTimeScale(0.2f, 0.0168f), "after kLostInRow lost closes the next opening writes nothing");
+	}
+	{
+		Gate g;
+		g.OnTimeScale(0.2f, njord);
+		g.OnTimeScale(1.0f, 0.016f);   // Havok Fix, once
+		g.OnTimeScale(0.2f, 0.016f);
+		auto v = g.OnTimeScale(1.0f, 0.016f * 0.2f);
+		Check(v && !g.StandingDown(), "an occasional writer (one lost close, then ours again) is still followed");
+		g.OnTimeScale(0.2f, 0.016f);
+		g.OnTimeScale(1.0f, 0.02f);
+		g.OnTimeScale(0.2f, 0.02f);
+		g.OnTimeScale(1.0f, 0.021f);
+		Check(!g.StandingDown(), "... a successful close resets the run (two lost after it do not stand down)");
+	}
+	{
+		const auto read = [](const char* a_text) { std::istringstream in(a_text); return ReadDynamicMaxTimeScaling(in); };
+		Check(read("[HAVOK]\nDynamicMaxTimeScaling = true\n") == true, "Display Tweaks INI: [HAVOK] DynamicMaxTimeScaling = true");
+		Check(read("[Havok]\r\ndynamicmaxtimescaling=0 ; off\r\n") == false, "... case, CRLF, '0' and a trailing comment");
+		Check(!read("[HAVOK]\n# DynamicMaxTimeScaling = true\n"), "... a commented-out line sets nothing");
+		Check(!read("[Render]\nDynamicMaxTimeScaling = true\n"), "... the key in another section is not it");
+		Check(read("[HAVOK]\nDynamicMaxTimeScaling = true\n[HAVOK]\nDynamicMaxTimeScaling = false\n") == false,
+			"... the last value wins");
 	}
 
 	std::cout << "havok_step_check: " << g_pass << " of " << (g_pass + g_fail) << " passed\n";
