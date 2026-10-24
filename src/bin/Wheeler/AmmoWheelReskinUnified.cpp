@@ -593,8 +593,10 @@ namespace AmmoWheelReskinUnified
 			PrewarmDefaultWeaponPresets();
 		}
 		
-		// Check for legacy flags and log deprecation warnings
-		CompatShim::CheckLegacyFlags();
+		// The legacy-flag check runs in main.cpp right after Config::ReadAmmoWheelConfig(), not here (1.5.0): this init
+		// runs BEFORE the AmmoWheel INI is read, so it saw the flags' compiled defaults (true) and warned that
+		// UseSkyrimTheme and UseMainWheelTheme were in use while every INI the player had set both to false (Njordlinger log
+		// audit 2026-10-24, wheeler.log lines 69-70 vs the AmmoWheel config read from line 95).
 		
 		_initialized = true;
 		logger::info("[AmmoWheelReskinUnified] Initialized (enabled={}, basePath={})", 

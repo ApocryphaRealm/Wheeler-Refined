@@ -13,6 +13,12 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 ## 1.5.0 - 2026-10-23 - untested (numbered 1.4.1 until the owner chose 1.5.0 on 2026-10-23 - Weapon Type Slots is a new feature; the first in-game test of the 1.4.1 build, 2026-10-21, was recorded failed; see Fixed)
 
 ### Fixed
+- 2026-10-24: **two false "DEPRECATED" warnings at every start.** wheeler.log said `'UseSkyrimTheme' is deprecated` and
+  `'UseMainWheelTheme' is deprecated` although every AmmoWheel INI the player had set both to false (Njordlinger log
+  audit, 2026-10-24). The check ran in the ammo-wheel reskin system's init, before Wheeler reads the AmmoWheel INI, so
+  it saw the two flags' compiled defaults (true). It now runs right after the AmmoWheel INI is read at start-up, so it
+  warns only when an INI actually turns one on (the shipped preset 1 still does - choosing that preset is the one case
+  that warns). No shipped INI changes: none of the files that load by default uses the old keys.
 - 2026-10-23: **corpses near the player flew about when the wheel opened** (iSlyy0 on Nexus, 2026-09-19: "corpses go
   haywire when I open the wheel near them. They fly everywhere like crazy."). Opening the wheel slows time (Slow Time
   Scale, 0.5 shipped and 0.2 for many players; the ammo wheel 0.2), so Havok was handed a step a fifth of a frame long

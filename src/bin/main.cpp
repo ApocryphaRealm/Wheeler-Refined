@@ -11,6 +11,7 @@
 
 #include "Wheeler/WheelItems/WheelItemMutableManager.h"
 #include "Wheeler/Wheeler.h"
+#include "Wheeler/AmmoWheelReskinUnified.h"  // CompatShim::CheckLegacyFlags
 #include "Utilities/UniqueIDHandler.h"
 #include "Serialization/SerializationEntry.h"
 #include <SimpleIni.h>
@@ -332,6 +333,9 @@ namespace
 		Config::ReadActionHotkeysBridgeConfig();
 		Config::ReadOStimIntegrationConfig();
 		Config::ReadAmmoWheelConfig();
+		// The deprecated theme keys are judged on what the INI says, so after it is read (1.5.0; it ran in the reskin
+		// system's init, before this read, and warned on the compiled defaults).
+		AmmoWheelReskinUnified::CompatShim::CheckLegacyFlags();
 		Config::OffsetSizingToViewport();
 		Config::OffsetAmmoWheelSizingToViewport();
 		Controls::BindAllInputsFromConfig();
