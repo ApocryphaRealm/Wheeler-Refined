@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include "HavokStepCore.h"
 #include <chrono>
 #include <string_view>
 
@@ -121,6 +122,20 @@ namespace Utils
 			}
 			if (auto* target = g_targetTimeScale.get()) {
 				*target = a_in;
+			}
+
+			// 1.5.0: Havok's step follows the slow time, so ragdolls near the player do not fly when the wheel opens
+			// (iSlyy0, Nexus 2026-09-19; HavokStepCore.h has the mechanism). Every SGTM - the wheel's and the ammo
+			// wheel's, opening and closing - goes through here.
+			static havokstep::Gate s_havokGate;
+			if (auto* ini = RE::INISettingCollection::GetSingleton()) {
+				if (auto* maxTime = ini->GetSetting("fMaxTime:HAVOK")) {
+					const float before = maxTime->data.f;
+					if (const auto next = s_havokGate.OnTimeScale(a_in, before)) {
+						maxTime->data.f = *next;
+						logger::debug("[Time] fMaxTime:HAVOK {:.6f} -> {:.6f} (time scale {:.3f})", before, *next, a_in);
+					}
+				}
 			}
 		}
 	}

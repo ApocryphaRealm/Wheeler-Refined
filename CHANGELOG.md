@@ -13,6 +13,15 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 ## 1.5.0 - 2026-10-23 - untested (numbered 1.4.1 until the owner chose 1.5.0 on 2026-10-23 - Weapon Type Slots is a new feature; the first in-game test of the 1.4.1 build, 2026-10-21, was recorded failed; see Fixed)
 
 ### Fixed
+- 2026-10-23: **corpses near the player flew about when the wheel opened** (iSlyy0 on Nexus, 2026-09-19: "corpses go
+  haywire when I open the wheel near them. They fly everywhere like crazy."). Opening the wheel slows time (Slow Time
+  Scale, 0.5 shipped and 0.2 for many players; the ammo wheel 0.2), so Havok was handed a step a fifth of a frame long
+  while fMaxTime:HAVOK - the step it is tuned for - stayed set for real time. A ragdoll resting on the ground and on
+  other bodies resolves its overlap as a velocity per unit of time, so the tiny step gave it a huge push, and when time
+  came back in one write the bodies flew. While time is slowed, fMaxTime is now scaled by the same factor (never under
+  0.5 ms) and put back when time runs normally again - for the wheel and the ammo wheel alike. A value another mod
+  wrote meanwhile (Havok Fix retunes it from the frame rate) is left as that mod set it. Stop Time While Open never
+  slowed time this way and is unchanged. tools\havok_step_check.bat checks the rules off-game.
 - 2026-10-23: **the inventory's 3D item stayed on screen while the wheel was open in a menu** (the owner, long-standing:
   opening the wheel in the inventory hid the menus, but the model of the focused item kept rendering where it was). The
   item is drawn by the game's Inventory3DManager, not by the menu's movie, so hiding the movie never reached it. While
