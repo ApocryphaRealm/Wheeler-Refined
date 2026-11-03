@@ -64,6 +64,10 @@ namespace
 			return "WheelNameInventory";
 		case Texts::TextType::WheelNameMagic:
 			return "WheelNameMagic";
+		case Texts::TextType::WheelMovedNotice:
+			return "WheelMovedNotice";
+		case Texts::TextType::WheelSwitchHint:
+			return "WheelSwitchHint";
 		case Texts::TextType::EditHintActionMoveWheelForward:
 			return "EditHintActionMoveWheelForward";
 		case Texts::TextType::EditHintActionMoveWheelBack:

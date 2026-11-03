@@ -13,6 +13,14 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 ## 1.5.0 - 2026-10-23 - untested (numbered 1.4.1 until the owner chose 1.5.0 on 2026-10-23 - Weapon Type Slots is a new feature; the first in-game test of the 1.4.1 build, 2026-10-21, was recorded failed; see Fixed)
 
 ### Fixed
+- 2026-11-03: **a flick of the left stick looked like a second Inventory Wheel** (the owner, 2026-11-03: "there's two inventory wheels
+  instead of an inventory wheel and a magic wheel"). Both wheels were always there and correct: the flick is Move Wheel
+  Forward / Back, which moves the wheel on screen to another place in the order and keeps showing it. The indicator's lit
+  diamond moved and nothing else changed, which reads exactly like a second page holding the same wheel. The stick keeps
+  its job, and now the move says so under the wheel's name for four seconds, naming the button that really changes wheels
+  (D-pad right by default). Changing wheel ends the message; with the favorites system off nothing new is drawn. The log
+  names the role on each open, move and wheel change. In all eleven languages. Saves need no repair: each wheel's kind is
+  saved with it and was never lost; an order changed by a flick stays as it is and a flick puts it back.
 - 2026-10-24: **two false "DEPRECATED" warnings at every start.** wheeler.log said `'UseSkyrimTheme' is deprecated` and
   `'UseMainWheelTheme' is deprecated` although every AmmoWheel INI the player had set both to false (Njordlinger log
   audit, 2026-10-24). The check ran in the ammo-wheel reskin system's init, before Wheeler reads the AmmoWheel INI, so

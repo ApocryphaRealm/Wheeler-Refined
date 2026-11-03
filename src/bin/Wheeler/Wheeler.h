@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <cstdint>
 #include <array>
 #include <mutex>
@@ -15,6 +16,7 @@
 #include "Wheel.h"
 #include "AmmoWheel.h"
 class WheelItem;
+struct DrawArgs;
 class Wheeler
 {
 public:
@@ -469,6 +471,14 @@ public:
 	/// 1.3.0: the wheel the player had before a menu switched it, put back when the wheel closes.
 	static void RestoreWheelAfterMenuSelect();
 	static inline int _wheelIdxBeforeMenuSelect = -1;
+	// Moving a wheel in the order keeps the same wheel on screen and only moves the indicator, which read as a second
+	// page holding the same wheel (the owner, 2026-11-03: "two inventory wheels"). The move says so under the wheel's
+	// name for a few REAL seconds (the wheel may have the game paused). Written on the input thread, read on the
+	// render thread. Index -1 = no notice.
+	static void NoteWheelMoved_NoLock(const char* a_action);
+	static void DrawWheelMovedNotice(float a_x, float a_y, const DrawArgs& a_drawArgs);
+	static inline std::atomic<int> _wheelMovedNoticeIdx{ -1 };
+	static inline std::atomic<std::int64_t> _wheelMovedNoticeUntilMs{ 0 };
 	/// The active wheel's slots in order, each as the name of its selected item ("" when empty), for the driving tool.
 	static std::vector<std::string> DescribeCurrentWheelSlots();
 	

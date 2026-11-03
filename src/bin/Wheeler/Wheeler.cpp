@@ -8153,6 +8153,7 @@ void Wheeler::Update(float a_deltaTime)
 			}
 			const float nameY = wheelCenter.y + Config::Styling::Wheel::WheelIndicatorOffsetY + Config::Styling::Wheel::WheelIndicatorSize + 4.0f;
 			Drawer::draw_text(nameX, nameY, wheelName.c_str(), C_SKYRIMWHITE, Config::Styling::Wheel::WheelIndicatorSize * 1.1f, drawArgs, true);
+			DrawWheelMovedNotice(nameX, nameY + Config::Styling::Wheel::WheelIndicatorSize * 1.5f, drawArgs);
 		}
 		// draw wheel indicator
 		for (int i = 0; i < _wheels.size(); i++) {
@@ -9044,8 +9045,9 @@ void Wheeler::OpenWheeler()
 	}
 
 	if (_state != WheelState::KOpened && _state != WheelState::KOpening) {
-		MainWheelDebug::Log(MainWheelDebug::Category::OpenClose, "Open (activeWheel={}, wheels={}, editMode={})",
-			_activeWheelIdx, static_cast<int>(_wheels.size()), _editMode);
+		MainWheelDebug::Log(MainWheelDebug::Category::OpenClose, "Open (activeWheel={}, role='{}', wheels={}, editMode={})",
+			_activeWheelIdx, (_activeWheelIdx >= 0 && _activeWheelIdx < static_cast<int>(_wheels.size()) && _wheels[_activeWheelIdx]) ? _wheels[_activeWheelIdx]->GetRole() : std::string(),
+			static_cast<int>(_wheels.size()), _editMode);
 		if (MainWheelDebug::IsCategoryEnabled(MainWheelDebug::Category::ReskinResolve)) {
 			MainWheelDebug::Log(MainWheelDebug::Category::ReskinResolve, "BackgroundMode={}",
 				Config::Styling::Wheel::UseGeometricPrimitiveForBackgroundTexture ? "primitive" : "texture");
@@ -9260,6 +9262,7 @@ void Wheeler::CloseWheeler()
 	if (_state != WheelState::KClosed) {
 		MainWheelDebug::Log(MainWheelDebug::Category::OpenClose, "Close (state={}, editMode={})",
 			static_cast<int>(_state), _editMode);
+		_wheelMovedNoticeIdx.store(-1);
 		if (Config::Styling::Wheel::BlurOnOpen) {
 			RE::UIBlurManager::GetSingleton()->DecrementBlurCount();
 		}
@@ -9743,6 +9746,7 @@ void Wheeler::NextWheel()
 		_activeWheelIdx = nextIdx;
 		_wheels[_activeWheelIdx]->ResetAnimation();
 		_wheels[_activeWheelIdx]->SetHoveredEntryIndex(-1);  // reset active entry for new wheel
+		logger::info("[Wheeler] NextWheel: now wheel {} of {} (role '{}', {} slots)", _activeWheelIdx + 1, wheelCount, _wheels[_activeWheelIdx]->GetRole(), _wheels[_activeWheelIdx]->GetNumEntries());
 		// Sound feedback removed for compatibility with newer CommonLibSSE-NG
 	}
 }
@@ -9899,6 +9903,7 @@ void Wheeler::PrevWheel()
 		_activeWheelIdx = nextIdx;
 		_wheels[_activeWheelIdx]->ResetAnimation();
 		_wheels[_activeWheelIdx]->SetHoveredEntryIndex(-1);  // reset active entry for new wheel
+		logger::info("[Wheeler] PrevWheel: now wheel {} of {} (role '{}', {} slots)", _activeWheelIdx + 1, wheelCount, _wheels[_activeWheelIdx]->GetRole(), _wheels[_activeWheelIdx]->GetNumEntries());
 		// Sound feedback removed for compatibility with newer CommonLibSSE-NG
 	}
 }
@@ -11916,6 +11921,7 @@ void Wheeler::MoveWheelForward()
 			}
 		}
 		_activeWheelIdx = targetIdx;
+		NoteWheelMoved_NoLock("MoveWheelForward");
 	}
 }
 
@@ -11962,6 +11968,7 @@ void Wheeler::MoveWheelBack()
 			}
 		}
 		_activeWheelIdx = targetIdx;
+		NoteWheelMoved_NoLock("MoveWheelBack");
 	}
 }
 
@@ -12202,6 +12209,41 @@ std::string Wheeler::WheelDisplayName(int a_wheel)
 	if (role == "inventory") { return Texts::GetText(Texts::TextType::WheelNameInventory); }
 	if (role == "magic") { return Texts::GetText(Texts::TextType::WheelNameMagic); }
 	return {};
+}
+
+void Wheeler::NoteWheelMoved_NoLock(const char* a_action)
+{
+	const int count = static_cast<int>(_wheels.size());
+	if (_activeWheelIdx < 0 || _activeWheelIdx >= count || !_wheels[_activeWheelIdx]) { return; }
+	logger::info("[Wheeler] {}: the same wheel (role '{}', {} slots) is now position {} of {} - a move in the order, not a change of wheel",
+		a_action, _wheels[_activeWheelIdx]->GetRole(), _wheels[_activeWheelIdx]->GetNumEntries(), _activeWheelIdx + 1, count);
+	const auto now = std::chrono::steady_clock::now().time_since_epoch();
+	_wheelMovedNoticeUntilMs.store(std::chrono::duration_cast<std::chrono::milliseconds>(now).count() + 4000);
+	_wheelMovedNoticeIdx.store(_activeWheelIdx);
+}
+
+void Wheeler::DrawWheelMovedNotice(float a_x, float a_y, const DrawArgs& a_drawArgs)
+{
+	// Only for the wheel that moved: changing wheels ends the notice. The caller is the wheel's name line, so this is
+	// gated with it on the favorites system (off, nothing new is drawn).
+	if (_wheelMovedNoticeIdx.load() < 0 || _wheelMovedNoticeIdx.load() != _activeWheelIdx) { return; }
+	const auto now = std::chrono::steady_clock::now().time_since_epoch();
+	if (std::chrono::duration_cast<std::chrono::milliseconds>(now).count() >= _wheelMovedNoticeUntilMs.load()) {
+		_wheelMovedNoticeIdx.store(-1);
+		return;
+	}
+	const auto fill = [](std::string a_text, std::string_view a_slot, const std::string& a_value) {
+		if (const auto at = a_text.find(a_slot); at != std::string::npos) { a_text.replace(at, a_slot.size(), a_value); }
+		return a_text;
+	};
+	const std::string moved = fill(fill(Texts::GetText(Texts::TextType::WheelMovedNotice), "{0}", std::to_string(_activeWheelIdx + 1)), "{1}", std::to_string(_wheels.size()));
+	const bool gamepad = IsLastInputGamepad();
+	EditHintActionBinding::Binding next{};
+	next.key = gamepad ? Config::InputBindings::GamePad::nextWheel : Config::InputBindings::MKB::nextWheel;
+	const std::string hint = fill(Texts::GetText(Texts::TextType::WheelSwitchHint), "{0}", GetEditHintBindingName(gamepad, next));
+	const float size = Config::Styling::Wheel::WheelIndicatorSize * 0.7f;
+	Drawer::draw_text(a_x, a_y, moved.c_str(), C_SKYRIMWHITE, size, a_drawArgs, true);
+	Drawer::draw_text(a_x, a_y + size * 1.3f, hint.c_str(), C_SKYRIMWHITE, size, a_drawArgs, true);
 }
 
 void Wheeler::SelectWheelForOpenMenu()
