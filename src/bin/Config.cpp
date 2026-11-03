@@ -865,6 +865,9 @@ namespace
 		bool releaseToUse{ false };
 		bool closeWheelAfterUse{ false };
 		int slotCategory[2][10]{ { 10, 20, 21, 3, 5, 11, 6, 7, 8, 13 }, { 14, 15, 16, 17, 18, 0, 0, 0, 0, 0 } };
+		bool skyUICategories{ true };
+		bool weaponTypeSlots{ false };
+		int slotType[10]{};
 		bool rtuAlchemy{ true };
 		bool rtuSpell{ true };
 		bool rtuShout{ true };
@@ -1209,6 +1212,9 @@ namespace
 		return a.releaseToUse == b.releaseToUse &&
 		       a.closeWheelAfterUse == b.closeWheelAfterUse &&
 		       std::equal(&a.slotCategory[0][0], &a.slotCategory[0][0] + 20, &b.slotCategory[0][0]) &&
+		       a.skyUICategories == b.skyUICategories &&
+		       a.weaponTypeSlots == b.weaponTypeSlots &&
+		       std::equal(&a.slotType[0], &a.slotType[0] + 10, &b.slotType[0]) &&
 		       a.rtuAlchemy == b.rtuAlchemy &&
 		       a.rtuSpell == b.rtuSpell &&
 		       a.rtuShout == b.rtuShout &&
@@ -1474,6 +1480,9 @@ namespace
 			GetBoolValue(ini, section, "ReleaseToUse", snapshot.releaseToUse);
 			GetBoolValue(ini, section, "CloseWheelAfterUse", snapshot.closeWheelAfterUse);
 			for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { std::uint32_t v = static_cast<std::uint32_t>(snapshot.slotCategory[w][i]); GetUInt32Value(ini, "SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), v); snapshot.slotCategory[w][i] = static_cast<int>(v); } }
+			GetBoolValue(ini, "SlotAssignments", "SkyUICategories", snapshot.skyUICategories);
+			GetBoolValue(ini, "SlotAssignments", "WeaponTypeSlots", snapshot.weaponTypeSlots);
+			for (int i = 0; i < 10; ++i) { if (i == 0 || i == 5) { continue; } std::uint32_t v = static_cast<std::uint32_t>(snapshot.slotType[i]); GetUInt32Value(ini, "SlotAssignments", ("W1Slot" + std::to_string(i + 1) + "Type").c_str(), v); snapshot.slotType[i] = static_cast<int>(v); }
 			GetBoolValue(ini, section, "RTUAlchemy", snapshot.rtuAlchemy);
 			GetBoolValue(ini, section, "RTUSpell", snapshot.rtuSpell);
 			GetBoolValue(ini, section, "RTUShout", snapshot.rtuShout);
@@ -2039,6 +2048,9 @@ namespace
 		Config::WheelBehavior::ReleaseToUse = snapshot.releaseToUse;
 		Config::WheelBehavior::CloseWheelAfterUse = snapshot.closeWheelAfterUse;
 		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { Config::SlotAssignments::Slot[w][i] = snapshot.slotCategory[w][i]; } }
+		Config::SlotAssignments::SkyUICategories = snapshot.skyUICategories;
+		Config::SlotAssignments::WeaponTypeSlots = snapshot.weaponTypeSlots;
+		for (int i = 0; i < 10; ++i) { Config::SlotAssignments::Type[i] = snapshot.slotType[i]; }
 		Config::WheelBehavior::RTUAlchemy = snapshot.rtuAlchemy;
 		Config::WheelBehavior::RTUSpell = snapshot.rtuSpell;
 		Config::WheelBehavior::RTUShout = snapshot.rtuShout;
@@ -2326,6 +2338,9 @@ namespace
 		out.SetBoolValue("WheelBehavior", "ReleaseToUse", snapshot.releaseToUse);
 		out.SetBoolValue("WheelBehavior", "CloseWheelAfterUse", snapshot.closeWheelAfterUse);
 		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { out.SetLongValue("SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), snapshot.slotCategory[w][i]); } }
+		out.SetBoolValue("SlotAssignments", "SkyUICategories", snapshot.skyUICategories);
+		out.SetBoolValue("SlotAssignments", "WeaponTypeSlots", snapshot.weaponTypeSlots);
+		for (int i = 0; i < 10; ++i) { if (i == 0 || i == 5) { continue; } out.SetLongValue("SlotAssignments", ("W1Slot" + std::to_string(i + 1) + "Type").c_str(), snapshot.slotType[i]); }
 		out.SetBoolValue("WheelBehavior", "RTUAlchemy", snapshot.rtuAlchemy);
 		out.SetBoolValue("WheelBehavior", "RTUSpell", snapshot.rtuSpell);
 		out.SetBoolValue("WheelBehavior", "RTUShout", snapshot.rtuShout);
@@ -3548,6 +3563,9 @@ static void ReadWheelBehaviorConfigFromIni(const CSimpleIniA& ini)
 		GetBoolValue(ini, section, "ReleaseToUse", Config::WheelBehavior::ReleaseToUse);
 		GetBoolValue(ini, section, "CloseWheelAfterUse", Config::WheelBehavior::CloseWheelAfterUse);
 		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { std::uint32_t v = static_cast<std::uint32_t>(Config::SlotAssignments::Slot[w][i]); GetUInt32Value(ini, "SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), v); Config::SlotAssignments::Slot[w][i] = static_cast<int>(v); } }
+		GetBoolValue(ini, "SlotAssignments", "SkyUICategories", Config::SlotAssignments::SkyUICategories);
+		GetBoolValue(ini, "SlotAssignments", "WeaponTypeSlots", Config::SlotAssignments::WeaponTypeSlots);
+		for (int i = 0; i < 10; ++i) { if (i == 0 || i == 5) { continue; } std::uint32_t v = static_cast<std::uint32_t>(Config::SlotAssignments::Type[i]); GetUInt32Value(ini, "SlotAssignments", ("W1Slot" + std::to_string(i + 1) + "Type").c_str(), v); Config::SlotAssignments::Type[i] = static_cast<int>(v); }
 		GetBoolValue(ini, section, "RTUAlchemy", Config::WheelBehavior::RTUAlchemy);
 		GetBoolValue(ini, section, "RTUSpell", Config::WheelBehavior::RTUSpell);
 		GetBoolValue(ini, section, "RTUShout", Config::WheelBehavior::RTUShout);
@@ -5146,6 +5164,51 @@ void Config::ReadStyleConfig()
 
 }
 
+// 1.5.0: SkyUI Categories and By Type are switches on the Favorites Menu tab, so they live in [SlotAssignments] of
+// wheelBehavior.ini. Runs after that file is read. Two cases rewrite it, because the page disables each switch while the
+// other is on and both on would leave the player unable to change either:
+//   - an old Controls.ini still saying [Control.Wheel] WeaponTypeSlots = true: that choice is the player's, so it wins
+//     once, is written to the new home, and the old key is removed so the switch alone decides from then on;
+//   - an INI with both on: By Type wins, and the log says so once.
+static void ReconcileFavoritesRouting(const CSimpleIniA& a_controlsIni)
+{
+	bool oldByType = false;
+	GetBoolValue(a_controlsIni, "Control.Wheel", "WeaponTypeSlots", oldByType);
+	if (oldByType) {
+		logger::info("[FavoritesToSlots] Controls.ini has the old WeaponTypeSlots = true; moving it to wheelBehavior.ini [SlotAssignments], By Type on");
+	} else if (Config::SlotAssignments::WeaponTypeSlots && Config::SlotAssignments::SkyUICategories) {
+		static bool loggedBothOn = false;
+		if (!loggedBothOn) {
+			loggedBothOn = true;
+			logger::info("[FavoritesToSlots] SkyUICategories and WeaponTypeSlots are both on in wheelBehavior.ini; By Type wins and SkyUICategories is set off");
+		}
+	} else {
+		return;
+	}
+	Config::SlotAssignments::WeaponTypeSlots = true;
+	Config::SlotAssignments::SkyUICategories = false;
+
+	CSimpleIniA behaviorIni;
+	behaviorIni.SetUnicode();
+	behaviorIni.LoadFile(WHEELBEHAVIORSETTINGS_PATH);   // missing is fine: the factory layer still supplies every other key
+	behaviorIni.SetBoolValue("SlotAssignments", "SkyUICategories", false);
+	behaviorIni.SetBoolValue("SlotAssignments", "WeaponTypeSlots", true);
+	if (behaviorIni.SaveFile(WHEELBEHAVIORSETTINGS_PATH) < 0) {
+		logger::warn("[FavoritesToSlots] could not write the favorites routing to {}; By Type holds for this session only", WHEELBEHAVIORSETTINGS_PATH);
+		return;
+	}
+	if (oldByType) {
+		CSimpleIniA controlsIni;
+		controlsIni.SetUnicode();
+		if (controlsIni.LoadFile(CONTROLSETTINGS_PATH) >= 0) {
+			controlsIni.Delete("Control.Wheel", "WeaponTypeSlots");
+			if (controlsIni.SaveFile(CONTROLSETTINGS_PATH) < 0) {
+				logger::warn("[FavoritesToSlots] could not remove the old WeaponTypeSlots key from {}", CONTROLSETTINGS_PATH);
+			}
+		}
+	}
+}
+
 void Config::ReadControlConfig()
 {
 	EnsureUserIniBootstrapped(CONTROLDEFAULTS_PATH, CONTROLSETTINGS_PATH, "Controls");
@@ -5326,7 +5389,7 @@ void Config::ReadControlConfig()
 	// button or a settings page bound key either since it's just through AMF"); both stay 0, unbound.
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
 	GetBoolValue(ini, "Control.Wheel", "FavoritesSystem", Config::Control::Wheel::FavoritesSystem);
-	GetBoolValue(ini, "Control.Wheel", "WeaponTypeSlots", Config::Control::Wheel::WeaponTypeSlots);
+	ReconcileFavoritesRouting(ini);
 	GetBoolValue(ini, "Control.Wheel", "LeftStickWheelControl", Config::Control::Wheel::LeftStickWheelControl);
 	GetBoolValue(ini, "Control.Wheel", "StopTimeWhileOpen", Config::Control::Wheel::StopTimeWhileOpen);
 	GetBoolValue(ini, "Control.Wheel", "SnapRotationToSlot", Config::Control::Wheel::SnapRotationToSlot);

@@ -12,12 +12,80 @@
                     "entries": [
                         {
                             "control": {
-                                "failAction": "disable"
+                                "failAction": "disable",
+                                "id": "wheeler_favorites_skyui",
+                                "requirements": [
+                                    {
+                                        "id": "wheeler_favorites_by_type",
+                                        "type": "checkbox",
+                                        "value": false
+                                    }
+                                ]
+                            },
+                            "default": true,
+                            "ini": {
+                                "id": "SkyUICategories",
+                                "section": "SlotAssignments"
+                            },
+                            "text": {
+                                "desc": "Favorites go to the slot whose SkyUI category takes them, set in the Inventory Wheel dropdowns below. Turn By Type off to turn this on. With both off, favoriting adds nothing to the Inventory Wheel. On by default.",
+                                "name": "SkyUI Categories"
+                            },
+                            "translation": {
+                                "desc": "$SkyUICategoriesDesc",
+                                "name": "$SkyUICategoriesName"
+                            },
+                            "type": "checkbox"
+                        },
+                        {
+                            "control": {
+                                "failAction": "disable",
+                                "id": "wheeler_favorites_by_type",
+                                "requirements": [
+                                    {
+                                        "id": "wheeler_favorites_skyui",
+                                        "type": "checkbox",
+                                        "value": false
+                                    }
+                                ]
+                            },
+                            "default": false,
+                            "ini": {
+                                "id": "WeaponTypeSlots",
+                                "section": "SlotAssignments"
+                            },
+                            "text": {
+                                "desc": "Each Inventory Wheel slot takes one type of item, set in the dropdowns below. A weapon, potion or poison goes to the slot set to its type; if that slot has no room it is not added. A weapon with no slot set to its type joins an Auto slot already holding its type, or else the first empty Auto slot. Potions and poisons need a slot set to them. Other items are not added; the shout and power slots and the Magic Wheel work as before. Turn SkyUI Categories off to turn this on. Off by default.",
+                                "name": "By Type"
+                            },
+                            "translation": {
+                                "desc": "$WeaponTypeSlotsDesc",
+                                "name": "$WeaponTypeSlotsName"
+                            },
+                            "type": "checkbox"
+                        },
+                        {
+                            "control": {
+                                "failAction": "hide",
+                                "requirements": [
+                                    {
+                                        "id": "wheeler_favorites_skyui",
+                                        "type": "checkbox",
+                                        "value": true
+                                    }
+                                ]
                             },
                             "entries": [
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 10,
                                     "ini": {
@@ -60,7 +128,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 20,
                                     "ini": {
@@ -103,7 +178,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 21,
                                     "ini": {
@@ -146,7 +228,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 3,
                                     "ini": {
@@ -189,7 +278,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 5,
                                     "ini": {
@@ -232,7 +328,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 11,
                                     "ini": {
@@ -275,7 +378,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 6,
                                     "ini": {
@@ -318,7 +428,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 7,
                                     "ini": {
@@ -361,7 +478,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 8,
                                     "ini": {
@@ -404,7 +528,14 @@
                                 },
                                 {
                                     "control": {
-                                        "failAction": "disable"
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_skyui",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
                                     },
                                     "default": 13,
                                     "ini": {
@@ -453,6 +584,365 @@
                             "translation": {
                                 "desc": "",
                                 "name": ""
+                            },
+                            "type": "group"
+                        },
+                        {
+                            "control": {
+                                "failAction": "hide",
+                                "requirements": [
+                                    {
+                                        "id": "wheeler_favorites_by_type",
+                                        "type": "checkbox",
+                                        "value": true
+                                    }
+                                ]
+                            },
+                            "entries": [
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot2Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 2"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot2Name"
+                                    },
+                                    "type": "dropdown"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot3Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 3"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot3Name"
+                                    },
+                                    "type": "dropdown"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot4Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 4"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot4Name"
+                                    },
+                                    "type": "dropdown"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot5Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 5"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot5Name"
+                                    },
+                                    "type": "dropdown"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot7Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 7"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot7Name"
+                                    },
+                                    "type": "dropdown"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot8Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 8"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot8Name"
+                                    },
+                                    "type": "dropdown"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot9Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 9"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot9Name"
+                                    },
+                                    "type": "dropdown"
+                                },
+                                {
+                                    "control": {
+                                        "failAction": "hide",
+                                        "requirements": [
+                                            {
+                                                "id": "wheeler_favorites_by_type",
+                                                "type": "checkbox",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "default": 0,
+                                    "ini": {
+                                        "id": "W1Slot10Type",
+                                        "section": "SlotAssignments"
+                                    },
+                                    "options": [
+                                        "$SlotTypeAuto",
+                                        "$SlotTypeSword",
+                                        "$SlotTypeDagger",
+                                        "$SlotTypeWarAxe",
+                                        "$SlotTypeMace",
+                                        "$SlotTypeGreatsword",
+                                        "$SlotTypeBattleaxe",
+                                        "$SlotTypeWarhammer",
+                                        "$SlotTypeBow",
+                                        "$SlotTypeCrossbow",
+                                        "$SlotTypeStaff",
+                                        "$SlotTypeHandToHand",
+                                        "$SlotTypePotions",
+                                        "$SlotTypePoisons"
+                                    ],
+                                    "text": {
+                                        "desc": "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts.",
+                                        "name": "Slot 10"
+                                    },
+                                    "translation": {
+                                        "desc": "$SlotTypeRowDesc",
+                                        "name": "$SlotTypeSlot10Name"
+                                    },
+                                    "type": "dropdown"
+                                }
+                            ],
+                            "text": {
+                                "desc": "",
+                                "name": "Inventory Wheel - By Type"
+                            },
+                            "translation": {
+                                "desc": "",
+                                "name": "$SlotTypeGroupName"
                             },
                             "type": "group"
                         },
@@ -904,11 +1394,11 @@
                         }
                     ],
                     "text": {
-                        "desc": "The wheels are the Favorites menu while the Perfected Wheeler Favorites System is on (the General tab): favorite something in a menu and it lands in the slot whose category takes it. Give each slot position of the Inventory Wheel and the Magic Wheel a category below; slot 1 is the bottom of the wheel and the numbers run clockwise. Opening the wheel inside the Magic menu shows the Magic Wheel, inside the Inventory menu the Inventory Wheel, and closing it puts back the wheel you had. The presets on the General tab save these with everything else.",
+                        "desc": "The wheels are the Favorites menu while the Perfected Wheeler Favorites System is on (the General tab). The two switches choose how a favorite reaches the Inventory Wheel: by SkyUI category or by type. Turn one off to turn the other on. Slot 1 is the bottom of the wheel and the numbers run clockwise. Opening the wheel inside the Magic menu shows the Magic Wheel, inside the Inventory menu the Inventory Wheel, and closing it puts back the wheel you had. The presets on the General tab save these with everything else.",
                         "name": "Favorites Menu"
                     },
                     "translation": {
-                        "desc": "",
+                        "desc": "$FavoritesMenuTabDesc",
                         "name": ""
                     },
                     "type": "group"

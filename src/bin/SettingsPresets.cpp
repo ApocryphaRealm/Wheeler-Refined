@@ -344,8 +344,9 @@ namespace SettingsPresets
 	// ammo config changed) and the derived key names.
 	void ReloadFromIni()
 	{
-		SettingsPage::ValueStore::GetSingleton().LoadAll(SettingsPage::Catalog::GetSingleton());
 		SettingsPage::Page::Shared::ApplyChangedSettings();
+		// After the read, not before: 1.5.0's ReconcileFavoritesRouting can rewrite wheelBehavior.ini during it.
+		SettingsPage::ValueStore::GetSingleton().LoadAll(SettingsPage::Catalog::GetSingleton());
 		AmmoWheelReskinUnified::ReskinSystem::GetSingleton().ReloadSmartFromIni();
 		RefreshAmmoWheelKeyNames();
 		Wheeler::NotifyAmmoWheelConfigChanged();

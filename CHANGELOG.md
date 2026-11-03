@@ -61,6 +61,9 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
   - Off, nothing changes from 1.4.0.
 - The switch's name and tooltip are in all eleven languages; setting-page rows can now name translation keys in their descriptor.
 
+### Changed
+- The Favorites Menu tab now has two switches at its top, SkyUI Categories and By Type, and it changes with them: the Inventory Wheel dropdowns show for whichever one is on. By Type replaces the Weapon Type Slots switch on the General tab and gains a dropdown for each unlocked slot, so a slot can be set to one weapon type, to potions or to poisons, or left on Auto. Turn one switch off to turn the other on; with both off, favoriting adds nothing to the Inventory Wheel. A Weapon Type Slots setting already on carries over.
+
 ## 1.4.0 - 2026-10-08 - working
 
 ### Changed

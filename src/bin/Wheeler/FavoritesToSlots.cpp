@@ -74,11 +74,14 @@ namespace FavoritesToSlots
 		{
 			int wheelOf[kWheelCount];
 			for (int w = 0; w < kWheelCount; ++w) { wheelOf[w] = WheelOfTable(w); }
-			// 1.4.1: with Weapon Type Slots on, the inventory wheel's free positions belong to weapons; anything
+			// 1.4.1: with By Type on, the inventory wheel's free positions belong to By Type routing; anything
 			// routed here (spells, powers, shouts) may only use its two locked slots there.
-			const bool weaponWheel = Config::Control::Wheel::WeaponTypeSlots;
+			const bool weaponWheel = Config::SlotAssignments::WeaponTypeSlots;
+			// 1.5.0: with both switches off, favouriting adds nothing to the inventory wheel.
+			const bool skipInventoryWheel = !weaponWheel && !Config::SlotAssignments::SkyUICategories;
 			for (int pass = 0; pass < 2; ++pass) {
 				for (int w = 0; w < kWheelCount; ++w) {
+					if (skipInventoryWheel && w == 0) { continue; }
 					const int count = Wheeler::GetSlotCountOfWheel(wheelOf[w]);
 					if (count <= 0) { continue; }
 					for (int s = 0; s < kSlotCount && s < count; ++s) {
@@ -91,19 +94,70 @@ namespace FavoritesToSlots
 			return false;
 		}
 
-		// 1.4.1 Weapon Type Slots: the first inventory-wheel slot (locked Powers / Shouts slots skipped) that already
-		// holds a weapon of this type and has room under Max Items Per Slot, else the first empty one. The type is read
-		// from the items in the slot each time, never stored (the Oblivion wheel's way). a_why says what was decided.
-		bool FindWeaponTypeSlot(std::uint32_t a_key, int& a_wheel, int& a_slot, std::string& a_why)
+		// The type a position of the inventory wheel is set to. A position past the table, or a value no dropdown
+		// offers (a hand-edited INI), is Auto.
+		SlotType SlotTypeAt(int a_slot)
+		{
+			if (a_slot < 0 || a_slot >= kSlotCount) { return SlotType::Auto; }
+			const int v = Config::SlotAssignments::Type[a_slot];
+			return (v > 0 && v < static_cast<int>(SlotType::Count)) ? static_cast<SlotType>(v) : SlotType::Auto;
+		}
+
+		enum class ByTypeRoute
+		{
+			Found,
+			Full,     // Auto slots exist, none has room: the slot full text
+			NoSlot    // nothing on the wheel can take this item as it is set up: logged only
+		};
+
+		// 1.5.0 By Type: a slot designated for exactly this type comes first. When every designated slot is full the first
+		// one is still handed back, so AddItemToSlotOnWheel tells "already on the wheel" from "slot full" as it does for
+		// every other route. False when no slot is designated for it. a_why says what was decided.
+		bool FindDesignatedSlot(SlotType a_type, int a_wheel, int a_count, int& a_slot, std::string& a_why)
+		{
+			const int cap = static_cast<int>(Config::WheelBehavior::MaxItemsPerSlot);
+			int firstDesignated = -1;
+			for (int s = 0; s < a_count; ++s) {
+				if (IsLockedSlot(0, s, a_count) || SlotTypeAt(s) != a_type) { continue; }
+				if (firstDesignated < 0) { firstDesignated = s; }
+				const auto held = Wheeler::GetSlotFormIDs(a_wheel, s).size();
+				if (static_cast<int>(held) < cap) {
+					a_slot = s;
+					a_why = "slot designated for " + std::string(SlotTypeName(a_type)) + " (" + std::to_string(held) + "/" + std::to_string(cap) + ")";
+					return true;
+				}
+			}
+			if (firstDesignated < 0) { return false; }
+			a_slot = firstDesignated;
+			a_why = "every slot designated for " + std::string(SlotTypeName(a_type)) + " is full";
+			return true;
+		}
+
+		// 1.4.1 Weapon Type Slots, 1.5.0 By Type: with no slot designated for this type, the first AUTO slot on the
+		// inventory wheel (locked Powers / Shouts slots skipped) that already holds a weapon of this type and has room
+		// under Max Items Per Slot, else the first empty Auto one. The type is read from the items in the slot each time,
+		// never stored (the Oblivion wheel's way); a slot holding potions reads as key 0, which is no weapon's key, so it
+		// is simply occupied. a_key is 0 for potions and poisons, which do not use Auto slots. a_why says what was decided.
+		ByTypeRoute FindByTypeSlot(SlotType a_type, std::uint32_t a_key, int& a_wheel, int& a_slot, std::string& a_why)
 		{
 			const int wheel = WheelOfTable(0);
 			const int count = Wheeler::GetSlotCountOfWheel(wheel);
-			if (count <= 0) { a_why = "no inventory wheel"; return false; }
+			if (count <= 0) { a_why = "no inventory wheel"; return ByTypeRoute::NoSlot; }
+			if (FindDesignatedSlot(a_type, wheel, count, a_slot, a_why)) {
+				a_wheel = wheel;
+				return ByTypeRoute::Found;
+			}
+			if (a_key == 0) {
+				a_why = "no slot is designated for " + std::string(SlotTypeName(a_type));
+				return ByTypeRoute::NoSlot;
+			}
 			const int cap = static_cast<int>(Config::WheelBehavior::MaxItemsPerSlot);
 			int firstEmpty = -1;
 			int sameTypeFull = 0;
+			int autoSlots = 0;
 			for (int s = 0; s < count; ++s) {
-				if (IsLockedSlot(0, s, count)) { continue; }
+				if (IsLockedSlot(0, s, count) || SlotTypeAt(s) != SlotType::Auto) { continue; }
+				++autoSlots;
 				const auto ids = Wheeler::GetSlotFormIDs(wheel, s);
 				if (ids.empty()) {
 					if (firstEmpty < 0) { firstEmpty = s; }
@@ -117,19 +171,23 @@ namespace FavoritesToSlots
 				if (static_cast<int>(ids.size()) < cap) {
 					a_wheel = wheel;
 					a_slot = s;
-					a_why = "slot already holding " + std::string(WeaponTypeName(a_key)) + " (" + std::to_string(ids.size()) + "/" + std::to_string(cap) + ")";
-					return true;
+					a_why = "Auto slot already holding " + std::string(WeaponTypeName(a_key)) + " (" + std::to_string(ids.size()) + "/" + std::to_string(cap) + ")";
+					return ByTypeRoute::Found;
 				}
 				++sameTypeFull;
+			}
+			if (autoSlots == 0) {
+				a_why = "no slot is designated for " + std::string(SlotTypeName(a_type)) + " and no slot is Auto";
+				return ByTypeRoute::NoSlot;
 			}
 			if (firstEmpty >= 0) {
 				a_wheel = wheel;
 				a_slot = firstEmpty;
-				a_why = sameTypeFull > 0 ? ("first empty slot (" + std::to_string(sameTypeFull) + " slot(s) of this type full)") : std::string("first empty slot (no slot holds this type yet)");
-				return true;
+				a_why = sameTypeFull > 0 ? ("first empty Auto slot (" + std::to_string(sameTypeFull) + " slot(s) of this type full)") : std::string("first empty Auto slot (no Auto slot holds this type yet)");
+				return ByTypeRoute::Found;
 			}
-			a_why = sameTypeFull > 0 ? "no room: every slot of this type is full and no slot is empty" : "no room: no slot holds this type and no slot is empty";
-			return false;
+			a_why = sameTypeFull > 0 ? "no room: every Auto slot of this type is full and no Auto slot is empty" : "no room: no Auto slot holds this type and no Auto slot is empty";
+			return ByTypeRoute::Full;
 		}
 
 		void Note(const std::string& a_what, bool a_added)
@@ -176,22 +234,23 @@ namespace FavoritesToSlots
 				const Category cat = Classify(form);
 				const char* name = form->GetName() ? form->GetName() : "";
 				int wheel = -1, slot = -1;
-				if (Config::Control::Wheel::WeaponTypeSlots && IsInventorySide(cat)) {
-					// 1.4.1 Weapon Type Slots: the inventory wheel takes weapons only, one weapon type per slot.
-					const std::uint32_t key = WeaponTypeKey(form);
-					if (key == 0) {
-						Note(std::string("weapon type slots: not a weapon, not added: ") + name, false);
-						logger::info("[FavoritesToSlots] weapon type slots: {} ({:08X}, {}) is not a weapon - not added to the wheel", name, k.formID, CategoryName(cat));
+				if (Config::SlotAssignments::WeaponTypeSlots && IsInventorySide(cat)) {
+					// 1.5.0 By Type: the inventory wheel takes weapons, potions and poisons, one type per slot.
+					const SlotType type = SlotTypeOf(form);
+					if (type == SlotType::Auto) {
+						Note(std::string("by type: no slot takes this kind of item, not added: ") + name, false);
+						logger::info("[FavoritesToSlots] by type: {} ({:08X}, {}) is not a weapon, potion or poison - not added to the wheel", name, k.formID, CategoryName(cat));
 						continue;
 					}
 					std::string why;
-					if (!FindWeaponTypeSlot(key, wheel, slot, why)) {
-						Note(std::string("weapon type slots: ") + why + ": " + name, false);
-						logger::info("[FavoritesToSlots] weapon type slots: {} ({:08X}, type {}) - {}; not added", name, k.formID, WeaponTypeName(key), why);
-						Utils::NotificationMessage(Texts::GetText(Texts::TextType::FavoriteSlotFull));
+					const ByTypeRoute route = FindByTypeSlot(type, WeaponTypeKey(form), wheel, slot, why);
+					if (route != ByTypeRoute::Found) {
+						Note(std::string("by type: ") + why + ": " + name, false);
+						logger::info("[FavoritesToSlots] by type: {} ({:08X}, type {}) - {}; not added", name, k.formID, SlotTypeName(type), why);
+						if (route == ByTypeRoute::Full) { Utils::NotificationMessage(Texts::GetText(Texts::TextType::FavoriteSlotFull)); }
 						continue;
 					}
-					logger::debug("[FavoritesToSlots] weapon type slots: {} ({:08X}, type {}) -> wheel {} slot {}: {}", name, k.formID, WeaponTypeName(key), wheel + 1, slot + 1, why);
+					logger::debug("[FavoritesToSlots] by type: {} ({:08X}, type {}) -> wheel {} slot {}: {}", name, k.formID, SlotTypeName(type), wheel + 1, slot + 1, why);
 				} else if (!FindSlot(cat, wheel, slot)) {
 					Note(std::string("no slot takes ") + CategoryName(cat) + ": " + name, false);
 					logger::info("[FavoritesToSlots] {} ({:08X}) favourited; no slot on any wheel takes {} and none is Any - left alone", name, k.formID, CategoryName(cat));
@@ -410,6 +469,53 @@ namespace FavoritesToSlots
 		}
 	}
 
+	SlotType SlotTypeOf(RE::TESForm* a_form)
+	{
+		if (!a_form) { return SlotType::Auto; }
+		if (a_form->GetFormType() == RE::FormType::AlchemyItem) {
+			// Food stays food, as Classify has it.
+			auto* alch = a_form->As<RE::AlchemyItem>();
+			if (!alch || alch->IsFood()) { return SlotType::Auto; }
+			return alch->IsPoison() ? SlotType::Poisons : SlotType::Potions;
+		}
+		const std::uint32_t key = WeaponTypeKey(a_form);
+		if (key == kWeaponKeyWarhammer) { return SlotType::Warhammer; }
+		if (key < 0x100u) { return SlotType::Auto; }
+		switch (static_cast<RE::WEAPON_TYPE>(key - 0x100u)) {
+		case RE::WEAPON_TYPE::kHandToHandMelee: return SlotType::HandToHand;
+		case RE::WEAPON_TYPE::kOneHandSword: return SlotType::Sword;
+		case RE::WEAPON_TYPE::kOneHandDagger: return SlotType::Dagger;
+		case RE::WEAPON_TYPE::kOneHandAxe: return SlotType::WarAxe;
+		case RE::WEAPON_TYPE::kOneHandMace: return SlotType::Mace;
+		case RE::WEAPON_TYPE::kTwoHandSword: return SlotType::Greatsword;
+		case RE::WEAPON_TYPE::kTwoHandAxe: return SlotType::Battleaxe;
+		case RE::WEAPON_TYPE::kBow: return SlotType::Bow;
+		case RE::WEAPON_TYPE::kStaff: return SlotType::Staff;
+		case RE::WEAPON_TYPE::kCrossbow: return SlotType::Crossbow;
+		default: return SlotType::Auto;
+		}
+	}
+
+	const char* SlotTypeName(SlotType a_type)
+	{
+		switch (a_type) {
+		case SlotType::Sword: return "Sword";
+		case SlotType::Dagger: return "Dagger";
+		case SlotType::WarAxe: return "War Axe";
+		case SlotType::Mace: return "Mace";
+		case SlotType::Greatsword: return "Greatsword";
+		case SlotType::Battleaxe: return "Battleaxe";
+		case SlotType::Warhammer: return "Warhammer";
+		case SlotType::Bow: return "Bow";
+		case SlotType::Crossbow: return "Crossbow";
+		case SlotType::Staff: return "Staff";
+		case SlotType::HandToHand: return "Hand to Hand";
+		case SlotType::Potions: return "Potions";
+		case SlotType::Poisons: return "Poisons";
+		default: return "Auto";
+		}
+	}
+
 	void Tick()
 	{
 		if (!Config::Control::Wheel::FavoritesSystem) {
@@ -491,8 +597,10 @@ namespace FavoritesToSlots
 			for (int i = 0; i < kSlotCount; ++i) { cats += (i ? "," : ""); cats += std::to_string(Config::SlotAssignments::Slot[w][i]); }
 			cats += "]";
 		}
+		std::string types;
+		for (int i = 0; i < kSlotCount; ++i) { types += (i ? "," : ""); types += std::to_string(Config::SlotAssignments::Type[i]); }
 		const int inv = Wheeler::FindWheelIndexByRole("inventory"), mag = Wheeler::FindWheelIndexByRole("magic");
-		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::Control::Wheel::WeaponTypeSlots ? "true" : "false") + ",\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
+		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"skyUICategories\":" + std::string(Config::SlotAssignments::SkyUICategories ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::SlotAssignments::WeaponTypeSlots ? "true" : "false") + ",\"slotTypes\":[" + types + "],\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
 			",\"known\":" + std::to_string(g_known.size()) + ",\"scans\":" + std::to_string(g_scans) + ",\"added\":" + std::to_string(g_added) +
 			",\"skipped\":" + std::to_string(g_skipped) + ",\"categories\":[" + cats + "],\"last\":\"" + esc + "\"}";
 	}

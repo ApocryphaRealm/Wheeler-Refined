@@ -16,6 +16,19 @@ namespace SettingsPage
 			return total;
 		}
 
+		// The same, leaving out rows that hide themselves when their requirements fail: they are not always on the page.
+		// 1.5.0: the Favorites Menu tab holds 30 controls but shows 22 at most, and it must stay one page, because a
+		// By Type group split into a child tab would be an empty tab while the switch is off.
+		int CountAlwaysShownControlsDeep(const Entry& a_entry)
+		{
+			const bool hides = a_entry.failAction == FailAction::Hide && !a_entry.requirements.empty();
+			int total = (IsControl(a_entry.type) && !hides) ? 1 : 0;
+			for (const auto& child : a_entry.entries) {
+				total += CountAlwaysShownControlsDeep(child);
+			}
+			return total;
+		}
+
 		bool HasChildGroup(const Entry& a_entry)
 		{
 			return std::any_of(a_entry.entries.begin(), a_entry.entries.end(), [](const Entry& child) {
@@ -46,7 +59,7 @@ namespace SettingsPage
 		// when the parent would otherwise be an overlong page.
 		void PopulateTab(Tab& a_tab, const Entry& a_group, const LayoutRules& a_rules)
 		{
-			const int directControls = CountControlsDeep(a_group);
+			const int directControls = CountAlwaysShownControlsDeep(a_group);
 			const bool parentIsCrowded = directControls > a_rules.splitTabAbove;
 
 			for (const auto& child : a_group.entries) {

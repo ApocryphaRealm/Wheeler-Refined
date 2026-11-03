@@ -460,7 +460,9 @@ namespace SettingsPage
 				std::vector<const char*> items;
 				items.reserve(a_entry.options.size());
 				for (const auto& option : a_entry.options) {
-					items.push_back(option.c_str());
+					// 1.5.0 (rule 66): an option spelled "$Key" draws that key's text in the game's language.
+					const char* translated = (!option.empty() && option[0] == '$') ? Texts::GetTextByKey(option) : nullptr;
+					items.push_back((translated && *translated) ? translated : option.c_str());
 				}
 
 				int index = static_cast<int>(a_current.AsNumber(a_entry.defaultNumber.value_or(0.0)));
@@ -975,6 +977,10 @@ namespace SettingsPage
 				// A group reaching here was small enough to be flattened inline, so it keeps its
 				// heading and its children follow in order.
 				if (a_entry.type == EntryType::Group) {
+					// 1.5.0: a heading whose rows hide with a switch hides with them.
+					if (EvaluateVisibility(Catalog::GetSingleton(), a_panel, a_entry, ValueStore::GetSingleton()) == Visibility::Hidden) {
+						return;
+					}
 					if (!a_entry.name.empty()) {
 						ImGui::SeparatorText(a_entry.name.c_str());
 					}
@@ -1194,8 +1200,11 @@ namespace SettingsPage
 					~ScopeGuard() { ImGui::PopID(); }
 				} popIdOnExit;
 
-				if (!a_tab.desc.empty()) {
-					ImGui::TextDisabled("%s", a_tab.desc.c_str());
+				// 1.5.0 (rule 66): a group whose descriptor names a translation key for its help text draws it translated.
+				const char* translatedDesc = (a_tab.source && !a_tab.source->descKey.empty()) ? Texts::GetTextByKey(a_tab.source->descKey) : nullptr;
+				const char* tabDesc = (translatedDesc && *translatedDesc) ? translatedDesc : a_tab.desc.c_str();
+				if (*tabDesc) {
+					ImGui::TextDisabled("%s", tabDesc);
 					ImGui::Separator();
 				}
 

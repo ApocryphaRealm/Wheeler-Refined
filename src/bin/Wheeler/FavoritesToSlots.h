@@ -34,6 +34,11 @@
 //     classified, the wheels are searched in order for the first slot whose category takes it
 //     (an exact match first, then a slot marked Any), and the HUD says where it went. Nothing is
 //     taken off a wheel when a favourite is removed - what the player put there stays theirs.
+//   - 1.5.0: two switches at the top of the Favorites Menu tab choose how the Inventory Wheel fills
+//     (Config::SlotAssignments): SkyUI Categories (default on) is the search above; By Type (default off)
+//     is described at SlotType below. The page lets one be on at a time. With both off, favouriting adds
+//     nothing to the Inventory Wheel, the locked Powers and Shouts slots included. The Magic Wheel is
+//     searched the same way in all three.
 //   - The first read after a game loads only takes the snapshot, so favourites the player already
 //     had do not pour onto the wheels at once; only what is favourited from then on moves.
 //   - The settings live in wheelBehavior.ini, which the presets on the General tab copy whole, so
@@ -98,16 +103,42 @@ namespace FavoritesToSlots
 	// locked slots - the bottom (index 0) is always Powers, the top (index count/2) always Shouts.
 	Category EffectiveCategory(int a_table, int a_slot, int a_slotCount);
 
-	// 1.4.1 WEAPON TYPE SLOTS (Config::Control::Wheel::WeaponTypeSlots, Controls.ini, default off; only while the
-	// favorites system is on). The owner, 2026-10-20: "each slot on the inventory wheel is only keyed to a single weapons
-	// type and the wheel is only the weapons category so favoriting an item in the weapons tab will send axes to the
-	// same slot and swords to a different slot". The Oblivion wheel's method: no fixed slot per type - a new weapon
-	// favourite goes to the first inventory-wheel slot already holding a weapon of the SAME type with room (Max Items
-	// Per Slot), else the first EMPTY slot, else nowhere (logged). The two locked slots (Powers bottom, Shouts top)
-	// stay locked and are skipped; every other position takes weapons whatever its category setting says. Non-weapon
-	// inventory favourites (apparel, shields, potions, food, scrolls, ingredients, misc, ammo) are not added; spells,
-	// powers and shouts route exactly as before, except that on the inventory wheel only the locked slots take them.
+	// 1.4.1 WEAPON TYPE SLOTS, 1.5.0 BY TYPE (Config::SlotAssignments::WeaponTypeSlots, wheelBehavior.ini, default off;
+	// only while the favorites system is on). The owner, 2026-10-20: "each slot on the inventory wheel is only keyed to a
+	// single weapons type and the wheel is only the weapons category so favoriting an item in the weapons tab will send
+	// axes to the same slot and swords to a different slot". Each unlocked position has a type
+	// (Config::SlotAssignments::Type, keys W1Slot{n}Type; Auto by default):
+	//   - a weapon, potion or poison goes to a slot designated for exactly its type; no room there (Max Items Per Slot)
+	//     and it is not added and the slot full text shows;
+	//   - a weapon with no designated slot takes the Oblivion wheel's method across AUTO slots only: the first holding a
+	//     weapon of the SAME type with room, else the first EMPTY one, else nowhere (slot full text). With no Auto slot at
+	//     all it is not added (logged). Potions and poisons never use Auto slots;
+	//   - the two locked slots (Powers bottom, Shouts top) stay locked and are skipped. Other inventory favourites
+	//     (apparel, shields, food, scrolls, ingredients, misc, ammo) are not added; spells, powers and shouts route
+	//     exactly as before, except that on the inventory wheel only the locked slots take them.
 	constexpr std::uint32_t kWeaponKeyWarhammer = 0x200u;
+	// What a position takes in By Type mode, in the order the settings-page dropdown lists them.
+	enum class SlotType : int
+	{
+		Auto = 0,
+		Sword,
+		Dagger,
+		WarAxe,
+		Mace,
+		Greatsword,
+		Battleaxe,
+		Warhammer,
+		Bow,
+		Crossbow,
+		Staff,
+		HandToHand,
+		Potions,
+		Poisons,
+		Count
+	};
+	// The type a form can be designated by; Auto for a form no position can be designated for (food, apparel, ...).
+	SlotType SlotTypeOf(RE::TESForm* a_form);
+	const char* SlotTypeName(SlotType a_type);
 	// True for a category that comes from the inventory side (everything but spells, schools, powers and shouts).
 	bool IsInventorySide(Category a_c);
 	// The weapon type a form is grouped by: 0x100 + RE::WEAPON_TYPE, or kWeaponKeyWarhammer for a two-handed axe

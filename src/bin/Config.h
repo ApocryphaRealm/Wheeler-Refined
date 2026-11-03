@@ -569,13 +569,6 @@ namespace Config
 			// opened matching the menu). Off, the mod behaves as 1.2.9 did (the owner, 2026-09-17: "so it doesn't
 			// bleed into the non favorites wheeler"). Default ON. Lives in Controls.ini, which the presets cover.
 			inline bool FavoritesSystem = true;
-			// 1.4.1: Weapon Type Slots (the owner, 2026-10-20: "each slot on the inventory wheel is only keyed to a single
-			// weapons type and the wheel is only the weapons category ... axes to the same slot and swords to a different
-			// slot"). On (and only while FavoritesSystem is on): a favourited weapon goes to the first Inventory Wheel slot
-			// already holding a weapon of its type with room, else the first empty slot, else nowhere; the slot categories
-			// are ignored there except the locked Powers and Shouts slots; non-weapon items are not added; the Magic Wheel
-			// and spells / powers / shouts are unchanged. Default OFF. Controls.ini, which the presets cover.
-			inline bool WeaponTypeSlots = false;
 			// 1.3.1: while the wheel is open the left stick stops moving the character and its four directions are
 			// gamepad buttons (Left Stick Up/Down/Left/Right, codes 282-285) the wheel's actions bind to; Move Wheel
 			// Forward / Back ship on Right / Left. The owner, 2026-09-17: "The whole point of dropping left stick
@@ -1243,6 +1236,17 @@ namespace Config
 	{
 		// [wheel][slot]: wheel 1 = the inventory wheel, wheel 2 = the magic wheel. INI keys W1Slot1Category ...
 		inline int Slot[2][10] = { { 10, 20, 21, 3, 5, 11, 6, 7, 8, 13 }, { 14, 15, 16, 17, 18, 0, 0, 0, 0, 0 } };
+		// 1.5.0: how a favourite reaches the Inventory Wheel, the two switches at the top of the Favorites Menu tab (the
+		// owner, 2026-11-03: "Two separate tick boxes. One for Sky UI categories and another for by type."). Both only
+		// count while Control::Wheel::FavoritesSystem is on. SkyUICategories: by the Slot table above (default ON).
+		// WeaponTypeSlots: By Type, routed by the Type table below (1.4.1 as Weapon Type Slots in Controls.ini, default
+		// OFF). Both off: favouriting adds nothing to the Inventory Wheel. Both on cannot be set from the page; an old
+		// INI that has it gets By Type (ReconcileFavoritesRouting in Config.cpp).
+		inline bool SkyUICategories = true;
+		inline bool WeaponTypeSlots = false;
+		// 1.5.0: what each Inventory Wheel slot position takes in By Type mode (FavoritesToSlots::SlotType as an int;
+		// 0 = Auto). INI keys W1Slot2Type ... W1Slot10Type; positions 1 and 6 are the locked slots, carry no key and stay 0.
+		inline int Type[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	}
 
 	// Debug logging toggles (safe patch, disabled by default).

@@ -138,7 +138,9 @@ namespace AmfPage
 			std::vector<const char*> items;
 			items.reserve(a_entry.options.size());
 			for (const auto& option : a_entry.options) {
-				items.push_back(option.c_str());
+				// 1.5.0 (rule 66): an option spelled "$Key" draws that key's text in the game's language.
+				const char* translated = (!option.empty() && option[0] == '$') ? Texts::GetTextByKey(option) : nullptr;
+				items.push_back((translated && *translated) ? translated : option.c_str());
 			}
 			int index = static_cast<int>(a_current.AsNumber(a_entry.defaultNumber.value_or(0.0)));
 			index = (std::max)(0, (std::min)(index, static_cast<int>(items.size()) - 1));
@@ -243,6 +245,10 @@ namespace AmfPage
 				return;
 			}
 			if (a_entry.type == EntryType::Group) {
+				// 1.5.0: a heading whose rows hide with a switch hides with them.
+				if (EvaluateVisibility(Catalog::GetSingleton(), a_panel, a_entry, ValueStore::GetSingleton()) == Visibility::Hidden) {
+					return;
+				}
 				if (!a_entry.name.empty()) {
 					MCP::SeparatorText(a_entry.name.c_str());
 				}
@@ -499,8 +505,11 @@ namespace AmfPage
 		void DrawTab(const Panel& a_panel, const Tab& a_tab, const std::string& a_id = std::string(), int a_depth = 0)
 		{
 			MCP::PushID(static_cast<const void*>(&a_tab));
-			if (!a_tab.desc.empty()) {
-				MCP::TextDisabled("%s", a_tab.desc.c_str());
+			// 1.5.0 (rule 66): a group whose descriptor names a translation key for its help text draws it translated.
+			const char* translatedDesc = (a_tab.source && !a_tab.source->descKey.empty()) ? Texts::GetTextByKey(a_tab.source->descKey) : nullptr;
+			const char* tabDesc = (translatedDesc && *translatedDesc) ? translatedDesc : a_tab.desc.c_str();
+			if (*tabDesc) {
+				MCP::TextDisabled("%s", tabDesc);
 				MCP::Separator();
 			}
 			for (const auto* entry : a_tab.controls) {

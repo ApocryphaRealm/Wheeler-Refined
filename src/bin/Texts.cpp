@@ -200,6 +200,60 @@ namespace
 			return "WeaponTypeSlotsName";
 		case Texts::TextType::WeaponTypeSlotsDesc:
 			return "WeaponTypeSlotsDesc";
+		case Texts::TextType::SkyUICategoriesName:
+			return "SkyUICategoriesName";
+		case Texts::TextType::SkyUICategoriesDesc:
+			return "SkyUICategoriesDesc";
+		case Texts::TextType::SlotTypeGroupName:
+			return "SlotTypeGroupName";
+		case Texts::TextType::SlotTypeRowDesc:
+			return "SlotTypeRowDesc";
+		case Texts::TextType::FavoritesMenuTabDesc:
+			return "FavoritesMenuTabDesc";
+		case Texts::TextType::SlotTypeSlot2Name:
+			return "SlotTypeSlot2Name";
+		case Texts::TextType::SlotTypeSlot3Name:
+			return "SlotTypeSlot3Name";
+		case Texts::TextType::SlotTypeSlot4Name:
+			return "SlotTypeSlot4Name";
+		case Texts::TextType::SlotTypeSlot5Name:
+			return "SlotTypeSlot5Name";
+		case Texts::TextType::SlotTypeSlot7Name:
+			return "SlotTypeSlot7Name";
+		case Texts::TextType::SlotTypeSlot8Name:
+			return "SlotTypeSlot8Name";
+		case Texts::TextType::SlotTypeSlot9Name:
+			return "SlotTypeSlot9Name";
+		case Texts::TextType::SlotTypeSlot10Name:
+			return "SlotTypeSlot10Name";
+		case Texts::TextType::SlotTypeAuto:
+			return "SlotTypeAuto";
+		case Texts::TextType::SlotTypeSword:
+			return "SlotTypeSword";
+		case Texts::TextType::SlotTypeDagger:
+			return "SlotTypeDagger";
+		case Texts::TextType::SlotTypeWarAxe:
+			return "SlotTypeWarAxe";
+		case Texts::TextType::SlotTypeMace:
+			return "SlotTypeMace";
+		case Texts::TextType::SlotTypeGreatsword:
+			return "SlotTypeGreatsword";
+		case Texts::TextType::SlotTypeBattleaxe:
+			return "SlotTypeBattleaxe";
+		case Texts::TextType::SlotTypeWarhammer:
+			return "SlotTypeWarhammer";
+		case Texts::TextType::SlotTypeBow:
+			return "SlotTypeBow";
+		case Texts::TextType::SlotTypeCrossbow:
+			return "SlotTypeCrossbow";
+		case Texts::TextType::SlotTypeStaff:
+			return "SlotTypeStaff";
+		case Texts::TextType::SlotTypeHandToHand:
+			return "SlotTypeHandToHand";
+		case Texts::TextType::SlotTypePotions:
+			return "SlotTypePotions";
+		case Texts::TextType::SlotTypePoisons:
+			return "SlotTypePoisons";
 		default:
 			return "";
 		}
