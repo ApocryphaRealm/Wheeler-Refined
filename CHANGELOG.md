@@ -13,6 +13,7 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 ## 1.5.0 - 2026-10-23 - untested (numbered 1.4.1 until the owner chose 1.5.0 on 2026-10-23 - Weapon Type Slots is a new feature; the first in-game test of the 1.4.1 build, 2026-10-21, was recorded failed; see Fixed)
 
 ### Fixed
+- A number typed into a settings slider stays inside the slider's range.
 - 2026-11-03: **a flick of the left stick looked like a second Inventory Wheel** (the owner, 2026-11-03: "there's two inventory wheels
   instead of an inventory wheel and a magic wheel"). Both wheels were always there and correct: the flick is Move Wheel
   Forward / Back, which moves the wheel on screen to another place in the order and keeps showing it. The indicator's lit

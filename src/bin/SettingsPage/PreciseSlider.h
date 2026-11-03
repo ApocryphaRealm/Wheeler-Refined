@@ -31,8 +31,9 @@ namespace precise
 	inline bool SliderFloat(const char* a_label, float* a_v, float a_min, float a_max, const char* a_format)
 	{
 		const float before = *a_v;
-		const bool  changed = ImGui::SliderFloat(a_label, a_v, a_min, a_max, a_format);
+		const bool  changed = ImGui::SliderFloat(a_label, a_v, a_min, a_max, a_format, ImGuiSliderFlags_AlwaysClamp);
 		if (!changed) return false;
+		*a_v = std::clamp(*a_v, a_min, a_max);   // a typed number stays inside the range whatever the framework's ImGui does
 		ImGuiContext& g = *GImGui;
 		const ImGuiID id = ImGui::GetItemID();
 		const bool nav = g.ActiveId == id && (g.ActiveIdSource == ImGuiInputSource_Keyboard || g.ActiveIdSource == ImGuiInputSource_Gamepad);
@@ -49,8 +50,9 @@ namespace precise
 	inline bool SliderInt(const char* a_label, int* a_v, int a_min, int a_max, const char* a_format = "%d")
 	{
 		const int  before = *a_v;
-		const bool changed = ImGui::SliderInt(a_label, a_v, a_min, a_max, a_format);
+		const bool changed = ImGui::SliderInt(a_label, a_v, a_min, a_max, a_format, ImGuiSliderFlags_AlwaysClamp);
 		if (!changed) return false;
+		*a_v = std::clamp(*a_v, a_min, a_max);   // a typed number stays inside the range whatever the framework's ImGui does
 		ImGuiContext& g = *GImGui;
 		const ImGuiID id = ImGui::GetItemID();
 		const bool nav = g.ActiveId == id && (g.ActiveIdSource == ImGuiInputSource_Keyboard || g.ActiveIdSource == ImGuiInputSource_Gamepad);
