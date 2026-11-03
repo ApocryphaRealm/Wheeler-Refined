@@ -609,18 +609,14 @@ static void NormalizeGamepadTriggerEdges(const RE::ButtonEvent* button, std::uin
 		return;
 	}
 
-	if (isDown || isUp) {
-		s_triggerPressed[triggerIndex] = isDown;
-		return;
-	}
-
+	// One pull, one press: the thresholds alone decide. The engine's own down edge comes at the first touch, so taking it
+	// as well made a pull count twice on its way down (down at the touch, up under the release threshold, down again
+	// at the press threshold - the owner, 2026-11-03: a full pull shifted a slot's items two places).
 	const bool wasPressed = s_triggerPressed[triggerIndex];
 	const bool nowPressed = wasPressed ? analogValue > kTriggerReleaseThreshold : analogValue >= kTriggerPressThreshold;
-	if (nowPressed != wasPressed) {
-		isDown = nowPressed;
-		isUp = !nowPressed;
-		s_triggerPressed[triggerIndex] = nowPressed;
-	}
+	isDown = nowPressed && !wasPressed;
+	isUp = wasPressed && !nowPressed;
+	s_triggerPressed[triggerIndex] = nowPressed;
 }
 
 void Input::ProcessAndFilter(RE::InputEvent** a_event)
