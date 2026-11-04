@@ -8438,6 +8438,11 @@ void Wheeler::ToggleAmmoWheel()
 		logger::info("[AmmoWheel] toggle ignored: a menu is open");
 		return;
 	}
+	// 1.5.1: the framework's menu, the same rule as the main wheel's open gate - it need not pause the game.
+	if (!IsAmmoWheelOpen() && AMFLaunch::IsFrameworkMenuOpen()) {
+		logger::info("[AmmoWheel] toggle ignored: the framework's menu is open");
+		return;
+	}
 
 	// Hard-block ammo wheel while Lich form is active.
 	if (TransformWheelManager::IsLichActive()) {

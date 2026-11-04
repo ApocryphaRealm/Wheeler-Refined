@@ -10,6 +10,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.5.1 - 2026-11-03 - untested
+
+### Fixed
+- **D-pad right opened the ammo wheel with the framework's menu open and a bow out** when the menu does not pause the game. Wheeler reads input before the framework does, so the framework could not stop it. While its menu is open and no wheel is up, no press now reaches any wheel, hotkey or binding of ours, or is consumed by us, so the framework's menu gets every press. Keys can still be rebound on our page, and an open wheel can still be closed.
+
 ## 1.5.0 - 2026-10-23 - untested (numbered 1.4.1 until the owner chose 1.5.0 on 2026-10-23 - Weapon Type Slots is a new feature; the first in-game test of the 1.4.1 build, 2026-10-21, was recorded failed; see Fixed)
 
 ### Fixed

@@ -644,6 +644,22 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 	InputBroker::RefreshConfigFromSettings();
 	InputBroker::RefreshWheelerReservations();
 
+	// 1.5.1 (the owner: "Using D-pad right with AMF open and a bow equipped causes the ammo wheel to pop up"). This hook is
+	// the OUTERMOST on the input call site: wheeler.dll loads after the framework, so it wraps the framework's hook and reads
+	// every event BEFORE the framework consumes it. The framework cannot hide a press from us from where it sits, and should
+	// not try: the keymap capture on our own page is read here while its menu is open. So we ask. While its menu (or a
+	// consumer window that blocks input) is open and no wheel is up, no press starts anything of ours and none is consumed:
+	// the framework gets it. Releases, key-state tracking and the rebind capture still run. An open wheel keeps its input, so
+	// it can always be closed. "Pause game with the menu" hid this: every Wheeler toggle already refuses in a paused game.
+	const bool frameworkHasInput = AMFLaunch::IsFrameworkMenuOpen() && !Wheeler::IsWheelerOpen() && !Wheeler::IsAmmoWheelOpen();
+	{
+		static bool s_lastFrameworkHasInput = false;
+		if (frameworkHasInput != s_lastFrameworkHasInput) {
+			s_lastFrameworkHasInput = frameworkHasInput;
+			logger::debug("[Input] framework menu has the input: {} (no press reaches a wheel or a binding meanwhile)", frameworkHasInput);
+		}
+	}
+
 	const bool mainWheelWasOpenAtDispatchStart = Wheeler::IsWheelerOpen();
 	bool mainWheelOpenedDuringThisDispatch = false;
 	bool mainWheelClosedDuringThisDispatch = false;
@@ -909,6 +925,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 				// the button's own code, only in gameplay, and never takes a wheel toggle or a Wheeler-bound key
 				// (those keep their hold/tap and bound behaviour; a replayed tap is checked where replays pass).
 				if (!consumeEvent &&
+				    !frameworkHasInput &&
 				    input != kInvalid &&
 				    !IsMainWheelToggleKey(input, isGamePad, isMouse) &&
 				    !Controls::IsKeyBound(input) &&
@@ -1018,9 +1035,18 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 					spyResult = "Blocked";
 				}
 
+				// The press belongs to the framework's open menu (frameworkHasInput, top of this function): both blocks below
+				// are every wheel, hotkey and binding this file dispatches.
+				const bool pressIsTheFrameworks = frameworkHasInput && isDown;
+				if (!consumeEvent && input != kInvalid && pressIsTheFrameworks) {
+					spyCandidates = "FrameworkMenu";
+					spyWinner = "FrameworkMenu";
+					spyResult = "PassThroughToFramework";
+				}
+
 				Controls::Action resolvedAction = Controls::Action::None;
 				bool suppressRepeatedActivationDown = false;
-				if (!consumeEvent && input != kInvalid && brokerAllowsWheelProcessing) {
+				if (!consumeEvent && input != kInvalid && brokerAllowsWheelProcessing && !pressIsTheFrameworks) {
 					resolvedAction = Controls::ResolveAction(input, isDown, isGamePad);
 					suppressRepeatedActivationDown =
 						isDown &&
@@ -1055,7 +1081,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 					}
 				}
 
-				if (!consumeEvent && input != kInvalid && brokerAllowsWheelProcessing) {
+				if (!consumeEvent && input != kInvalid && brokerAllowsWheelProcessing && !pressIsTheFrameworks) {
 					const bool isAmmoToggleKey = IsAmmoToggleKey(input, isGamePad, isMouse);
 					const bool wheelerOpen = Wheeler::IsWheelerOpen();
 					const bool ammoWheelOpen = Wheeler::IsAmmoWheelOpen();
@@ -1324,7 +1350,7 @@ void Input::ProcessAndFilter(RE::InputEvent** a_event)
 			    Config::Control::Wheel::SettingsPageGamepadButton != 0 &&
 			    pageKeyEvent->GetDevice() == RE::INPUT_DEVICE::kGamepad &&
 			    spyMappedInput == Config::Control::Wheel::SettingsPageGamepadButton;
-			if ((pageKeyboardHit || pageGamepadHit) && pageKeyEvent->IsDown()) {
+			if ((pageKeyboardHit || pageGamepadHit) && pageKeyEvent->IsDown() && !frameworkHasInput) {
 				if (AmfPage::IsHosted()) {
 					// M9: the settings live in the framework's menu; 1.0.10 opens it there (AMF 1.7.7's
 					// AMF_OpenMenu). An older framework gets the notification instead.
