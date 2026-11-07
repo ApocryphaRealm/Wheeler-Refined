@@ -1,6 +1,7 @@
 // ShoutUtils.cpp
 
 #include "ShoutUtils.h"
+#include "bin/Utilities/LineCompat.h"
 
 #include "bin/Config.h"
 
@@ -239,7 +240,7 @@ namespace
 		}
 
 		RE::SkyrimVM* skyrimVM = RE::SkyrimVM::GetSingleton();
-		RE::BSScript::IVirtualMachine* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+		RE::BSScript::IVirtualMachine* vm = LineCompat::VM(skyrimVM);
 		const GameFuncInfo info = BuildGameFuncInfo(vm);
 
 		logger::info("[ShoutUnlockVMInit] vm={} gameTypeFound={} linked={} funcFound={} funcSig='{}' funcParams={} retType='{}' native={} static={} tasklets={} globals={}",
@@ -290,7 +291,7 @@ namespace
 		}
 
 		RE::SkyrimVM* skyrimVM = RE::SkyrimVM::GetSingleton();
-		RE::BSScript::IVirtualMachine* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+		RE::BSScript::IVirtualMachine* vm = LineCompat::VM(skyrimVM);
 		const GameFuncInfo info = BuildGameFuncInfo(vm);
 
 		if (!info.vmAvailable) {

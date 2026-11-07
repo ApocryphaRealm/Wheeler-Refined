@@ -1,4 +1,5 @@
 #include "bin/Wheeler/FavoritesToSlots.h"
+#include "bin/Utilities/LineCompat.h"
 #include "bin/UserInput/LeftStick.h"
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
@@ -3478,7 +3479,7 @@ void Wheeler::PlaySoundByEditorID(const char* a_editorID, float a_volume)
 	handle.assumeSuccess = false;
 	auto* audioManager = RE::BSAudioManager::GetSingleton();
 	if (audioManager) {
-		audioManager->BuildSoundDataFromEditorID(handle, a_editorID, 0x10);
+		LineCompat::SoundFromEditorID(audioManager, handle, a_editorID, 0x10);
 		if (handle.IsValid()) {
 			handle.SetVolume(a_volume);
 			handle.Play();
@@ -7368,7 +7369,7 @@ void Wheeler::ProcessPendingActions()
 			
 			if (shouldRefund && pc) {
 				// Refund the magicka
-				pc->AsActorValueOwner()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kMagicka, refundAmount);
+				LineCompat::ModDamage(pc->AsActorValueOwner(), RE::ActorValue::kMagicka, refundAmount);
 				if (Config::WheelBehavior::InstantSpellDebugLog) {
 					logger::info("InstantCast: REFUNDED {:.1f} magicka for failed summon (spellFormID={:08X})",
 						refundAmount, check.spellFormID);
@@ -9321,7 +9322,7 @@ void Wheeler::EnableEditModeGameplayInputBlock()
 	_editModeGameplayInputBlocker.disabledByUsMask = 0;
 	for (const auto flag : kEditModeGameplayBlockFlags) {
 		if (controlMap->AreControlsEnabled(flag)) {
-			controlMap->ToggleControls(flag, false);
+			LineCompat::ToggleControls(controlMap, flag, false);
 			_editModeGameplayInputBlocker.disabledByUsMask |= static_cast<std::uint32_t>(flag);
 		}
 	}
@@ -9343,7 +9344,7 @@ void Wheeler::DisableEditModeGameplayInputBlock()
 	for (const auto flag : kEditModeGameplayBlockFlags) {
 		const std::uint32_t mask = static_cast<std::uint32_t>(flag);
 		if ((_editModeGameplayInputBlocker.disabledByUsMask & mask) != 0) {
-			controlMap->ToggleControls(flag, true);
+			LineCompat::ToggleControls(controlMap, flag, true);
 		}
 	}
 

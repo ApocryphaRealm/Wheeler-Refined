@@ -490,9 +490,14 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	v.PluginVersion(Plugin::VERSION);
 	v.PluginName(Plugin::NAME);
 
+#if RUNTIME_LINE == 17
+	v.UsesAddressLibrary();
+	v.UsesNoStructs();
+#else
 	v.UsesAddressLibrary(true);
-	v.CompatibleVersions({ SKSE::RUNTIME_SSE_LATEST });
 	v.HasNoStructUse(true);
+#endif
+	v.CompatibleVersions({ SKSE::RUNTIME_SSE_LATEST });
 
 	return v;
 }();
@@ -526,7 +531,13 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 		logger::critical("[AddressLibrary] loading inert: no hooks, no listeners, nothing resolved");
 		return true;
 	}
+#if RUNTIME_LINE == 17
+	// CommonLibSSE-NG 7.2's Init(a_skse, a_log = true) starts its own logger, which would recreate wheeler.log and
+	// wipe the banner and [AddressLibrary] lines above (Infinity UI's 1.7 log, 2026-10-22). Ours is already running.
+	SKSE::Init(a_skse, false);
+#else
 	SKSE::Init(a_skse);
+#endif
 
 	// 1.2.9: say which Address Library file this game version needs and whether it is there BEFORE
 	// any address is resolved; a missing file leaves the plugin inert with a message that names it

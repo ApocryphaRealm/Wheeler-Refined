@@ -244,7 +244,11 @@ namespace SettingsPage
 						// because it builds against a different CommonLib - and Wheeler's own
 						// Input.cpp carries a local CharEvent shim for the same reason, which is
 						// what would have made a compile error here look mysterious.
+#if RUNTIME_LINE == 17
+						Enqueue({ Record::Kind::kCharacter, character->keyCode, true, 0.0f, 0.0f });   // 7.2 spells it keyCode
+#else
 						Enqueue({ Record::Kind::kCharacter, character->keycode, true, 0.0f, 0.0f });
+#endif
 						break;
 					}
 				case RE::INPUT_EVENT_TYPE::kThumbstick:

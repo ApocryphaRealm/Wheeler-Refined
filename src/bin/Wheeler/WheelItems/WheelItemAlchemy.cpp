@@ -1,4 +1,5 @@
 #include "bin/Rendering/Drawer.h"
+#include "bin/Utilities/LineCompat.h"
 #include "bin/Utilities/Utils.h"
 #include "bin/Wheeler/Wheeler.h"
 #include "bin/Texts.h"
@@ -231,9 +232,9 @@ namespace
 			return;
 		}
 
-		RE::ItemCard card;
+		LineCompat::BlankItemCard card;
 		RE::BSString rawDescription;
-		Utils::Magic::GetMagicItemDescription(&card, a_item, rawDescription);
+		Utils::Magic::GetMagicItemDescription(card.get(), a_item, rawDescription);
 
 		logger::info("[AlchemyDescDiag] item form={:08X} name='{}' editor='{}' rawDesc='{}' cachedDesc='{}'",
 			a_item->GetFormID(),

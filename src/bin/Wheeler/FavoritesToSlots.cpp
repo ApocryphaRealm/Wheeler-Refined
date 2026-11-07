@@ -365,7 +365,11 @@ namespace FavoritesToSlots
 			auto* armo = a_form->As<RE::TESObjectARMO>();
 			if (!armo) { return Category::Apparel; }
 			using Slot = RE::BGSBipedObjectForm::BipedObjectSlot;
+#if RUNTIME_LINE == 17
+			const auto mask = static_cast<std::uint32_t>(armo->GetSlotMask().underlying());   // 7.2: an EnumSet
+#else
 			const auto mask = static_cast<std::uint32_t>(armo->GetSlotMask());
+#endif
 			// Head is biped 30 OR 31: vanilla helmets occupy 31 (hair) + 42 (circlet), not 30 (the owner's first
 			// test: Iron Helmet went to Apparel). A circlet alone (42) stays apparel, like jewellery.
 			const auto main = static_cast<std::uint32_t>(Slot::kHead) | static_cast<std::uint32_t>(Slot::kHair) | static_cast<std::uint32_t>(Slot::kBody) |

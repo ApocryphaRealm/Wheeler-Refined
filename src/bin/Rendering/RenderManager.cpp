@@ -1,4 +1,5 @@
 #include "RenderManager.h"
+#include "bin/Utilities/LineCompat.h"
 
 #include "bin/AMF/AMFLaunch.h"
 #include <d3d11.h>
@@ -607,7 +608,7 @@ void RenderManager::D3DInitHook::thunk()
 		return;
 	}
 
-	auto* render_data = RE::BSGraphics::Renderer::GetRendererData();
+	auto* render_data = LineCompat::RendererData();
 	if (!render_data) {
 		ERROR("Cannot get renderer data. Initialization failed!");
 		return;

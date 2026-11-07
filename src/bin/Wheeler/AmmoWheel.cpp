@@ -1,4 +1,5 @@
 #include "AmmoWheel.h"
+#include "bin/Utilities/LineCompat.h"
 #include "bin/SettingsPage/Page.h"
 #include "AmmoWheelReskin.h"
 #include "AmmoWheelReskinUnified.h"
@@ -7760,7 +7761,7 @@ void AmmoWheel::PlayHoverSlotSound(int newHoveredIndex)
 	
 	auto* audioManager = RE::BSAudioManager::GetSingleton();
 	if (audioManager) {
-		audioManager->BuildSoundDataFromEditorID(handle, editorID, 0x10);
+		LineCompat::SoundFromEditorID(audioManager, handle, editorID, 0x10);
 		if (handle.IsValid()) {
 			handle.SetVolume(Config::AmmoWheel::Sounds::HoverSlotSoundVolume);
 			handle.Play();

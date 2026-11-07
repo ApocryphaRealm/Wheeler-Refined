@@ -1,0 +1,25 @@
+{
+  "name": "wheeler-17",
+  "version": "1",
+  "description": "Perfected Wheeler, Skyrim 1.7.x build line: same sources, CommonLibSSE-NG 7.2.0 (cmake/ports-17) instead of the pinned checkout. The SE/AE-1.6 line keeps the root manifest untouched.",
+  "dependencies": [
+    "commonlibsse-ng",
+    "fast-cpp-csv-parser",
+    "rsm-binary-io",
+    "simpleini",
+    "spdlog",
+    "xbyak",
+    "rapidcsv",
+    "nlohmann-json",
+    "freetype",
+    {
+      "name": "imgui",
+      "features": [
+        "dx11-binding",
+        "win32-binding"
+      ]
+    }
+  ],
+  "license": "GPL-3.0-or-later",
+  "builtin-baseline": "382c5b8a94b3d6b6286df7a488c7efa8d37313eb"
+}

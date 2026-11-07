@@ -1,8 +1,8 @@
-﻿cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.22)
 
 project(
 	wheeler
-	VERSION 1.5.1
+	VERSION 1.6.0
 	LANGUAGES CXX
 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,6 +18,12 @@ option(ENABLE_SKYRIM_AE "Enable support for Skyrim AE in the dynamic runtime fea
 option(ENABLE_SKYRIM_VR "Enable support for Skyrim VR in the dynamic runtime feature." OFF)
 set(BUILD_TESTS OFF)
 
+# Build line (2026-11-07): 1 = SE 1.5.97 / AE 1.6.x on the pinned CommonLibSSE-NG checkout below; 17 = Skyrim 1.7.x
+# on CommonLibSSE-NG 7.2.0 from the vcpkg overlay port in cmake/ports-17 (configure17.bat). That checkout calls a
+# 1.7 game "SE" and looks for version-1-7-104-0.bin, which Address Library for 1.7 does not ship.
+set(RUNTIME_LINE "1" CACHE STRING "Build line: 1 (SE 1.5.97 / AE 1.6.x) or 17 (Skyrim 1.7.x)")
+
+if(NOT RUNTIME_LINE STREQUAL "17")
 # A -D cache value takes precedence.  The environment variable is only a
 # compatibility fallback for existing local build setups.
 set(CommonLibSSEPath_NG "" CACHE PATH "Path to a CommonLibSSE-NG checkout")
@@ -44,6 +50,7 @@ if(Git_FOUND AND EXISTS "${CommonLibSSEPath_NG}/.git")
 else()
 	message(WARNING "CommonLibSSE-NG revision could not be verified because the supplied directory is not a Git checkout. Expected revision: ${WHEELER_COMMONLIBSSE_NG_REVISION}")
 endif()
+endif() # RUNTIME_LINE 1
 
 if(COPY_OUTPUT)
 	set(CompiledPluginsPath "" CACHE PATH "Existing deployment root containing SKSE/Plugins")

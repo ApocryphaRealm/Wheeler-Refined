@@ -1,4 +1,5 @@
 #include "I4SwfIconRenderer.h"
+#include "bin/Utilities/LineCompat.h"
 
 #include <algorithm>
 #include <array>
@@ -395,7 +396,7 @@ namespace I4Integration
 		ApplyColorTransform(root, ColorToRGB(spec.color));
 		movie->Advance(0.0f);
 
-		auto* rendererData = RE::BSGraphics::Renderer::GetRendererData();
+		auto* rendererData = LineCompat::RendererData();
 		auto* context = rendererData ? reinterpret_cast<ID3D11DeviceContext*>(rendererData->context) : nullptr;
 		auto* device = Texture::device_;
 		if (!context || !device) {
@@ -1279,7 +1280,7 @@ namespace I4Integration
 				job.captureH);
 		}
 
-		auto* rendererData = RE::BSGraphics::Renderer::GetRendererData();
+		auto* rendererData = LineCompat::RendererData();
 		auto* context = rendererData ? reinterpret_cast<ID3D11DeviceContext*>(rendererData->context) : nullptr;
 		auto* device = Texture::device_;
 		if (!context || !device) {

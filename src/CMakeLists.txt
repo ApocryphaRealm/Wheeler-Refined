@@ -103,7 +103,9 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 			"/utf-8"	# Set Source and Executable character sets to UTF-8
 			"/Zi"	# Debug Information Format
 
-			"/await"
+			# /await is the pre-C++20 coroutine switch; CommonLibSSE-NG 7.2 uses std::coroutine, which /await hides.
+			# Nothing in Wheeler uses coroutines; line 1 keeps it as it always built.
+			"$<$<NOT:$<STREQUAL:${RUNTIME_LINE},17>>:/await>"
 
 			"/permissive-"	# Standards conformance
 			"/Zc:preprocessor"	# Enable preprocessor conformance mode
@@ -143,7 +145,18 @@ target_compile_definitions(
 
 set(SKSE_SUPPORT_XBYAK ON)
 
-add_subdirectory("${CommonLibSSEPath_NG}" CommonLibSSE EXCLUDE_FROM_ALL)
+if(RUNTIME_LINE STREQUAL "17")
+	find_package(directxtk CONFIG REQUIRED)  # CommonLibSSE-NG 7.2 links Microsoft::DirectXTK
+	find_package(CommonLibSSE CONFIG REQUIRED)
+else()
+	add_subdirectory("${CommonLibSSEPath_NG}" CommonLibSSE EXCLUDE_FROM_ALL)
+endif()
+target_compile_definitions("${PROJECT_NAME}" PRIVATE RUNTIME_LINE=${RUNTIME_LINE})
+# Both lines put the DLL and PDB at the top of their build tree, where package-mod looks for each line.
+set_target_properties("${PROJECT_NAME}" PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+	PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 find_package(xbyak REQUIRED CONFIG)
 

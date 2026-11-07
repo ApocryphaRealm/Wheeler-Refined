@@ -27,8 +27,10 @@ if not exist "%CommonLibSSEPath_NG%" (
 	exit /b 1
 )
 
-if not exist "build-release\CMakeCache.txt" (
-	cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static-md -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL -DCOPY_OUTPUT=OFF -DCommonLibSSEPath_NG="%CommonLibSSEPath_NG%"
+REM The SE 1.5.97 / AE 1.6.x line (RUNTIME_LINE 1). Its tree is build\relwithdebinfo-se-only, the name package-mod
+REM reads beside build\relwithdebinfo-17 (the Skyrim 1.7.x line: configure17.bat / build17.bat).
+if not exist "build\relwithdebinfo-se-only\CMakeCache.txt" (
+	cmake -S . -B build\relwithdebinfo-se-only -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static-md -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL -DCOPY_OUTPUT=OFF -DRUNTIME_LINE=1 -DCommonLibSSEPath_NG="%CommonLibSSEPath_NG%"
 	if errorlevel 1 exit /b 1
 )
-cmake --build build-release --target wheeler
+cmake --build build\relwithdebinfo-se-only --target wheeler

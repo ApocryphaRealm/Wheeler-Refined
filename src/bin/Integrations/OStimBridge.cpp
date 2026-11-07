@@ -1,4 +1,5 @@
 #include "OStimBridge.h"
+#include "bin/Utilities/LineCompat.h"
 
 #include "OStimNGThreadAPI.h"
 #include "OStimPreviewResolver.h"
@@ -265,7 +266,7 @@ RE::VMHandle OStimBridge::ResolveQuestHandle()
 	}
 
 	auto* skyrimVM = RE::SkyrimVM::GetSingleton();
-	auto* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+	auto* vm = LineCompat::VM(skyrimVM);
 	if (!vm) {
 		return 0;
 	}
@@ -281,7 +282,7 @@ RE::VMHandle OStimBridge::ResolveQuestHandle()
 bool OStimBridge::HasBoundScript(std::string_view a_className)
 {
 	auto* skyrimVM = RE::SkyrimVM::GetSingleton();
-	auto* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+	auto* vm = LineCompat::VM(skyrimVM);
 	if (!vm) {
 		return false;
 	}
@@ -344,7 +345,7 @@ template <class TResult, class... TArgs>
 bool OStimBridge::DispatchQuestMethod(std::string_view a_className, std::string_view a_method, TResult& a_outResult, TArgs&&... a_args)
 {
 	auto* skyrimVM = RE::SkyrimVM::GetSingleton();
-	auto* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+	auto* vm = LineCompat::VM(skyrimVM);
 	if (!vm) {
 		return false;
 	}
@@ -382,7 +383,7 @@ template <class... TArgs>
 bool OStimBridge::DispatchQuestMethodVoid(std::string_view a_className, std::string_view a_method, TArgs&&... a_args)
 {
 	auto* skyrimVM = RE::SkyrimVM::GetSingleton();
-	auto* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+	auto* vm = LineCompat::VM(skyrimVM);
 	if (!vm) {
 		return false;
 	}
@@ -419,7 +420,7 @@ template <class TResult, class... TArgs>
 bool OStimBridge::DispatchStaticMethod(std::string_view a_className, std::string_view a_method, TResult& a_outResult, TArgs&&... a_args)
 {
 	auto* skyrimVM = RE::SkyrimVM::GetSingleton();
-	auto* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+	auto* vm = LineCompat::VM(skyrimVM);
 	if (!vm) {
 		return false;
 	}
@@ -451,7 +452,7 @@ template <class... TArgs>
 bool OStimBridge::DispatchStaticMethodVoid(std::string_view a_className, std::string_view a_method, TArgs&&... a_args)
 {
 	auto* skyrimVM = RE::SkyrimVM::GetSingleton();
-	auto* vm = skyrimVM ? skyrimVM->impl.get() : nullptr;
+	auto* vm = LineCompat::VM(skyrimVM);
 	if (!vm) {
 		return false;
 	}

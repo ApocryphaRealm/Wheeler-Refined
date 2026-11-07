@@ -13,6 +13,16 @@ This guide describes the supported public Windows build. It separates what the p
 
 The public preset targets `x64-windows-static-md`. CMake rejects a CommonLib Git checkout at any other revision.
 
+## Two build lines (1.6.0)
+
+Wheeler builds twice from the same source. `build.bat` builds the SE 1.5.97 / AE 1.6.x DLL into
+`build\relwithdebinfo-se-only` against the CommonLibSSE-NG checkout above (`RUNTIME_LINE=1`). `build17.bat` (which
+runs `configure17.bat` the first time) builds the Skyrim 1.7.x DLL into `build\relwithdebinfo-17` against
+CommonLibSSE-NG 7.2.0, which vcpkg builds from the overlay port in `cmake\ports-17` with the manifest in
+`cmake\manifest-17` (`RUNTIME_LINE=17`); it needs no CommonLib checkout. Where the two libraries spell the same thing
+differently, the difference lives in `src\bin\Utilities\LineCompat.h`. Linking CommonLibSSE-NG 7.2.0 (GPL-3.0-or-later
+with its Modding and Linking exceptions) is compatible with Wheeler's GPL-3.0-only licence.
+
 ## Audited / Tested Toolchain
 
 The public source gate was run with:

@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include "bin/Utilities/LineCompat.h"
 #include "HavokStepCore.h"
 #include <chrono>
 #include <fstream>
@@ -757,7 +758,7 @@ namespace Utils
 	}
 	void NotificationMessage(std::string a_message)
 	{
-		RE::DebugNotification(a_message.data());
+		LineCompat::Notify(a_message.data());
 	}
 }
 void Utils::Magic::GetMagicItemDescription(RE::ItemCard* a_itemCard, RE::MagicItem* a_magicItem, RE::BSString& a_str)
@@ -1004,9 +1005,9 @@ static void stripSurvivalModeItemCardText(std::string& a_description)
 /// </summary>
 void Utils::Magic::GetMagicItemDescription(RE::MagicItem* a_magicItem, std::string& a_buf)
 {
-	RE::ItemCard card;
+	LineCompat::BlankItemCard card;
 	RE::BSString buf;
-	GetMagicItemDescription(&card, a_magicItem, buf);
+	GetMagicItemDescription(card.get(), a_magicItem, buf);
 	a_buf = buf.c_str();
 	stripMagicItemDescriptionFormatCode(a_buf);
 	stripSurvivalModeItemCardText(a_buf);
