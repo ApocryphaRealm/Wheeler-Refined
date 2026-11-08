@@ -17,6 +17,8 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 - Each wheel item now remembers who put it there (by hand, or the favourites system), saved with the wheels. Wheels from an older save are settled at the first load: an item whose form is a favourite then counts as put there by favouriting, anything else as yours.
 
 ### Fixed
+- The wheel's name under the indicator (Inventory Wheel, Magic Wheel) stayed small when the wheel was made bigger, which at 4K left it hard to read. It now also grows with the wheel's Outer Circle Radius (Wheel Size); at the default size and below it is the same size as before.
+- The Ammo Wheel's Show Icons switch did nothing: the wheel read only the style preset's or skin's own icon setting. The switch now wins - off hides the ammo icons in the slots, on the skin's art and in the pop-up, whatever the preset says; on shows them wherever the preset or skin has icons. Turning it back on shows them at once.
 - Loading a second save in the same session compared its favourites with the first save's, so favourites the two saves did not share could be added to the wheel on the first menu opened. Each loaded save now takes its own snapshot at the load.
 - Whether an un-favourited item is still carried is asked of the game's own inventory count, and favourites are read from every inventory entry of an item. In the first two tests of this build an un-favourited Long Bow was not seen as carried and nothing was removed; for each favourite that goes, the scan now logs the game's count, its own sum and what it decided.
 

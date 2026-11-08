@@ -2288,8 +2288,9 @@ void AmmoWheel::loadAmmoIcon(AmmoEntry& entry)
 		return;
 	}
 	
-	// Check preset for icons enabled override
-	bool iconsEnabled = Config::AmmoWheel::ShowIcons;
+	// 1.7.0: the texture is loaded whatever the player's Show Icons switch says, so turning the switch on later shows
+	// icons at once; the switch is applied where icons are DRAWN. Only a preset that has no icons skips the load.
+	bool iconsEnabled = true;
 	if (entry.resolvedPreset) {
 		iconsEnabled = entry.resolvedPreset->IconsEnabled;
 	}
@@ -4932,7 +4933,8 @@ void AmmoWheel::drawSlot(int a_index, ImVec2 a_center, bool a_hovered, float a_i
 		ctx.center = iconCenter;
 		ctx.radius = _cachedIconSize / 2.0f;
 		
-		if (!reskinSystem.DrawTarget(AmmoWheelReskinUnified::VisualTarget::SlotIcon, entry.reskinEntry, ctx, drawList)) {
+		// 1.7.0: Show Icons off draws no slot icon on the reskin path either (neither the skin's asset nor the fallback).
+		if (Config::AmmoWheel::ShowIcons && !reskinSystem.DrawTarget(AmmoWheelReskinUnified::VisualTarget::SlotIcon, entry.reskinEntry, ctx, drawList)) {
 			// Fallback to legacy icon rendering
 			if (entry.iconImage.texture) {
 				float iconSize = _cachedIconSize;
@@ -5435,7 +5437,9 @@ void AmmoWheel::drawSlot(int a_index, ImVec2 a_center, bool a_hovered, float a_i
 
 	// ========== ICON RENDERING ==========
 	// Check if icons are enabled (preset or legacy Skin setting)
-	bool iconsEnabled = usePresetStyling && preset ? preset->IconsEnabled : Config::AmmoWheel::Skin::IconsEnabled;
+	// 1.7.0: the player's Show Icons switch (Ammo Wheel page, [Display] ShowIcons) wins: off hides icons whatever the preset
+	// or skin says. Before, this read only the preset's Icon.Enabled or the skin's IconsEnabled and the switch did nothing.
+	bool iconsEnabled = Config::AmmoWheel::ShowIcons && (usePresetStyling && preset ? preset->IconsEnabled : Config::AmmoWheel::Skin::IconsEnabled);
 	if (iconsEnabled && entry.iconImage.texture) {
 		// Compute slot angular span
 		float slotAngularSpan = a_endAngle - a_startAngle;
@@ -6770,8 +6774,8 @@ void AmmoWheel::drawHoverPopup(ImVec2 a_wheelCenter, DrawArgs a_drawArgs)
 	// Apply padding to the content area.
 	float contentRadius = animatedRadius - padding;  // Effective content area
 	
-	// Draw magnified icon (centered in upper portion of bubble)
-	if (entry.iconImage.texture) {
+	// Draw magnified icon (centered in upper portion of bubble); 1.7.0: not while Show Icons is off
+	if (Config::AmmoWheel::ShowIcons && entry.iconImage.texture) {
 		float magnifiedIconSize = (std::min)(iconSize * 1.15f, contentRadius * 1.2f);  // Clamp to content area
 		ImVec2 iconPos(popupCenter.x, popupCenter.y - contentRadius * 0.15f);
 		ImU32 iconColor = IM_COL32(255, 255, 255, static_cast<int>(255 * alpha));

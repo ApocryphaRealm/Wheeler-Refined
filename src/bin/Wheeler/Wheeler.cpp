@@ -8153,8 +8153,15 @@ void Wheeler::Update(float a_deltaTime)
 				nameX += (_wheels.size() - 1) * Config::Styling::Wheel::WheelIndicatorSpacing / 2.f;
 			}
 			const float nameY = wheelCenter.y + Config::Styling::Wheel::WheelIndicatorOffsetY + Config::Styling::Wheel::WheelIndicatorSize + 4.0f;
-			Drawer::draw_text(nameX, nameY, wheelName.c_str(), C_SKYRIMWHITE, Config::Styling::Wheel::WheelIndicatorSize * 1.1f, drawArgs, true);
-			DrawWheelMovedNotice(nameX, nameY + Config::Styling::Wheel::WheelIndicatorSize * 1.5f, drawArgs);
+			// 1.7.0: the name also grows with the wheel itself (Outer Circle Radius under Wheel Size), so a 4K player who
+			// raises the wheel keeps a readable name. WheelIndicatorSize already carries Global Scale and the resolution
+			// scale; the wheel's growth is the player's Outer Circle Radius against the compiled default (360), with those
+			// same two scales divided back out. Never smaller than before: at or below the default it is the old size.
+			const float sizeScale = Config::WheelBehavior::GlobalScale * Config::MainWheel::LayoutScaling::Runtime.CombinedU;
+			const float wheelGrowth = sizeScale > 0.0f ? Config::Styling::Wheel::OuterCircleRadius / (360.0f * sizeScale) : 1.0f;
+			const float nameSize = Config::Styling::Wheel::WheelIndicatorSize * 1.1f * std::clamp(wheelGrowth, 1.0f, 4.0f);
+			Drawer::draw_text(nameX, nameY, wheelName.c_str(), C_SKYRIMWHITE, nameSize, drawArgs, true);
+			DrawWheelMovedNotice(nameX, nameY + nameSize * (1.5f / 1.1f), drawArgs);
 		}
 		// draw wheel indicator
 		for (int i = 0; i < _wheels.size(); i++) {
