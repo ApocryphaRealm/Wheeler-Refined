@@ -10,13 +10,15 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
-## 1.6.1 - 2026-11-07 - untested
+## 1.7.0 - 2026-11-07 - untested (opened as 1.6.1, a fix; re-issued as 1.7.0 when the owner made it an option, 2026-11-07)
 
-### Changed
-- **Un-favouriting an item now takes it off the wheel** (a player's report; the owner: 'If true, then we should fix it'). Until now favouriting put an item on the wheel and un-favouriting left it there. Each wheel item now remembers who put it there, saved with the wheels: an item the favourites system put on the wheel leaves its slot when you un-favourite it - in the inventory, magic, container, barter or Favorites menu - and the slot stays. An item you placed by hand is never removed, even if you later favourite and un-favourite it. An item that stops being a favourite because it was sold, dropped or used up is left to Keep Missing as before. Wheels from an older save: at the first load, an item whose form is a favourite then counts as put there by favouriting, anything else as yours.
+### Added
+- **Remove When Un-favorited**, a new switch on the Favorites Menu tab (wheelBehavior.ini `[SlotAssignments] RemoveOnUnfavorite`), **off by default** (a player's report; the owner: 'If true, then we should fix it', then 'For compatibility, the unfavoriting an item removes it from the wheel should be a toggle and not a default behavior'). On: un-favouriting an item that the favourites system put on the wheel takes it out of its slot again - in the inventory, magic, container, barter or Favorites menu - and the slot stays. An item you placed by hand is never removed, even if you later favourite and un-favourite it. An item that stops being a favourite because it was sold, dropped or used up is left to Keep Missing as before. Off: un-favouriting removes nothing, exactly as before. In all eleven languages.
+- Each wheel item now remembers who put it there (by hand, or the favourites system), saved with the wheels. Wheels from an older save are settled at the first load: an item whose form is a favourite then counts as put there by favouriting, anything else as yours.
 
 ### Fixed
 - Loading a second save in the same session compared its favourites with the first save's, so favourites the two saves did not share could be added to the wheel on the first menu opened. Each loaded save now takes its own snapshot at the load.
+- Favourites and the count carried are read from every inventory entry of an item, not only the first one the game lists. The first test of this build un-favourited a Long Bow and nothing was removed; the scan now logs, for each favourite that goes, what it decided and why.
 
 ## 1.6.0 - 2026-11-07 - untested
 

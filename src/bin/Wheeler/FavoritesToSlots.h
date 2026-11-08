@@ -33,13 +33,15 @@
 //     through MagicFavorites. A form that is favourited now and was not last time is NEW: it is
 //     classified, the wheels are searched in order for the first slot whose category takes it
 //     (an exact match first, then a slot marked Any), and the HUD says where it went.
-//   - 1.6.1 (a player's report; the owner: "If true, then we should fix it"): UN-FAVOURITING TAKES IT OFF THE
-//     WHEEL. Each wheel item remembers who put it there (WheelItem::Source, saved with the wheels). A form that was a
+//   - 1.7.0 (a player's report; the owner: "If true, then we should fix it"): UN-FAVOURITING TAKES IT OFF THE
+//     WHEEL - only while Config::SlotAssignments::RemoveOnUnfavorite is on (1.7.0, default OFF; the owner: "For
+//     compatibility ... should be a toggle and not a default behavior"). Off, nothing is removed. Each wheel item
+//     remembers who put it there (WheelItem::Source, saved with the wheels). A form that was a
 //     favourite at the last scan, is not one now (no other copy of it is either) and is still carried - or is a
 //     spell or shout - is taken out of every slot holding it as Source::Favourite; the slot stays. An item placed by
 //     hand is never removed, even one later favourited and un-favourited (the add then said "already on the
 //     wheel" and left it the player's). An item that stopped being a favourite because it was sold, dropped or used
-//     up is left to the inventory prune and Keep Missing. Wheels from a save before 1.6.1 carry no source: the
+//     up is left to the inventory prune and Keep Missing. Wheels from a save before 1.7.0 carry no source: the
 //     first scan after the load counts an item whose form is a favourite then as the favourites system's, anything
 //     else as placed by hand. The Favorites menu is read too, as an item can be un-favourited there.
 //   - 1.5.0: two switches at the top of the Favorites Menu tab choose how the Inventory Wheel fills
@@ -160,7 +162,7 @@ namespace FavoritesToSlots
 
 	// Driving-tool entry: queue one scan now regardless of menus, and report the state.
 	void ScanNow();
-	// 1.6.1: kNewGame / kPostLoadGame - forget the last save's snapshot and take this one's now.
+	// 1.7.0: kNewGame / kPostLoadGame - forget the last save's snapshot and take this one's now.
 	void OnGameLoaded();
 	// Driving-tool entry, test only: un-favourite one form through the game's own InventoryChanges::RemoveFavorite /
 	// MagicFavorites::RemoveFavorite (a_formID 0 = the last item the favourites system added), then scan.
@@ -168,7 +170,7 @@ namespace FavoritesToSlots
 	// Driving-tool entry, test only: favourite up to a_count un-favourited inventory items and up to a_count of the
 	// player's spells and shouts through the game's own InventoryChanges::SetFavorite / MagicFavorites::SetFavorite,
 	// on the game thread - what a proof uses instead of pressing F in a menu the tools cannot reach.
-	void MarkForTest(int a_count);
+	void MarkForTest(int a_count, RE::FormID a_formID = 0);
 	void AdoptAllForTest();
 	std::string StatusJson();
 }

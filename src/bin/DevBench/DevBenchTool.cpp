@@ -209,8 +209,8 @@ namespace DevBenchTool
 				// 1.3.0: sub=scan queues a favourites scan on the game thread now; no sub reads the state.
 				if (JsonStr(args, "sub") == "scan") { FavoritesToSlots::ScanNow(); }
 				else if (JsonStr(args, "sub") == "adopt") { FavoritesToSlots::AdoptAllForTest(); }   // test only
-				else if (JsonStr(args, "sub") == "mark") { FavoritesToSlots::MarkForTest(static_cast<int>(JsonNum(args, "count", 12.0))); }   // test only
-				else if (JsonStr(args, "sub") == "unmark") { FavoritesToSlots::UnmarkForTest(static_cast<RE::FormID>(JsonNum(args, "formid", 0.0))); }   // 1.6.1, test only: formid 0 = the last one added
+				else if (JsonStr(args, "sub") == "mark") { FavoritesToSlots::MarkForTest(static_cast<int>(JsonNum(args, "count", 12.0)), static_cast<RE::FormID>(JsonNum(args, "formid", 0.0))); }   // test only; 1.7.0: formid favourites that form only
+				else if (JsonStr(args, "sub") == "unmark") { FavoritesToSlots::UnmarkForTest(static_cast<RE::FormID>(JsonNum(args, "formid", 0.0))); }   // 1.7.0, test only: formid 0 = the last one added
 				result = "{\"ok\":true,\"op\":\"favorites\",\"state\":" + FavoritesToSlots::StatusJson() + "}";
 			} else if (op == "wheels") {
 				// The number-of-wheels slider's setter (the owner, 2026-09-13). value = desired count.

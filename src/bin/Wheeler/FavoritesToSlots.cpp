@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace FavoritesToSlots
@@ -41,7 +42,7 @@ namespace FavoritesToSlots
 		bool ItemMenuOpen()
 		{
 			auto* ui = RE::UI::GetSingleton();
-			// 1.6.1: the Favorites menu too - an item can be un-favourited there.
+			// 1.7.0: the Favorites menu too - an item can be un-favourited there.
 			return ui && (ui->IsMenuOpen(RE::InventoryMenu::MENU_NAME) || ui->IsMenuOpen(RE::MagicMenu::MENU_NAME) ||
 						  ui->IsMenuOpen(RE::ContainerMenu::MENU_NAME) || ui->IsMenuOpen(RE::BarterMenu::MENU_NAME) ||
 						  ui->IsMenuOpen(RE::FavoritesMenu::MENU_NAME));
@@ -208,13 +209,26 @@ namespace FavoritesToSlots
 			auto* player = RE::PlayerCharacter::GetSingleton();
 			if (!player) { return; }
 
+			// 1.7.0: read from the inventory's own entry list, EVERY entry, not through GetInventory(). GetInventory()
+			// keeps only the FIRST entry it meets for a form (an emplace into a map), so a second entry of the same form -
+			// the one holding the item, or the one carrying the favourite - was never seen: the 1.6.1 test (request 5465)
+			// un-favourited a Long Bow and the scan found it neither favourited nor carried, so nothing was removed.
+			// Counts add up every entry of a form plus the base container.
 			std::unordered_set<Key, KeyHash> now;
-			std::unordered_set<RE::FormID> held;   // 1.6.1: inventory forms the player still carries
-			auto inv = player->GetInventory();
-			for (auto& [obj, data] : inv) {
-				if (obj && data.first > 0) { held.insert(obj->GetFormID()); }
-				if (!obj || !data.second || !data.second->IsFavorited()) { continue; }
-				now.insert(Key{ obj->GetFormID(), UniqueIDOf(data.second.get()) });
+			std::unordered_map<RE::FormID, std::int32_t> counts;
+			if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
+				for (auto* entry : *changes->entryList) {
+					if (!entry || !entry->object) { continue; }
+					const RE::FormID id = entry->object->GetFormID();
+					counts[id] += entry->countDelta;
+					if (entry->IsFavorited()) { now.insert(Key{ id, UniqueIDOf(entry) }); }
+				}
+			}
+			if (auto* cont = player->GetContainer()) {
+				cont->ForEachContainerObject([&](RE::ContainerObject& a_obj) {
+					if (a_obj.obj) { counts[a_obj.obj->GetFormID()] += a_obj.count; }
+					return RE::BSContainer::ForEachResult::kContinue;
+				});
 			}
 			if (auto* fav = RE::MagicFavorites::GetSingleton()) {
 				for (RE::TESForm* f : fav->spells) {
@@ -233,18 +247,23 @@ namespace FavoritesToSlots
 				++g_scans;
 				if (g_seeded) {
 					for (const Key& k : now) { if (!g_known.contains(k)) { fresh.push_back(k); } }
-					// 1.6.1 UN-FAVOURITING TAKES IT OFF THE WHEEL. A favourite at the last scan that is not one now, with
+					// 1.7.0 UN-FAVOURITING TAKES IT OFF THE WHEEL. A favourite at the last scan that is not one now, with
 					// no other copy of the same form still a favourite, is un-favourited - but only while the player
 					// still has it: an item sold, dropped or used up also stops being a favourite, and what happens to
 					// it on the wheel stays with the inventory prune and the Keep Missing settings. Spells and shouts
 					// are not inventory items and are taken at their word.
 					for (const Key& k : g_known) {
 						if (nowForms.contains(k.formID)) { continue; }
+						if (std::find(unfavourited.begin(), unfavourited.end(), k.formID) != unfavourited.end()) { continue; }
 						auto* f = RE::TESForm::LookupByID(k.formID);
-						if (!f) { continue; }
-						const bool magic = f->GetFormType() == RE::FormType::Spell || f->GetFormType() == RE::FormType::Shout;
-						if (!magic && !held.contains(k.formID)) { continue; }
-						if (std::find(unfavourited.begin(), unfavourited.end(), k.formID) == unfavourited.end()) { unfavourited.push_back(k.formID); }
+						const bool magic = f && (f->GetFormType() == RE::FormType::Spell || f->GetFormType() == RE::FormType::Shout);
+						const auto c = counts.find(k.formID);
+						const std::int32_t count = c != counts.end() ? c->second : 0;
+						// Every favourite that went is logged with what decided it, so a run says why it did or did not act.
+						const bool gone = !f || (!magic && count <= 0);
+						logger::info("[FavoritesToSlots] {} ({:08X}) is no longer a favourite: {}, carried {} -> {}", f && f->GetName() ? f->GetName() : "", k.formID,
+							magic ? "spell/shout" : "item", count, gone ? "left the inventory, left to Keep Missing" : "un-favourited");
+						if (!gone) { unfavourited.push_back(k.formID); }
 					}
 				} else {
 					seeding = true;
@@ -254,7 +273,7 @@ namespace FavoritesToSlots
 			}
 
 			if (seeding) {
-				// 1.6.1: wheels read from a save written before 1.6.1 do not say who put each item there. The first scan
+				// 1.7.0: wheels read from a save written before 1.7.0 do not say who put each item there. The first scan
 				// after the load settles it on the two favourites wheels: an item whose form is a favourite now counts as
 				// put there by the favourites system, anything else as placed by hand.
 				std::vector<int> wheels;
@@ -263,6 +282,11 @@ namespace FavoritesToSlots
 				if (settled > 0) { logger::info("[FavoritesToSlots] settled who placed {} item(s) read from an older save ({} favourite(s) now)", settled, nowForms.size()); }
 			}
 
+			if (!unfavourited.empty() && !Config::SlotAssignments::RemoveOnUnfavorite) {
+				// 1.7.0: the option is off (the default) - nothing is removed, as up to 1.6.0.
+				logger::info("[FavoritesToSlots] {} un-favourited item(s) stay on the wheel: Remove When Un-favorited is off", unfavourited.size());
+				unfavourited.clear();
+			}
 			for (RE::FormID id : unfavourited) {
 				auto* form = RE::TESForm::LookupByID(id);
 				const char* name = form && form->GetName() ? form->GetName() : "";
@@ -316,7 +340,7 @@ namespace FavoritesToSlots
 					logger::info("[FavoritesToSlots] {} ({:08X}) favourited; the wheel has no item type for it", name, k.formID);
 					continue;
 				}
-				item->SetSource(WheelItem::Source::Favourite);   // 1.6.1: un-favouriting it takes it off again
+				item->SetSource(WheelItem::Source::Favourite);   // 1.7.0: un-favouriting it takes it off again
 				const auto result = Wheeler::AddItemToSlotOnWheel(wheel, slot, item);
 				switch (result) {
 				case Wheeler::AddToSlotResult::Added:
@@ -598,7 +622,7 @@ namespace FavoritesToSlots
 
 	void OnGameLoaded()
 	{
-		// 1.6.1: each loaded save starts a fresh snapshot - without this the favourites of the save loaded before were
+		// 1.7.0: each loaded save starts a fresh snapshot - without this the favourites of the save loaded before were
 		// compared with this one's, and what the two saves did not share read as favourited or un-favourited.
 		{
 			std::scoped_lock l(g_lock);
@@ -647,18 +671,40 @@ namespace FavoritesToSlots
 		Queue();
 	}
 
-	void MarkForTest(int a_count)
+	void MarkForTest(int a_count, RE::FormID a_formID)
 	{
 		auto* tasks = SKSE::GetTaskInterface();
 		if (!tasks) { return; }
-		tasks->AddTask([a_count]() {
+		tasks->AddTask([a_count, a_formID]() {
 			auto* player = RE::PlayerCharacter::GetSingleton();
 			if (!player) { return; }
+			// 1.7.0: a_formID != 0 favourites that one form only (an item the player holds, or a spell or shout).
+			if (a_formID != 0) {
+				auto* form = RE::TESForm::LookupByID(a_formID);
+				if (!form) { logger::info("[FavoritesToSlots] test mark: no form {:08X}", a_formID); return; }
+				int done = 0;
+				if (form->GetFormType() == RE::FormType::Spell || form->GetFormType() == RE::FormType::Shout) {
+					if (auto* fav = RE::MagicFavorites::GetSingleton()) { fav->SetFavorite(form); ++done; }
+				} else if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
+					for (auto* entry : *changes->entryList) {
+						if (!entry || entry->object != form || entry->countDelta <= 0) { continue; }
+						if (!entry->IsFavorited()) {
+							RE::ExtraDataList* xl = (entry->extraLists && !entry->extraLists->empty()) ? entry->extraLists->front() : nullptr;
+							changes->SetFavorite(entry, xl);
+						}
+						++done;
+						break;
+					}
+				}
+				logger::info("[FavoritesToSlots] test mark {} ({:08X}): {}", form->GetName() ? form->GetName() : "", a_formID, done ? "favourited through the game" : "not carried, nothing done");
+				Scan();
+				return;
+			}
 			int items = 0, magic = 0;
 			if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
 				for (auto* entry : *changes->entryList) {
 					if (items >= a_count) { break; }
-					if (!entry || !entry->object || entry->IsFavorited() || !entry->object->GetPlayable()) { continue; }
+					if (!entry || !entry->object || entry->countDelta <= 0 || entry->IsFavorited() || !entry->object->GetPlayable()) { continue; }
 					RE::ExtraDataList* xl = (entry->extraLists && !entry->extraLists->empty()) ? entry->extraLists->front() : nullptr;
 					changes->SetFavorite(entry, xl);
 					++items;
@@ -699,7 +745,7 @@ namespace FavoritesToSlots
 		std::string types;
 		for (int i = 0; i < kSlotCount; ++i) { types += (i ? "," : ""); types += std::to_string(Config::SlotAssignments::Type[i]); }
 		const int inv = Wheeler::FindWheelIndexByRole("inventory"), mag = Wheeler::FindWheelIndexByRole("magic");
-		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"skyUICategories\":" + std::string(Config::SlotAssignments::SkyUICategories ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::SlotAssignments::WeaponTypeSlots ? "true" : "false") + ",\"slotTypes\":[" + types + "],\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
+		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"skyUICategories\":" + std::string(Config::SlotAssignments::SkyUICategories ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::SlotAssignments::WeaponTypeSlots ? "true" : "false") + ",\"removeOnUnfavorite\":" + std::string(Config::SlotAssignments::RemoveOnUnfavorite ? "true" : "false") + ",\"slotTypes\":[" + types + "],\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
 			",\"known\":" + std::to_string(g_known.size()) + ",\"scans\":" + std::to_string(g_scans) + ",\"added\":" + std::to_string(g_added) +
 			",\"skipped\":" + std::to_string(g_skipped) + ",\"removed\":" + std::to_string(g_removed) + ",\"lastAdded\":" + std::to_string(g_lastAddedFormID) + ",\"categories\":[" + cats + "],\"last\":\"" + esc + "\"}";
 	}

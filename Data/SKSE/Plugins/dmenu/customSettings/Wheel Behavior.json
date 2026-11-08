@@ -66,6 +66,26 @@
                         },
                         {
                             "control": {
+                                "failAction": "disable",
+                                "id": "wheeler_favorites_remove_on_unfavorite"
+                            },
+                            "default": false,
+                            "ini": {
+                                "id": "RemoveOnUnfavorite",
+                                "section": "SlotAssignments"
+                            },
+                            "text": {
+                                "desc": "Un-favoriting an item takes it off the wheel again, if the favorites system put it there. Items you placed on the wheel yourself always stay. Off by default, for compatibility: with it off, un-favoriting removes nothing.",
+                                "name": "Remove When Un-favorited"
+                            },
+                            "translation": {
+                                "desc": "$RemoveOnUnfavoriteDesc",
+                                "name": "$RemoveOnUnfavoriteName"
+                            },
+                            "type": "checkbox"
+                        },
+                        {
+                            "control": {
                                 "failAction": "hide",
                                 "requirements": [
                                     {

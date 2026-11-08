@@ -712,7 +712,7 @@ bool WheelEntry::ReplaceSelectedItem(std::shared_ptr<WheelItem> item)
 	if (_items.empty() || _selectedItem < 0 || _selectedItem >= _items.size()) {
 		return false;
 	}
-	if (_items[_selectedItem]) { item->SetSource(_items[_selectedItem]->GetSource()); }   // 1.6.1: a refreshed item keeps who put it there
+	if (_items[_selectedItem]) { item->SetSource(_items[_selectedItem]->GetSource()); }   // 1.7.0: a refreshed item keeps who put it there
 	_items[_selectedItem] = std::move(item);
 	return true;
 }
@@ -726,7 +726,7 @@ bool WheelEntry::ReplaceItemAt(int index, std::shared_ptr<WheelItem> item)
 	if (_items.empty() || index < 0 || index >= static_cast<int>(_items.size())) {
 		return false;
 	}
-	if (_items[index]) { item->SetSource(_items[index]->GetSource()); }   // 1.6.1: a refreshed item keeps who put it there
+	if (_items[index]) { item->SetSource(_items[index]->GetSource()); }   // 1.7.0: a refreshed item keeps who put it there
 	_items[index] = std::move(item);
 	return true;
 }
@@ -927,7 +927,7 @@ void WheelEntry::SerializeIntoJsonObj(nlohmann::json& j_entry)
 		nlohmann::json j_item;
 		item->SerializeIntoJsonObj(j_item);
 		j_item["missingCategory"] = MissingCategoryToInt(item->GetMissingCategory());
-		j_item["source"] = static_cast<int>(item->GetSource());   // 1.6.1: 1 = placed by hand, 2 = put there by the favourites system
+		j_item["source"] = static_cast<int>(item->GetSource());   // 1.7.0: 1 = placed by hand, 2 = put there by the favourites system
 		const char* itemName = item->GetItemName();
 		if (itemName && itemName[0] != '\0') {
 			j_item["missingName"] = itemName;
@@ -965,7 +965,7 @@ std::unique_ptr<WheelEntry> WheelEntry::SerializeFromJsonObj(const nlohmann::jso
 		try {
 			std::shared_ptr<WheelItem> item = WheelItemFactory::MakeWheelItemFromJsonObject(j_item, a_intfc);
 			if (item) {
-				// 1.6.1: who put the item there. A save from before 1.6.1 has no "source" - Unknown, settled by the
+				// 1.7.0: who put the item there. A save from before 1.7.0 has no "source" - Unknown, settled by the
 				// first favourites scan after the load.
 				int source = 0;
 				if (j_item.contains("source") && j_item["source"].is_number_integer()) { source = j_item["source"].get<int>(); }

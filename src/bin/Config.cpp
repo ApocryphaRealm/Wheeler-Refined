@@ -866,6 +866,7 @@ namespace
 		bool closeWheelAfterUse{ false };
 		int slotCategory[2][10]{ { 10, 20, 21, 3, 5, 11, 6, 7, 8, 13 }, { 14, 15, 16, 17, 18, 0, 0, 0, 0, 0 } };
 		bool skyUICategories{ true };
+		bool removeOnUnfavorite{ false };   // 1.7.0
 		bool weaponTypeSlots{ false };
 		int slotType[10]{};
 		bool rtuAlchemy{ true };
@@ -1213,6 +1214,7 @@ namespace
 		       a.closeWheelAfterUse == b.closeWheelAfterUse &&
 		       std::equal(&a.slotCategory[0][0], &a.slotCategory[0][0] + 20, &b.slotCategory[0][0]) &&
 		       a.skyUICategories == b.skyUICategories &&
+		       a.removeOnUnfavorite == b.removeOnUnfavorite &&
 		       a.weaponTypeSlots == b.weaponTypeSlots &&
 		       std::equal(&a.slotType[0], &a.slotType[0] + 10, &b.slotType[0]) &&
 		       a.rtuAlchemy == b.rtuAlchemy &&
@@ -1481,6 +1483,7 @@ namespace
 			GetBoolValue(ini, section, "CloseWheelAfterUse", snapshot.closeWheelAfterUse);
 			for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { std::uint32_t v = static_cast<std::uint32_t>(snapshot.slotCategory[w][i]); GetUInt32Value(ini, "SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), v); snapshot.slotCategory[w][i] = static_cast<int>(v); } }
 			GetBoolValue(ini, "SlotAssignments", "SkyUICategories", snapshot.skyUICategories);
+			GetBoolValue(ini, "SlotAssignments", "RemoveOnUnfavorite", snapshot.removeOnUnfavorite);
 			GetBoolValue(ini, "SlotAssignments", "WeaponTypeSlots", snapshot.weaponTypeSlots);
 			for (int i = 0; i < 10; ++i) { if (i == 0 || i == 5) { continue; } std::uint32_t v = static_cast<std::uint32_t>(snapshot.slotType[i]); GetUInt32Value(ini, "SlotAssignments", ("W1Slot" + std::to_string(i + 1) + "Type").c_str(), v); snapshot.slotType[i] = static_cast<int>(v); }
 			GetBoolValue(ini, section, "RTUAlchemy", snapshot.rtuAlchemy);
@@ -2049,6 +2052,7 @@ namespace
 		Config::WheelBehavior::CloseWheelAfterUse = snapshot.closeWheelAfterUse;
 		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { Config::SlotAssignments::Slot[w][i] = snapshot.slotCategory[w][i]; } }
 		Config::SlotAssignments::SkyUICategories = snapshot.skyUICategories;
+		Config::SlotAssignments::RemoveOnUnfavorite = snapshot.removeOnUnfavorite;
 		Config::SlotAssignments::WeaponTypeSlots = snapshot.weaponTypeSlots;
 		for (int i = 0; i < 10; ++i) { Config::SlotAssignments::Type[i] = snapshot.slotType[i]; }
 		Config::WheelBehavior::RTUAlchemy = snapshot.rtuAlchemy;
@@ -2339,6 +2343,7 @@ namespace
 		out.SetBoolValue("WheelBehavior", "CloseWheelAfterUse", snapshot.closeWheelAfterUse);
 		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { out.SetLongValue("SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), snapshot.slotCategory[w][i]); } }
 		out.SetBoolValue("SlotAssignments", "SkyUICategories", snapshot.skyUICategories);
+		out.SetBoolValue("SlotAssignments", "RemoveOnUnfavorite", snapshot.removeOnUnfavorite);
 		out.SetBoolValue("SlotAssignments", "WeaponTypeSlots", snapshot.weaponTypeSlots);
 		for (int i = 0; i < 10; ++i) { if (i == 0 || i == 5) { continue; } out.SetLongValue("SlotAssignments", ("W1Slot" + std::to_string(i + 1) + "Type").c_str(), snapshot.slotType[i]); }
 		out.SetBoolValue("WheelBehavior", "RTUAlchemy", snapshot.rtuAlchemy);
@@ -3564,6 +3569,7 @@ static void ReadWheelBehaviorConfigFromIni(const CSimpleIniA& ini)
 		GetBoolValue(ini, section, "CloseWheelAfterUse", Config::WheelBehavior::CloseWheelAfterUse);
 		for (int w = 0; w < 2; ++w) { for (int i = 0; i < 10; ++i) { std::uint32_t v = static_cast<std::uint32_t>(Config::SlotAssignments::Slot[w][i]); GetUInt32Value(ini, "SlotAssignments", ("W" + std::to_string(w + 1) + "Slot" + std::to_string(i + 1) + "Category").c_str(), v); Config::SlotAssignments::Slot[w][i] = static_cast<int>(v); } }
 		GetBoolValue(ini, "SlotAssignments", "SkyUICategories", Config::SlotAssignments::SkyUICategories);
+		GetBoolValue(ini, "SlotAssignments", "RemoveOnUnfavorite", Config::SlotAssignments::RemoveOnUnfavorite);
 		GetBoolValue(ini, "SlotAssignments", "WeaponTypeSlots", Config::SlotAssignments::WeaponTypeSlots);
 		for (int i = 0; i < 10; ++i) { if (i == 0 || i == 5) { continue; } std::uint32_t v = static_cast<std::uint32_t>(Config::SlotAssignments::Type[i]); GetUInt32Value(ini, "SlotAssignments", ("W1Slot" + std::to_string(i + 1) + "Type").c_str(), v); Config::SlotAssignments::Type[i] = static_cast<int>(v); }
 		GetBoolValue(ini, section, "RTUAlchemy", Config::WheelBehavior::RTUAlchemy);

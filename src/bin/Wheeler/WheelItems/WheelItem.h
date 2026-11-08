@@ -110,9 +110,9 @@ public:
 	MissingCategory GetMissingCategory() const { return _missingCategory; }
 	void SetMissingCategory(MissingCategory category) { _missingCategory = category; }
 
-	// 1.6.1: who put this item on the wheel. Un-favouriting an item takes it off the wheel only when the favourites
+	// 1.7.0: who put this item on the wheel. Un-favouriting an item takes it off the wheel only when the favourites
 	// system put it there (Favourite); an item the player placed by hand (Hand) is never touched. Unknown = read from a
-	// save written before 1.6.1; the first favourites scan after the load settles it (FavoritesToSlots).
+	// save written before 1.7.0; the first favourites scan after the load settles it (FavoritesToSlots).
 	enum class Source : std::uint8_t { Unknown = 0, Hand = 1, Favourite = 2 };
 	Source GetSource() const { return _source; }
 	void SetSource(Source a_source) { _source = a_source; }

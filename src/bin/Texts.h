@@ -99,6 +99,8 @@ public:
 		WeaponTypeSlotsDesc,
 		SkyUICategoriesName,
 		SkyUICategoriesDesc,
+		RemoveOnUnfavoriteName,   // 1.7.0
+		RemoveOnUnfavoriteDesc,
 		SlotTypeGroupName,
 		SlotTypeRowDesc,
 		FavoritesMenuTabDesc,
@@ -244,6 +246,8 @@ private:
 		MAP_ENTRY(WeaponTypeSlotsDesc, "Each Inventory Wheel slot takes one type of item, set in the dropdowns below. A weapon, potion or poison goes to the slot set to its type; if that slot has no room it is not added. A weapon with no slot set to its type joins an Auto slot already holding its type, or else the first empty Auto slot. Potions and poisons need a slot set to them. Other items are not added; the shout and power slots and the Magic Wheel work as before. Turn SkyUI Categories off to turn this on. Off by default."),
 		MAP_ENTRY(SkyUICategoriesName, "SkyUI Categories"),
 		MAP_ENTRY(SkyUICategoriesDesc, "Favorites go to the slot whose SkyUI category takes them, set in the Inventory Wheel dropdowns below. Turn By Type off to turn this on. With both off, favoriting adds nothing to the Inventory Wheel. On by default."),
+		MAP_ENTRY(RemoveOnUnfavoriteName, "Remove When Un-favorited"),
+		MAP_ENTRY(RemoveOnUnfavoriteDesc, "Un-favoriting an item takes it off the wheel again, if the favorites system put it there. Items you placed on the wheel yourself always stay. Off by default, for compatibility: with it off, un-favoriting removes nothing."),
 		MAP_ENTRY(SlotTypeGroupName, "Inventory Wheel - By Type"),
 		MAP_ENTRY(SlotTypeRowDesc, "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts."),
 		MAP_ENTRY(FavoritesMenuTabDesc, "The wheels are the Favorites menu while the Perfected Wheeler Favorites System is on (the General tab). The two switches choose how a favorite reaches the Inventory Wheel: by SkyUI category or by type. Turn one off to turn the other on. Slot 1 is the bottom of the wheel and the numbers run clockwise. Opening the wheel inside the Magic menu shows the Magic Wheel, inside the Inventory menu the Inventory Wheel, and closing it puts back the wheel you had. The presets on the General tab save these with everything else."),

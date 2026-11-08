@@ -204,6 +204,10 @@ namespace
 			return "SkyUICategoriesName";
 		case Texts::TextType::SkyUICategoriesDesc:
 			return "SkyUICategoriesDesc";
+		case Texts::TextType::RemoveOnUnfavoriteName:
+			return "RemoveOnUnfavoriteName";
+		case Texts::TextType::RemoveOnUnfavoriteDesc:
+			return "RemoveOnUnfavoriteDesc";
 		case Texts::TextType::SlotTypeGroupName:
 			return "SlotTypeGroupName";
 		case Texts::TextType::SlotTypeRowDesc:

@@ -96,10 +96,10 @@ public:
 	bool ContainsForm(RE::FormID a_formID);
 	// 1.4.1: the form id of every item in this entry, in order (Weapon Type Slots reads a slot's weapon types).
 	std::vector<RE::FormID> GetFormIDs();
-	// 1.6.1: takes out every item of this form that the favourites system put here (WheelItem::Source::Favourite);
+	// 1.7.0: takes out every item of this form that the favourites system put here (WheelItem::Source::Favourite);
 	// items placed by hand stay. Returns how many were taken out; the slot itself stays, empty or not.
 	int RemoveFavouriteItems(RE::FormID a_formID);
-	// 1.6.1: items read from a save written before 1.6.1 (Source::Unknown) become Favourite when their form is a favourite
+	// 1.7.0: items read from a save written before 1.7.0 (Source::Unknown) become Favourite when their form is a favourite
 	// now, else Hand. Returns how many were settled.
 	int SettleUnknownSources(const std::unordered_set<RE::FormID>& a_favourites);
 

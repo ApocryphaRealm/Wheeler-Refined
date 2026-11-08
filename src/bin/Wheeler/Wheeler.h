@@ -464,11 +464,11 @@ public:
 	static int GetSlotCountOfWheel(int a_wheel);
 	/// 1.5.0: the form ids held by one slot of a wheel (empty for an empty slot or a wheel/slot that does not exist).
 	static std::vector<RE::FormID> GetSlotFormIDs(int a_wheel, int a_slot);
-	/// 1.6.1: un-favouriting takes the item off the wheel - every item of this form the favourites system put on any
+	/// 1.7.0: un-favouriting takes the item off the wheel - every item of this form the favourites system put on any
 	/// wheel is taken out of its slot (the slot stays); items placed by hand stay. Each (wheel, slot) emptied of one is
 	/// added to a_where. Returns how many items were taken out.
 	static int RemoveFavouriteItems(RE::FormID a_formID, std::vector<std::pair<int, int>>* a_where);
-	/// 1.6.1: settles items read from a save written before 1.6.1 on the given wheels: Favourite when their form is a
+	/// 1.7.0: settles items read from a save written before 1.7.0 on the given wheels: Favourite when their form is a
 	/// favourite now, else Hand. Returns how many were settled.
 	static int SettleUnknownSources(const std::vector<int>& a_wheels, const std::unordered_set<RE::FormID>& a_favourites);
 	/// 1.3.0: the name drawn under the wheel indicator - the role's translated name, or empty.

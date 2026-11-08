@@ -1244,6 +1244,10 @@ namespace Config
 		// INI that has it gets By Type (ReconcileFavoritesRouting in Config.cpp).
 		inline bool SkyUICategories = true;
 		inline bool WeaponTypeSlots = false;
+		// 1.7.0: un-favouriting an item the favourites system put on a wheel takes it off again (the owner, 2026-11-07:
+		// "For compatibility, the unfavoriting an item removes it from the wheel should be a toggle and not a default
+		// behavior"). Default OFF - off, nothing is removed, exactly as up to 1.6.0. INI key RemoveOnUnfavorite.
+		inline bool RemoveOnUnfavorite = false;
 		// 1.5.0: what each Inventory Wheel slot position takes in By Type mode (FavoritesToSlots::SlotType as an int;
 		// 0 = Auto). INI keys W1Slot2Type ... W1Slot10Type; positions 1 and 6 are the locked slots, carry no key and stay 0.
 		inline int Type[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
