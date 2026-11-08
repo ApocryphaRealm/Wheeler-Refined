@@ -37,6 +37,20 @@ namespace FavoritesToSlots
 		bool g_menuWasOpen = false;
 		int g_scans = 0, g_added = 0, g_skipped = 0, g_removed = 0;
 		RE::FormID g_lastAddedFormID = 0;   // the driving tool's unmark default
+		std::string g_lastInspect;          // 1.7.0: the driving tool's inspect dump (JSON), read back through the state
+
+		// 1.7.0: how many of a form the player carries, asked of the GAME (TESObjectREFR::GetInventoryCounts, the same
+		// count the inventory menu shows), by form id. Run 430b: the scan's own sum over the inventory entries said a
+		// carried Long Bow was not carried. The game's count is what decides; the raw sum is only logged beside it.
+		std::unordered_map<RE::FormID, std::int32_t> GameCounts(RE::PlayerCharacter* a_player)
+		{
+			std::unordered_map<RE::FormID, std::int32_t> out;
+			if (!a_player) { return out; }
+			for (const auto& [obj, n] : a_player->GetInventoryCounts()) {
+				if (obj) { out[obj->GetFormID()] += n; }
+			}
+			return out;
+		}
 		std::string g_lastAction;
 
 		bool ItemMenuOpen()
@@ -236,6 +250,7 @@ namespace FavoritesToSlots
 				}
 			}
 
+			const auto gameCounts = GameCounts(player);
 			std::unordered_set<RE::FormID> nowForms;
 			for (const Key& k : now) { nowForms.insert(k.formID); }
 
@@ -258,11 +273,13 @@ namespace FavoritesToSlots
 						auto* f = RE::TESForm::LookupByID(k.formID);
 						const bool magic = f && (f->GetFormType() == RE::FormType::Spell || f->GetFormType() == RE::FormType::Shout);
 						const auto c = counts.find(k.formID);
-						const std::int32_t count = c != counts.end() ? c->second : 0;
+						const std::int32_t rawCount = c != counts.end() ? c->second : 0;
+						const auto g = gameCounts.find(k.formID);
+						const std::int32_t count = g != gameCounts.end() ? g->second : 0;   // the game's count decides
 						// Every favourite that went is logged with what decided it, so a run says why it did or did not act.
 						const bool gone = !f || (!magic && count <= 0);
-						logger::info("[FavoritesToSlots] {} ({:08X}) is no longer a favourite: {}, carried {} -> {}", f && f->GetName() ? f->GetName() : "", k.formID,
-							magic ? "spell/shout" : "item", count, gone ? "left the inventory, left to Keep Missing" : "un-favourited");
+						logger::info("[FavoritesToSlots] {} ({:08X}) is no longer a favourite: {}, carried {} (game count; entry sum {}) -> {}", f && f->GetName() ? f->GetName() : "", k.formID,
+							magic ? "spell/shout" : "item", count, rawCount, gone ? "left the inventory, left to Keep Missing" : "un-favourited");
 						if (!gone) { unfavourited.push_back(k.formID); }
 					}
 				} else {
@@ -633,6 +650,59 @@ namespace FavoritesToSlots
 		if (Config::Control::Wheel::FavoritesSystem) { Queue(); }   // the snapshot is taken at the load, not at the first menu
 	}
 
+	void InspectForTest(RE::FormID a_formID)
+	{
+		auto* tasks = SKSE::GetTaskInterface();
+		if (!tasks) { return; }
+		tasks->AddTask([a_formID]() {
+			// 1.7.0 (order: "ask the object, don't infer it"): what the scan's read sees for one form, beside what the
+			// game itself counts. Every entry of the form in the inventory list (countDelta, extra lists, favourite),
+			// the base container's count, the raw sum, the game's count (GetInventoryCounts), and - for an item a mod may
+			// have swapped for a copy (durability mods) - every OTHER entry carrying the same name.
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			auto* form = a_formID ? RE::TESForm::LookupByID(a_formID) : nullptr;
+			auto q = [](const char* s) { std::string o = "\""; for (const char* p = s ? s : ""; *p; ++p) { if (*p == '"' || *p == '\\') { o += '\\'; } o += *p; } return o + "\""; };
+			std::string j = "{\"formid\":" + std::to_string(a_formID) + ",\"name\":" + q(form ? form->GetName() : "");
+			if (!player || !form) {
+				j += ",\"error\":\"no player or no such form\"}";
+			} else {
+				const std::string name = form->GetName() ? form->GetName() : "";
+				std::string entries, sameName;
+				std::int32_t raw = 0, base = 0;
+				int listed = 0;
+				if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
+					for (auto* entry : *changes->entryList) {
+						++listed;
+						if (!entry || !entry->object) { continue; }
+						const std::size_t lists = entry->extraLists ? static_cast<std::size_t>(std::distance(entry->extraLists->begin(), entry->extraLists->end())) : 0;
+						const std::string e = "{\"id\":" + std::to_string(entry->object->GetFormID()) + ",\"countDelta\":" + std::to_string(entry->countDelta) +
+							",\"extraLists\":" + std::to_string(lists) + ",\"favourite\":" + (entry->IsFavorited() ? "true" : "false") + "}";
+						if (entry->object->GetFormID() == a_formID) {
+							raw += entry->countDelta;
+							entries += (entries.empty() ? "" : ",") + e;
+						} else if (!name.empty() && entry->object->GetName() && name == entry->object->GetName()) {
+							sameName += (sameName.empty() ? "" : ",") + e;
+						}
+					}
+				}
+				if (auto* cont = player->GetContainer()) {
+					cont->ForEachContainerObject([&](RE::ContainerObject& a_obj) {
+						if (a_obj.obj && a_obj.obj->GetFormID() == a_formID) { base += a_obj.count; }
+						return RE::BSContainer::ForEachResult::kContinue;
+					});
+				}
+				const auto gc = GameCounts(player);
+				const auto it = gc.find(a_formID);
+				j += ",\"entriesListed\":" + std::to_string(listed) + ",\"entries\":[" + entries + "],\"entrySum\":" + std::to_string(raw) +
+					",\"baseCount\":" + std::to_string(base) + ",\"rawTotal\":" + std::to_string(raw + base) +
+					",\"gameCount\":" + std::to_string(it != gc.end() ? it->second : 0) + ",\"sameNameEntries\":[" + sameName + "]}";
+			}
+			logger::info("[FavoritesToSlots] inspect {:08X}: {}", a_formID, j);
+			std::scoped_lock l(g_lock);
+			g_lastInspect = j;
+		});
+	}
+
 	void UnmarkForTest(RE::FormID a_formID)
 	{
 		auto* tasks = SKSE::GetTaskInterface();
@@ -686,8 +756,14 @@ namespace FavoritesToSlots
 				if (form->GetFormType() == RE::FormType::Spell || form->GetFormType() == RE::FormType::Shout) {
 					if (auto* fav = RE::MagicFavorites::GetSingleton()) { fav->SetFavorite(form); ++done; }
 				} else if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
+					// 1.7.0: carried is the game's count; the entry is the form's own entry in the list, whatever its delta
+					// (an item from the base container has a delta of 0 and is still carried).
+					const auto gc = GameCounts(player);
+					const auto it = gc.find(a_formID);
+					const std::int32_t have = it != gc.end() ? it->second : 0;
 					for (auto* entry : *changes->entryList) {
-						if (!entry || entry->object != form || entry->countDelta <= 0) { continue; }
+						if (have <= 0) { break; }
+						if (!entry || !entry->object || entry->object->GetFormID() != a_formID) { continue; }
 						if (!entry->IsFavorited()) {
 							RE::ExtraDataList* xl = (entry->extraLists && !entry->extraLists->empty()) ? entry->extraLists->front() : nullptr;
 							changes->SetFavorite(entry, xl);
@@ -696,7 +772,7 @@ namespace FavoritesToSlots
 						break;
 					}
 				}
-				logger::info("[FavoritesToSlots] test mark {} ({:08X}): {}", form->GetName() ? form->GetName() : "", a_formID, done ? "favourited through the game" : "not carried, nothing done");
+				logger::info("[FavoritesToSlots] test mark {} ({:08X}): {}", form->GetName() ? form->GetName() : "", a_formID, done ? "favourited through the game" : "no inventory entry for it with a game count above 0, nothing done (see favorites sub=inspect)");
 				Scan();
 				return;
 			}
@@ -704,7 +780,9 @@ namespace FavoritesToSlots
 			if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
 				for (auto* entry : *changes->entryList) {
 					if (items >= a_count) { break; }
-					if (!entry || !entry->object || entry->countDelta <= 0 || entry->IsFavorited() || !entry->object->GetPlayable()) { continue; }
+					if (!entry || !entry->object || entry->IsFavorited() || !entry->object->GetPlayable()) { continue; }
+					if (!entry->object->GetName() || !entry->object->GetName()[0]) { continue; }   // 1.7.0: e.g. 000001F4, the unarmed "weapon"
+					if (const auto gc = GameCounts(player); !gc.contains(entry->object->GetFormID()) || gc.at(entry->object->GetFormID()) <= 0) { continue; }
 					RE::ExtraDataList* xl = (entry->extraLists && !entry->extraLists->empty()) ? entry->extraLists->front() : nullptr;
 					changes->SetFavorite(entry, xl);
 					++items;
@@ -747,6 +825,6 @@ namespace FavoritesToSlots
 		const int inv = Wheeler::FindWheelIndexByRole("inventory"), mag = Wheeler::FindWheelIndexByRole("magic");
 		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"skyUICategories\":" + std::string(Config::SlotAssignments::SkyUICategories ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::SlotAssignments::WeaponTypeSlots ? "true" : "false") + ",\"removeOnUnfavorite\":" + std::string(Config::SlotAssignments::RemoveOnUnfavorite ? "true" : "false") + ",\"slotTypes\":[" + types + "],\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
 			",\"known\":" + std::to_string(g_known.size()) + ",\"scans\":" + std::to_string(g_scans) + ",\"added\":" + std::to_string(g_added) +
-			",\"skipped\":" + std::to_string(g_skipped) + ",\"removed\":" + std::to_string(g_removed) + ",\"lastAdded\":" + std::to_string(g_lastAddedFormID) + ",\"categories\":[" + cats + "],\"last\":\"" + esc + "\"}";
+			",\"skipped\":" + std::to_string(g_skipped) + ",\"removed\":" + std::to_string(g_removed) + ",\"lastAdded\":" + std::to_string(g_lastAddedFormID) + ",\"categories\":[" + cats + "],\"last\":\"" + esc + "\",\"inspect\":" + (g_lastInspect.empty() ? std::string("null") : g_lastInspect) + "}";
 	}
 }

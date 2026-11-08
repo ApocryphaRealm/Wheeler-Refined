@@ -18,7 +18,7 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 
 ### Fixed
 - Loading a second save in the same session compared its favourites with the first save's, so favourites the two saves did not share could be added to the wheel on the first menu opened. Each loaded save now takes its own snapshot at the load.
-- Favourites and the count carried are read from every inventory entry of an item, not only the first one the game lists. The first test of this build un-favourited a Long Bow and nothing was removed; the scan now logs, for each favourite that goes, what it decided and why.
+- Whether an un-favourited item is still carried is asked of the game's own inventory count, and favourites are read from every inventory entry of an item. In the first two tests of this build an un-favourited Long Bow was not seen as carried and nothing was removed; for each favourite that goes, the scan now logs the game's count, its own sum and what it decided.
 
 ## 1.6.0 - 2026-11-07 - untested
 

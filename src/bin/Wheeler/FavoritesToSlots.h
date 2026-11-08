@@ -167,6 +167,9 @@ namespace FavoritesToSlots
 	// Driving-tool entry, test only: un-favourite one form through the game's own InventoryChanges::RemoveFavorite /
 	// MagicFavorites::RemoveFavorite (a_formID 0 = the last item the favourites system added), then scan.
 	void UnmarkForTest(RE::FormID a_formID);
+	// Driving-tool entry, test only (1.7.0): dump what the inventory read sees for one form beside the game's own count;
+	// logged and returned as "inspect" in the favorites state.
+	void InspectForTest(RE::FormID a_formID);
 	// Driving-tool entry, test only: favourite up to a_count un-favourited inventory items and up to a_count of the
 	// player's spells and shouts through the game's own InventoryChanges::SetFavorite / MagicFavorites::SetFavorite,
 	// on the game thread - what a proof uses instead of pressing F in a menu the tools cannot reach.
