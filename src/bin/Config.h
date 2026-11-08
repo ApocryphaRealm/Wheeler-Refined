@@ -54,13 +54,13 @@ namespace Config
 	namespace I4
 	{
 		// Master toggle for InventoryInjector icon integration.
-		// Default OFF for backward compatibility.
-		inline bool Enabled = false;
+		// 1.7.0: every default here equals the shipped I4.defaults.ini (rule 16); Enabled is ON there, as the page shows.
+		inline bool Enabled = true;
 		inline bool PreferI4Icons = true;
 		// Alternative I4 resolver path.
 		// - Allows I4 attempts for non-inventory wheel items (spell/shout/power).
 		// If I4 resolve/render fails, Wheeler still falls back to its normal icon pipeline.
-		inline bool UseAlternativePath = false;
+		inline bool UseAlternativePath = true;
 		inline std::uint32_t CacheMaxEntries = 256;
 		inline bool DebugLog = false;
 		// Very verbose I4 pipeline trace logs (provider/resolver/renderer decisions).
@@ -71,7 +71,7 @@ namespace Config
 		inline std::uint32_t RenderSizePolicy = 0;
 		inline std::uint32_t FixedRenderSize = 128;
 		// Optional on-screen extraction capture path for non-default SWF icon sources.
-		inline bool ExtractionMode = false;
+		inline bool ExtractionMode = true;
 		// Per-category opt-in toggles for I4 pipeline. When false, Wheeler uses its normal fallback icon chain.
 		inline bool UseForWeapons = true;
 		inline bool UseForArmor = true;
@@ -84,23 +84,23 @@ namespace Config
 		inline bool UseForScrolls = true;
 		inline bool UseForLights = true;
 		inline bool UseForMisc = true;
-		inline bool UseForSpells = true;
+		inline bool UseForSpells = false;
 		inline bool UseForShouts = true;
-		inline bool UseForPowers = true;
+		inline bool UseForPowers = false;
 		// Per-category extraction routing (only applies when ExtractionMode=true).
 		// When false for a category, renderer uses built-in I4 fallback mapping for that category.
 		inline bool ExtractForWeapons = true;
 		inline bool ExtractForArmor = true;
 		inline bool ExtractForAmmo = true;
-		inline bool ExtractForPotions = true;
-		inline bool ExtractForFood = true;
-		inline bool ExtractForIngredients = true;
-		inline bool ExtractForPoisons = true;
+		inline bool ExtractForPotions = false;
+		inline bool ExtractForFood = false;
+		inline bool ExtractForIngredients = false;
+		inline bool ExtractForPoisons = false;
 		inline bool ExtractForBooks = true;
 		inline bool ExtractForScrolls = true;
 		inline bool ExtractForLights = true;
 		inline bool ExtractForMisc = true;
-		inline bool ExtractForSpells = true;
+		inline bool ExtractForSpells = false;
 		inline bool ExtractForShouts = true;
 		inline bool ExtractForPowers = true;
 	}
@@ -1303,8 +1303,13 @@ namespace Config
 			inline float SafePadPx = 8.0f;
 			inline bool AutoCreateUserFile = true;
 			inline bool ScaleGeometry = true;
-			inline bool ScaleText = false;
+			// 1.7.0: ON - the ammo wheel's text grows with its geometry; off, text stayed at 1080p sizes while the circles
+			// grew (a player's 4K report: text too small to read).
+			inline bool ScaleText = true;
 			inline bool ScaleStylePx = true;
+			// 1.7.0: the uniform scale applied to the ammo wheel's geometry this frame (resolution mismatch x layout), so
+			// limits on scaled pixel values scale with them. Written by OffsetAmmoWheelSizingToViewport.
+			inline float GeometryScaleU = 1.0f;
 			inline bool ConfigPresent = false;
 			inline std::string LoadedSourceTag = "off";
 			inline std::string LoadedSourcePath;

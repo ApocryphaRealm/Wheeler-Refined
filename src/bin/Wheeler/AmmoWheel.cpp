@@ -1502,14 +1502,18 @@ void AmmoWheel::OnConfigChanged()
 	_cachedInnerRadius = _cachedOuterRadius * Config::AmmoWheel::InnerRadiusRatio;
 	
 	// Text radius: midpoint + offset (range extended to -200..+400)
-	float textRadialOffset = std::clamp(Config::AmmoWheel::TextRadialOffsetPx, -200.0f, 400.0f);
+	// 1.7.0: the limits are in 1080p pixels and scale with the geometry, like the values they limit. Fixed limits cut a
+	// scaled value short above 1080p: at 2x the default icon offset (-62 -> -124) was held at -100, so the icons sat off
+	// their circles.
+	const float limitScale = (std::max)(Config::AmmoWheel::LayoutScaling::GeometryScaleU, 0.01f);
+	float textRadialOffset = std::clamp(Config::AmmoWheel::TextRadialOffsetPx, -200.0f * limitScale, 400.0f * limitScale);
 	_cachedTextRadius = (_cachedInnerRadius + _cachedOuterRadius) / 2.0f + textRadialOffset;
 	
 	// Icon radius: use IconRadiusRatio (0..1 between inner and outer) + offset
 	// IconRadiusRatio=0.0 -> inner edge, 0.5 -> midpoint, 1.0 -> outer edge
 	float ringThickness = _cachedOuterRadius - _cachedInnerRadius;
 	float iconBaseRadius = _cachedInnerRadius + ringThickness * std::clamp(Config::AmmoWheel::IconRadiusRatio, 0.0f, 1.0f);
-	float iconRadialOffset = std::clamp(Config::AmmoWheel::IconRadialOffsetPx, -100.0f, 100.0f);
+	float iconRadialOffset = std::clamp(Config::AmmoWheel::IconRadialOffsetPx, -100.0f * limitScale, 100.0f * limitScale);
 	_cachedIconRadius = iconBaseRadius + iconRadialOffset;
 	
 	// Count radius: use CountRadiusRatio (0..1 between inner and outer)
@@ -1519,7 +1523,7 @@ void AmmoWheel::OnConfigChanged()
 	
 	// Cache icon size (use IconSizePx if set, else IconSize)
 	_cachedIconSize = Config::AmmoWheel::IconSizePx > 0.0f ? Config::AmmoWheel::IconSizePx : Config::AmmoWheel::IconSize;
-	_cachedIconSize = std::clamp(_cachedIconSize, 16.0f, 256.0f);
+	_cachedIconSize = std::clamp(_cachedIconSize, 16.0f * limitScale, 256.0f * limitScale);
 	
 	// Recompute screen position based on anchor
 	_cachedScreenPos = calculateScreenPosition();

@@ -555,16 +555,16 @@ namespace
 
 	struct I4ConfigValues
 	{
-		bool Enabled = false;
+		bool Enabled = true;
 		bool PreferI4Icons = true;
-		bool UseAlternativePath = false;
+		bool UseAlternativePath = true;
 		std::uint32_t CacheMaxEntries = 256;
 		bool DebugLog = false;
 		bool TraceLog = false;
 		bool TraceCacheHits = false;
 		std::uint32_t RenderSizePolicy = 0;
 		std::uint32_t FixedRenderSize = 128;
-		bool ExtractionMode = false;
+		bool ExtractionMode = true;
 		bool UseForWeapons = true;
 		bool UseForArmor = true;
 		bool UseForAmmo = true;
@@ -576,21 +576,21 @@ namespace
 		bool UseForScrolls = true;
 		bool UseForLights = true;
 		bool UseForMisc = true;
-		bool UseForSpells = true;
+		bool UseForSpells = false;
 		bool UseForShouts = true;
-		bool UseForPowers = true;
+		bool UseForPowers = false;
 		bool ExtractForWeapons = true;
 		bool ExtractForArmor = true;
 		bool ExtractForAmmo = true;
-		bool ExtractForPotions = true;
-		bool ExtractForFood = true;
-		bool ExtractForIngredients = true;
-		bool ExtractForPoisons = true;
+		bool ExtractForPotions = false;
+		bool ExtractForFood = false;
+		bool ExtractForIngredients = false;
+		bool ExtractForPoisons = false;
 		bool ExtractForBooks = true;
 		bool ExtractForScrolls = true;
 		bool ExtractForLights = true;
 		bool ExtractForMisc = true;
-		bool ExtractForSpells = true;
+		bool ExtractForSpells = false;
 		bool ExtractForShouts = true;
 		bool ExtractForPowers = true;
 
@@ -2976,9 +2976,12 @@ static bool g_ammoLayoutRepairFailed = false;
 
 static bool WriteMainWheelLayoutUserIni(float displayW, float displayH, int& outRefW, int& outRefH, std::string& outError)
 {
-	// Use runtime display resolution for auto-scaling reference
-	outRefW = static_cast<int>(std::round(displayW));
-	outRefH = static_cast<int>(std::round(displayH));
+	// 1.7.0: the reference is the resolution the shipped sizes are AUTHORED at, 1920x1080 - not the player's display. With
+	// the display as the reference the layout scale was always 1.0 on the machine that wrote the file, so a 4K player got
+	// 1080p pixel sizes on a 4K screen: a wheel and text half the size they were designed to be (a player's log at
+	// 3840x2160: "ref 3840x2160, ls=(1.000,1.000,1.000)"). displayW/H only decide whether a file is written at all.
+	outRefW = (displayW > 0.0f && displayH > 0.0f) ? 1920 : 0;
+	outRefH = (displayW > 0.0f && displayH > 0.0f) ? 1080 : 0;
 	if (outRefW <= 0 || outRefH <= 0) {
 		outError = "invalid display size";
 		return false;
@@ -3010,16 +3013,16 @@ static bool WriteMainWheelLayoutUserIni(float displayW, float displayH, int& out
 	file << "ClampToScreen = true\n";
 	file << "SafePadPx = 8.0\n";
 	file << "ScaleGeometry = true\n";
-	file << "ScaleText = false\n";
+	file << "ScaleText = true\n";   // 1.7.0: ammo text grows with the ammo wheel
 	file << "ScaleStylePx = true\n";
 	return true;
 }
 
 static bool AppendAmmoWheelLayoutSection(float displayW, float displayH, int& outRefW, int& outRefH, std::string& outError)
 {
-	// Use runtime display resolution for auto-scaling reference
-	outRefW = static_cast<int>(std::round(displayW));
-	outRefH = static_cast<int>(std::round(displayH));
+	// 1.7.0: the authored reference, 1920x1080, as in WriteMainWheelLayoutUserIni.
+	outRefW = (displayW > 0.0f && displayH > 0.0f) ? 1920 : 0;
+	outRefH = (displayW > 0.0f && displayH > 0.0f) ? 1080 : 0;
 	if (outRefW <= 0 || outRefH <= 0) {
 		outError = "invalid display size";
 		return false;
@@ -3038,7 +3041,7 @@ static bool AppendAmmoWheelLayoutSection(float displayW, float displayH, int& ou
 	file << "ClampToScreen = true\n";
 	file << "SafePadPx = 8.0\n";
 	file << "ScaleGeometry = true\n";
-	file << "ScaleText = false\n";
+	file << "ScaleText = true\n";   // 1.7.0: ammo text grows with the ammo wheel
 	file << "ScaleStylePx = true\n";
 	return true;
 }
@@ -3056,6 +3059,25 @@ static void MaybeAutoCreateMainWheelLayoutUserIni(const ResolutionScale::State& 
 	}
 
 	if (userExists) {
+		// 1.7.0: a file written by an older build carries the DISPLAY as its reference, so on a screen above 1080p nothing
+		// is scaled. It is the player's file and is left as it is (they may have raised the sizes by hand to make up for
+		// it); the log says once what to change.
+		static bool advised = false;
+		if (!advised && state.displayW > 0.0f && state.displayH > 1080.5f) {
+			advised = true;
+			CSimpleIniA probe;
+			probe.SetUnicode();
+			if (probe.LoadFile(MAINWHEEL_LAYOUT_USER_PATH) >= 0) {
+				const double rw = probe.GetDoubleValue("MainWheel.LayoutScaling", "RefW", 0.0);
+				const double rh = probe.GetDoubleValue("MainWheel.LayoutScaling", "RefH", 0.0);
+				if (std::abs(rw - state.displayW) < 1.0 && std::abs(rh - state.displayH) < 1.0) {
+					logger::warn("[MainWheel.LayoutScaling] '{}' uses your display ({}x{}) as its reference, so the wheels are drawn at 1080p pixel "
+						"sizes on this screen. Set RefW = 1920 and RefH = 1080 in both sections (and ScaleText = true for the ammo wheel) to scale "
+						"them with the screen - or delete the file and Wheeler writes a new one; lower any sizes you raised to make up for it.",
+						MAINWHEEL_LAYOUT_USER_PATH, rw, rh);
+				}
+			}
+		}
 		if (!Config::AmmoWheel::LayoutScaling::AutoCreateUserFile || g_ammoLayoutRepairAttempted || g_ammoLayoutRepairFailed) {
 			return;
 		}
@@ -4791,31 +4813,26 @@ void Config::ReadStyleConfig()
 	const I4ConfigValues codeDefaultI4{};
 	const I4ConfigValues i4Defaults = LoadI4DefaultsSnapshot();
 	I4ConfigValues effectiveI4 = codeDefaultI4;
-	std::ifstream i4UserFile(I4_SETTINGS_PATH, std::ios::binary);
-	const bool hasI4UserConfig = i4UserFile.good();
-	i4UserFile.close();
+	// 1.7.0 (a player's log, Skyrim 1.7.104: "I4: '...I4.ini' missing; keeping dedicated feature off/code defaults"): the
+	// I4 loader read I4.defaults.ini only when the USER I4.ini existed, so a fresh install - which has no user file - kept
+	// I4 off although the shipped defaults say Enabled = true and the settings page showed it on. It now layers
+	// I4.defaults.ini then the user I4.ini, as Styles, Controls, Ammo Wheel, Action Hotkeys Bridge and OStim do.
 	bool i4DefaultsLoaded = false;
 	bool i4UserLoaded = false;
 	CSimpleIniA i4Ini;
 	i4Ini.SetUnicode();
-	if (hasI4UserConfig) {
-		if (!LoadLayeredIni(I4_DEFAULTS_PATH, I4_SETTINGS_PATH, i4Ini, &i4DefaultsLoaded, &i4UserLoaded)) {
-			logger::warn(
-				"I4: Failed to load dedicated config from '{}' or '{}'; using runtime defaults",
-				I4_SETTINGS_PATH,
-				I4_DEFAULTS_PATH);
-		} else {
-			logger::info(
-				"I4: Loading config (defaults={}, user={})",
-				i4DefaultsLoaded,
-				i4UserLoaded);
-			LoadI4ConfigValues(i4Ini, effectiveI4);
-			ClampI4ConfigValues(effectiveI4);
-		}
+	if (!LoadLayeredIni(I4_DEFAULTS_PATH, I4_SETTINGS_PATH, i4Ini, &i4DefaultsLoaded, &i4UserLoaded)) {
+		logger::warn(
+			"I4: neither '{}' nor '{}' could be read; using the compiled defaults",
+			I4_DEFAULTS_PATH,
+			I4_SETTINGS_PATH);
 	} else {
 		logger::info(
-			"I4: '{}' missing; keeping dedicated feature off/code defaults",
-			I4_SETTINGS_PATH);
+			"I4: Loading config (defaults={}, user={})",
+			i4DefaultsLoaded,
+			i4UserLoaded);
+		LoadI4ConfigValues(i4Ini, effectiveI4);
+		ClampI4ConfigValues(effectiveI4);
 	}
 	ApplyI4ConfigValues(effectiveI4);
 
@@ -7587,6 +7604,9 @@ void Config::OffsetAmmoWheelSizingToViewport()
 		}
 		*entry.value = scaled;
 	}
+
+	// 1.7.0: the uniform geometry scale, for limits on scaled values (AmmoWheel::RecalculateLayout).
+	Config::AmmoWheel::LayoutScaling::GeometryScaleU = geomScale.scaleU > 0.0f ? geomScale.scaleU : 1.0f;
 
 	if (g_ammoPresetBaseCaptured) {
 		for (const auto& [presetId, preset] : g_ammoPresetBase) {
