@@ -12193,6 +12193,41 @@ int Wheeler::GetSlotCountOfWheel(int a_wheel)
 	return _wheels[a_wheel]->GetNumEntries();
 }
 
+int Wheeler::RemoveFavouriteItems(RE::FormID a_formID, std::vector<std::pair<int, int>>* a_where)
+{
+	if (a_formID == 0) { return 0; }
+	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+	int removed = 0;
+	for (int w = 0; w < static_cast<int>(_wheels.size()); ++w) {
+		if (!_wheels[w]) { continue; }
+		auto* wheel = _wheels[w].get();
+		for (int s = 0; s < wheel->GetNumEntries(); ++s) {
+			WheelEntry* entry = wheel->GetEntry(s);
+			if (!entry) { continue; }
+			const int n = entry->RemoveFavouriteItems(a_formID);
+			if (n > 0) {
+				removed += n;
+				if (a_where) { a_where->emplace_back(w, s); }
+			}
+		}
+	}
+	return removed;
+}
+
+int Wheeler::SettleUnknownSources(const std::vector<int>& a_wheels, const std::unordered_set<RE::FormID>& a_favourites)
+{
+	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
+	int settled = 0;
+	for (int w : a_wheels) {
+		if (w < 0 || w >= static_cast<int>(_wheels.size()) || !_wheels[w]) { continue; }
+		auto* wheel = _wheels[w].get();
+		for (int s = 0; s < wheel->GetNumEntries(); ++s) {
+			if (WheelEntry* entry = wheel->GetEntry(s)) { settled += entry->SettleUnknownSources(a_favourites); }
+		}
+	}
+	return settled;
+}
+
 std::vector<RE::FormID> Wheeler::GetSlotFormIDs(int a_wheel, int a_slot)
 {
 	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);

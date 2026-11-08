@@ -110,6 +110,13 @@ public:
 	MissingCategory GetMissingCategory() const { return _missingCategory; }
 	void SetMissingCategory(MissingCategory category) { _missingCategory = category; }
 
+	// 1.6.1: who put this item on the wheel. Un-favouriting an item takes it off the wheel only when the favourites
+	// system put it there (Favourite); an item the player placed by hand (Hand) is never touched. Unknown = read from a
+	// save written before 1.6.1; the first favourites scan after the load settles it (FavoritesToSlots).
+	enum class Source : std::uint8_t { Unknown = 0, Hand = 1, Favourite = 2 };
+	Source GetSource() const { return _source; }
+	void SetSource(Source a_source) { _source = a_source; }
+
 	static inline const char* ITEM_TYPE_STR = "WheelItem";
 
 
@@ -118,6 +125,7 @@ protected:
 	Texture::Image _stat_texture = Texture::Image();
 	std::string _description = "";  // buffer for description.
 	MissingCategory _missingCategory = MissingCategory::Unknown;
+	Source _source = Source::Hand;   // a new item is the player's unless the favourites system says otherwise
 	mutable float _cooldownCacheTime = -1.0f;
 	mutable float _cooldownCacheRemaining = 0.0f;
 	mutable float _cooldownCacheTotal = 0.0f;

@@ -34,14 +34,17 @@ namespace FavoritesToSlots
 		std::atomic<bool> g_scanQueued{ false };
 		int g_framesSinceScan = 0;
 		bool g_menuWasOpen = false;
-		int g_scans = 0, g_added = 0, g_skipped = 0;
+		int g_scans = 0, g_added = 0, g_skipped = 0, g_removed = 0;
+		RE::FormID g_lastAddedFormID = 0;   // the driving tool's unmark default
 		std::string g_lastAction;
 
 		bool ItemMenuOpen()
 		{
 			auto* ui = RE::UI::GetSingleton();
+			// 1.6.1: the Favorites menu too - an item can be un-favourited there.
 			return ui && (ui->IsMenuOpen(RE::InventoryMenu::MENU_NAME) || ui->IsMenuOpen(RE::MagicMenu::MENU_NAME) ||
-						  ui->IsMenuOpen(RE::ContainerMenu::MENU_NAME) || ui->IsMenuOpen(RE::BarterMenu::MENU_NAME));
+						  ui->IsMenuOpen(RE::ContainerMenu::MENU_NAME) || ui->IsMenuOpen(RE::BarterMenu::MENU_NAME) ||
+						  ui->IsMenuOpen(RE::FavoritesMenu::MENU_NAME));
 		}
 
 		std::uint16_t UniqueIDOf(RE::InventoryEntryData* a_entry)
@@ -206,8 +209,10 @@ namespace FavoritesToSlots
 			if (!player) { return; }
 
 			std::unordered_set<Key, KeyHash> now;
+			std::unordered_set<RE::FormID> held;   // 1.6.1: inventory forms the player still carries
 			auto inv = player->GetInventory();
 			for (auto& [obj, data] : inv) {
+				if (obj && data.first > 0) { held.insert(obj->GetFormID()); }
 				if (!obj || !data.second || !data.second->IsFavorited()) { continue; }
 				now.insert(Key{ obj->GetFormID(), UniqueIDOf(data.second.get()) });
 			}
@@ -217,15 +222,64 @@ namespace FavoritesToSlots
 				}
 			}
 
+			std::unordered_set<RE::FormID> nowForms;
+			for (const Key& k : now) { nowForms.insert(k.formID); }
+
 			std::vector<Key> fresh;
+			std::vector<RE::FormID> unfavourited;
+			bool seeding = false;
 			{
 				std::scoped_lock l(g_lock);
 				++g_scans;
 				if (g_seeded) {
 					for (const Key& k : now) { if (!g_known.contains(k)) { fresh.push_back(k); } }
+					// 1.6.1 UN-FAVOURITING TAKES IT OFF THE WHEEL. A favourite at the last scan that is not one now, with
+					// no other copy of the same form still a favourite, is un-favourited - but only while the player
+					// still has it: an item sold, dropped or used up also stops being a favourite, and what happens to
+					// it on the wheel stays with the inventory prune and the Keep Missing settings. Spells and shouts
+					// are not inventory items and are taken at their word.
+					for (const Key& k : g_known) {
+						if (nowForms.contains(k.formID)) { continue; }
+						auto* f = RE::TESForm::LookupByID(k.formID);
+						if (!f) { continue; }
+						const bool magic = f->GetFormType() == RE::FormType::Spell || f->GetFormType() == RE::FormType::Shout;
+						if (!magic && !held.contains(k.formID)) { continue; }
+						if (std::find(unfavourited.begin(), unfavourited.end(), k.formID) == unfavourited.end()) { unfavourited.push_back(k.formID); }
+					}
+				} else {
+					seeding = true;
 				}
 				g_known = std::move(now);
 				g_seeded = true;
+			}
+
+			if (seeding) {
+				// 1.6.1: wheels read from a save written before 1.6.1 do not say who put each item there. The first scan
+				// after the load settles it on the two favourites wheels: an item whose form is a favourite now counts as
+				// put there by the favourites system, anything else as placed by hand.
+				std::vector<int> wheels;
+				for (int t = 0; t < kWheelCount; ++t) { wheels.push_back(WheelOfTable(t)); }
+				const int settled = Wheeler::SettleUnknownSources(wheels, nowForms);
+				if (settled > 0) { logger::info("[FavoritesToSlots] settled who placed {} item(s) read from an older save ({} favourite(s) now)", settled, nowForms.size()); }
+			}
+
+			for (RE::FormID id : unfavourited) {
+				auto* form = RE::TESForm::LookupByID(id);
+				const char* name = form && form->GetName() ? form->GetName() : "";
+				std::vector<std::pair<int, int>> where;
+				const int n = Wheeler::RemoveFavouriteItems(id, &where);
+				if (n > 0) {
+					std::string at;
+					for (const auto& [w, s] : where) { at += (at.empty() ? "" : ", ") + std::to_string(w + 1) + "-" + std::to_string(s + 1); }
+					{
+						std::scoped_lock l(g_lock);
+						g_removed += n;
+						g_lastAction = std::string("removed ") + name + " from wheel slot " + at;
+					}
+					logger::info("[FavoritesToSlots] {} ({:08X}) un-favourited -> taken off wheel slot {} ({} item(s))", name, id, at, n);
+				} else {
+					logger::info("[FavoritesToSlots] {} ({:08X}) un-favourited; not on a wheel by a favourite (absent, or placed by hand) - left alone", name, id);
+				}
 			}
 
 			for (const Key& k : fresh) {
@@ -262,9 +316,11 @@ namespace FavoritesToSlots
 					logger::info("[FavoritesToSlots] {} ({:08X}) favourited; the wheel has no item type for it", name, k.formID);
 					continue;
 				}
+				item->SetSource(WheelItem::Source::Favourite);   // 1.6.1: un-favouriting it takes it off again
 				const auto result = Wheeler::AddItemToSlotOnWheel(wheel, slot, item);
 				switch (result) {
 				case Wheeler::AddToSlotResult::Added:
+					{ std::scoped_lock l(g_lock); g_lastAddedFormID = k.formID; }
 					Note(std::string("added ") + name + " to wheel " + std::to_string(wheel + 1) + " slot " + std::to_string(slot + 1), true);
 					logger::info("[FavoritesToSlots] {} ({:08X}, {}) -> wheel {} slot {}", name, k.formID, CategoryName(cat), wheel + 1, slot + 1);
 					Utils::NotificationMessage(std::string(name) + " " + Texts::GetText(Texts::TextType::FavoriteAddedToSlot) + " " + std::to_string(wheel + 1) + "-" + std::to_string(slot + 1));
@@ -540,6 +596,45 @@ namespace FavoritesToSlots
 
 	void ScanNow() { Queue(); }
 
+	void OnGameLoaded()
+	{
+		// 1.6.1: each loaded save starts a fresh snapshot - without this the favourites of the save loaded before were
+		// compared with this one's, and what the two saves did not share read as favourited or un-favourited.
+		{
+			std::scoped_lock l(g_lock);
+			g_known.clear();
+			g_seeded = false;
+		}
+		g_framesSinceScan = 0;
+		if (Config::Control::Wheel::FavoritesSystem) { Queue(); }   // the snapshot is taken at the load, not at the first menu
+	}
+
+	void UnmarkForTest(RE::FormID a_formID)
+	{
+		auto* tasks = SKSE::GetTaskInterface();
+		if (!tasks) { return; }
+		tasks->AddTask([a_formID]() {
+			RE::FormID id = a_formID;
+			if (id == 0) { std::scoped_lock l(g_lock); id = g_lastAddedFormID; }
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			auto* form = id ? RE::TESForm::LookupByID(id) : nullptr;
+			if (!player || !form) { logger::info("[FavoritesToSlots] test unmark: no form {:08X}", id); return; }
+			int done = 0;
+			if (form->GetFormType() == RE::FormType::Spell || form->GetFormType() == RE::FormType::Shout) {
+				if (auto* fav = RE::MagicFavorites::GetSingleton()) { fav->RemoveFavorite(form); ++done; }
+			} else if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
+				for (auto* entry : *changes->entryList) {
+					if (!entry || entry->object != form || !entry->extraLists) { continue; }
+					for (auto* xl : *entry->extraLists) {
+						if (xl && xl->HasType(RE::ExtraDataType::kHotkey)) { changes->RemoveFavorite(entry, xl); ++done; }
+					}
+				}
+			}
+			logger::info("[FavoritesToSlots] test unmark {} ({:08X}): {} favourite(s) removed through the game", form->GetName() ? form->GetName() : "", id, done);
+			Scan();
+		});
+	}
+
 	// Driving-tool entry, test only: forget the snapshot so EVERY current favourite counts as new on the next
 	// scan - fills fresh wheels from a save that already has favourites, for a proof or a capture.
 	void AdoptAllForTest()
@@ -606,6 +701,6 @@ namespace FavoritesToSlots
 		const int inv = Wheeler::FindWheelIndexByRole("inventory"), mag = Wheeler::FindWheelIndexByRole("magic");
 		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"skyUICategories\":" + std::string(Config::SlotAssignments::SkyUICategories ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::SlotAssignments::WeaponTypeSlots ? "true" : "false") + ",\"slotTypes\":[" + types + "],\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
 			",\"known\":" + std::to_string(g_known.size()) + ",\"scans\":" + std::to_string(g_scans) + ",\"added\":" + std::to_string(g_added) +
-			",\"skipped\":" + std::to_string(g_skipped) + ",\"categories\":[" + cats + "],\"last\":\"" + esc + "\"}";
+			",\"skipped\":" + std::to_string(g_skipped) + ",\"removed\":" + std::to_string(g_removed) + ",\"lastAdded\":" + std::to_string(g_lastAddedFormID) + ",\"categories\":[" + cats + "],\"last\":\"" + esc + "\"}";
 	}
 }

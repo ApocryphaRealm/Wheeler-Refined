@@ -11,6 +11,7 @@
 
 #include "Wheeler/WheelItems/WheelItemMutableManager.h"
 #include "Wheeler/Wheeler.h"
+#include "Wheeler/FavoritesToSlots.h"
 #include "Wheeler/AmmoWheelReskinUnified.h"  // CompatShim::CheckLegacyFlags
 #include "Utilities/UniqueIDHandler.h"
 #include "Serialization/SerializationEntry.h"
@@ -440,6 +441,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 		[[fallthrough]];
 	case SKSE::MessagingInterface::kPostLoadGame:
 		Wheeler::EnsureFirstWheel();   // a save with no wheel gets one (the owner, 2026-09-13)
+		FavoritesToSlots::OnGameLoaded();   // 1.6.1: a fresh favourites snapshot per loaded save
 		UniqueIDHandler::QueuePostLoadInventoryRepair(GetMessageTypeName(a_msg->type));
 		break;
 	default:
