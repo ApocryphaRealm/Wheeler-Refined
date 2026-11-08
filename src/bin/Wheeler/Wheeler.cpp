@@ -10143,6 +10143,8 @@ void Wheeler::ActivateHoveredEntrySecondary()
 			}
 		} else {
 			if (allowEditMutation) {
+				// 1.7.0: Follow Favorites - an item is not taken off by hand (un-favourite it instead).
+				if (ManualPlacementLocked()) { NoteManualPlacementLocked("ActivateHoveredEntrySecondary (edit: remove item)"); return; }
 				// Legacy Wheeler edit mode keeps delete semantics; FavWheel edit mode falls through
 				// to normal activation so slot management is handled only by reorder actions.
 				activeWheel->ActivateHoveredEntrySecondary(true);
@@ -10213,6 +10215,8 @@ void Wheeler::ActivateHoveredEntryPrimary()
 				}
 			}
 		}
+		// 1.7.0: Follow Favorites - an item is not put on by hand (favourite it instead).
+		if (allowEditMutation && ManualPlacementLocked()) { NoteManualPlacementLocked("ActivateHoveredEntryPrimary (edit: add item)"); return; }
 		_wheels[_activeWheelIdx]->ActivateHoveredEntryPrimary(allowEditMutation);
 		if (!allowEditMutation && !Config::WheelBehavior::ReleaseToUse && IsBowLikeFormID(hoveredFormID)) {
 			logger::info("[HandMemoryDiag] DirectPrimaryRTUOffBowLike entry={} formId={:08X} immediateNotify=0",
@@ -11769,12 +11773,41 @@ int Wheeler::SetCurrentWheelSlotCount(int a_desired)
 	return current;
 }
 
+bool Wheeler::ManualPlacementLocked()
+{
+	return Config::Control::Wheel::FavoritesSystem && Config::Control::Wheel::FollowFavorites;
+}
+
+void Wheeler::NoteManualPlacementLocked(const char* a_what)
+{
+	logger::info("[Wheeler] {}: refused - Follow Favorites is on, the wheel follows the favorites", a_what);
+	Utils::NotificationMessage(Texts::GetText(Texts::TextType::FollowFavoritesPlacementLocked));
+}
+
+std::vector<RE::FormID> Wheeler::GetFavouriteSourceFormIDs()
+{
+	std::vector<RE::FormID> out;
+	std::shared_lock<std::shared_mutex> lock(_wheelDataLock);
+	for (const auto& wheel : _wheels) {
+		if (!wheel) { continue; }
+		for (int s = 0; s < wheel->GetNumEntries(); ++s) {
+			WheelEntry* entry = wheel->GetEntry(s);
+			if (!entry) { continue; }
+			for (int i = 0; i < entry->GetNumItems(); ++i) {
+				if (WheelItem* item = entry->GetItem(i); item && item->GetSource() == WheelItem::Source::Favourite) { out.push_back(item->GetFormID()); }
+			}
+		}
+	}
+	return out;
+}
+
 void Wheeler::MoveEntryForwardInCurrentWheel()
 {
 	std::unique_lock<std::shared_mutex> lock(_wheelDataLock);
 	if (!_editMode || _state == WheelState::KClosed) {
 		return;
 	}
+	if (ManualPlacementLocked()) { NoteManualPlacementLocked("MoveEntryForwardInCurrentWheel"); return; }   // 1.7.0
 	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "MoveEntryForwardInCurrentWheel")) {
 		return;
 	}
@@ -11787,6 +11820,7 @@ void Wheeler::MoveEntryBackInCurrentWheel()
 	if (!_editMode || _state == WheelState::KClosed) {
 		return;
 	}
+	if (ManualPlacementLocked()) { NoteManualPlacementLocked("MoveEntryBackInCurrentWheel"); return; }   // 1.7.0
 	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "MoveEntryBackInCurrentWheel")) {
 		return;
 	}
@@ -11813,6 +11847,12 @@ void Wheeler::PickUpOrDropSlot()
 		EndWheelRotation();
 	}
 	if (!EnsureValidActiveWheelForEdit_NoLock(std::nullopt, "PickUpOrDropSlot")) {
+		return;
+	}
+	// 1.7.0: Follow Favorites refuses a pick-up; a slot already in hand (picked up before the switch went on) may still be
+	// dropped, so nothing is left held.
+	if (ManualPlacementLocked() && _wheels[_activeWheelIdx]->GetHeldEntryIndex() < 0) {
+		NoteManualPlacementLocked("PickUpOrDropSlot");
 		return;
 	}
 	// A slot picked up on another wheel is put back there first: a drop only ever lands on the wheel

@@ -5395,6 +5395,7 @@ void Config::ReadControlConfig()
 	// button or a settings page bound key either since it's just through AMF"); both stay 0, unbound.
 	GetBoolValue(ini, "Control.Wheel", "DisableVanillaFavoritesMenu", Config::Control::Wheel::DisableVanillaFavoritesMenu);
 	GetBoolValue(ini, "Control.Wheel", "FavoritesSystem", Config::Control::Wheel::FavoritesSystem);
+	GetBoolValue(ini, "Control.Wheel", "FollowFavorites", Config::Control::Wheel::FollowFavorites);   // 1.7.0
 	ReconcileFavoritesRouting(ini);
 	GetBoolValue(ini, "Control.Wheel", "LeftStickWheelControl", Config::Control::Wheel::LeftStickWheelControl);
 	GetBoolValue(ini, "Control.Wheel", "StopTimeWhileOpen", Config::Control::Wheel::StopTimeWhileOpen);

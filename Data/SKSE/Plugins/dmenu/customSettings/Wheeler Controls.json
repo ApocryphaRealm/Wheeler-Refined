@@ -989,6 +989,33 @@
         },
         {
             "control": {
+                "failAction": "disable",
+                "id": "wheeler_follow_favorites",
+                "requirements": [
+                    {
+                        "id": "wheeler_favorites_system",
+                        "type": "checkbox",
+                        "value": true
+                    }
+                ]
+            },
+            "default": false,
+            "ini": {
+                "id": "FollowFavorites",
+                "section": "Control.Wheel"
+            },
+            "text": {
+                "desc": "The wheels follow your favorites. Every favorite goes onto the wheel by the sorting chosen on the Favorites Menu tab (SkyUI Categories or By Type), and un-favoriting takes it off again. Placing items by hand is turned off: adding or removing an item in edit mode, and picking up or moving a slot. Items you placed by hand before stay on the wheel. Needs the Perfected Wheeler Favorites System. Off by default.",
+                "name": "Follow Favorites"
+            },
+            "translation": {
+                "desc": "$FollowFavoritesDesc",
+                "name": "$FollowFavoritesName"
+            },
+            "type": "checkbox"
+        },
+        {
+            "control": {
                 "failAction": "disable"
             },
             "default": true,

@@ -450,6 +450,12 @@ public:
 	/// Only in edit mode. Leaving edit mode or changing wheel puts the slot back where it was.
 	/// </summary>
 	static void PickUpOrDropSlot();
+	/// 1.7.0: Follow Favorites (Controls.ini FollowFavorites, with the favorites system on) - Wheeler's own placement by hand
+	/// is refused. NoteManualPlacementLocked says so on the HUD and in the log.
+	static bool ManualPlacementLocked();
+	static void NoteManualPlacementLocked(const char* a_what);
+	/// 1.7.0: the form ids of every item on any wheel that the favourites system put there (Source::Favourite).
+	static std::vector<RE::FormID> GetFavouriteSourceFormIDs();
 	/// The slot in hand on the active wheel, -1 when none (the driving tool's read-back).
 	static int GetHeldSlotIndex();
 	/// The hovered slot on the active wheel, settable by the driving tool so a pick-up/drop can be driven.

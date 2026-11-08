@@ -208,6 +208,12 @@ namespace
 			return "RemoveOnUnfavoriteName";
 		case Texts::TextType::RemoveOnUnfavoriteDesc:
 			return "RemoveOnUnfavoriteDesc";
+		case Texts::TextType::FollowFavoritesName:
+			return "FollowFavoritesName";
+		case Texts::TextType::FollowFavoritesDesc:
+			return "FollowFavoritesDesc";
+		case Texts::TextType::FollowFavoritesPlacementLocked:
+			return "FollowFavoritesPlacementLocked";
 		case Texts::TextType::SlotTypeGroupName:
 			return "SlotTypeGroupName";
 		case Texts::TextType::SlotTypeRowDesc:

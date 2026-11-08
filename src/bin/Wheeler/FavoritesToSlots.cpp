@@ -37,7 +37,9 @@ namespace FavoritesToSlots
 		bool g_menuWasOpen = false;
 		int g_scans = 0, g_added = 0, g_skipped = 0, g_removed = 0;
 		RE::FormID g_lastAddedFormID = 0;   // the driving tool's unmark default
-		std::string g_lastInspect;          // 1.7.0: the driving tool's inspect dump (JSON), read back through the state
+		std::string g_lastInspect;
+		bool g_followWas = false;           // 1.7.0: Follow Favorites as the last scan saw it (off -> on adopts the favourites)
+		bool FollowOn() { return Config::Control::Wheel::FavoritesSystem && Config::Control::Wheel::FollowFavorites; }          // 1.7.0: the driving tool's inspect dump (JSON), read back through the state
 
 		// 1.7.0: how many of a form the player carries, asked of the GAME (TESObjectREFR::GetInventoryCounts, the same
 		// count the inventory menu shows), by form id. Run 430b: the scan's own sum over the inventory entries said a
@@ -289,6 +291,15 @@ namespace FavoritesToSlots
 				g_seeded = true;
 			}
 
+			// 1.7.0 FOLLOW FAVORITES. When the switch is found on for the first time since the load (or since it was off),
+			// the wheels are brought into line with the favourites once: every current favourite is offered to the
+			// sorting as if just favourited (a form already on the wheel is not added twice), and an item the favourites
+			// system put on a wheel whose form is no longer a favourite - and is still carried, or is a spell or shout -
+			// is taken off. Hand-placed items are kept. This pass is quiet on the HUD (log only).
+			const bool follow = FollowOn();
+			const bool adopting = follow && !g_followWas;
+			g_followWas = follow;
+
 			if (seeding) {
 				// 1.7.0: wheels read from a save written before 1.7.0 do not say who put each item there. The first scan
 				// after the load settles it on the two favourites wheels: an item whose form is a favourite now counts as
@@ -299,7 +310,21 @@ namespace FavoritesToSlots
 				if (settled > 0) { logger::info("[FavoritesToSlots] settled who placed {} item(s) read from an older save ({} favourite(s) now)", settled, nowForms.size()); }
 			}
 
-			if (!unfavourited.empty() && !Config::SlotAssignments::RemoveOnUnfavorite) {
+			if (adopting) {
+				for (RE::FormID id : Wheeler::GetFavouriteSourceFormIDs()) {
+					if (nowForms.contains(id) || std::find(unfavourited.begin(), unfavourited.end(), id) != unfavourited.end()) { continue; }
+					auto* f = RE::TESForm::LookupByID(id);
+					const bool magic = f && (f->GetFormType() == RE::FormType::Spell || f->GetFormType() == RE::FormType::Shout);
+					const auto g = gameCounts.find(id);
+					if (f && (magic || (g != gameCounts.end() && g->second > 0))) { unfavourited.push_back(id); }
+				}
+				for (const Key& k : now) {
+					if (std::find(fresh.begin(), fresh.end(), k) == fresh.end()) { fresh.push_back(k); }
+				}
+				logger::info("[FavoritesToSlots] Follow Favorites on: lining the wheels up with {} favourite(s); {} wheel item(s) no longer favourites", now.size(), unfavourited.size());
+			}
+			// Follow Favorites: un-favouriting always takes it off - the favourites ARE the wheel.
+			if (!unfavourited.empty() && !Config::SlotAssignments::RemoveOnUnfavorite && !follow) {
 				// 1.7.0: the option is off (the default) - nothing is removed, as up to 1.6.0.
 				logger::info("[FavoritesToSlots] {} un-favourited item(s) stay on the wheel: Remove When Un-favorited is off", unfavourited.size());
 				unfavourited.clear();
@@ -342,7 +367,7 @@ namespace FavoritesToSlots
 					if (route != ByTypeRoute::Found) {
 						Note(std::string("by type: ") + why + ": " + name, false);
 						logger::info("[FavoritesToSlots] by type: {} ({:08X}, type {}) - {}; not added", name, k.formID, SlotTypeName(type), why);
-						if (route == ByTypeRoute::Full) { Utils::NotificationMessage(Texts::GetText(Texts::TextType::FavoriteSlotFull)); }
+						if (route == ByTypeRoute::Full) { if (!adopting) Utils::NotificationMessage(Texts::GetText(Texts::TextType::FavoriteSlotFull)); }
 						continue;
 					}
 					logger::debug("[FavoritesToSlots] by type: {} ({:08X}, type {}) -> wheel {} slot {}: {}", name, k.formID, SlotTypeName(type), wheel + 1, slot + 1, why);
@@ -364,7 +389,7 @@ namespace FavoritesToSlots
 					{ std::scoped_lock l(g_lock); g_lastAddedFormID = k.formID; }
 					Note(std::string("added ") + name + " to wheel " + std::to_string(wheel + 1) + " slot " + std::to_string(slot + 1), true);
 					logger::info("[FavoritesToSlots] {} ({:08X}, {}) -> wheel {} slot {}", name, k.formID, CategoryName(cat), wheel + 1, slot + 1);
-					Utils::NotificationMessage(std::string(name) + " " + Texts::GetText(Texts::TextType::FavoriteAddedToSlot) + " " + std::to_string(wheel + 1) + "-" + std::to_string(slot + 1));
+					if (!adopting) Utils::NotificationMessage(std::string(name) + " " + Texts::GetText(Texts::TextType::FavoriteAddedToSlot) + " " + std::to_string(wheel + 1) + "-" + std::to_string(slot + 1));
 					break;
 				case Wheeler::AddToSlotResult::AlreadyOnWheel:
 					Note(std::string("already on wheel ") + std::to_string(wheel + 1) + ": " + name, false);
@@ -373,7 +398,7 @@ namespace FavoritesToSlots
 				case Wheeler::AddToSlotResult::SlotFull:
 					Note(std::string("slot full for ") + name, false);
 					logger::info("[FavoritesToSlots] wheel {} slot {} is full; {} not added", wheel + 1, slot + 1, name);
-					Utils::NotificationMessage(Texts::GetText(Texts::TextType::FavoriteSlotFull));
+					if (!adopting) Utils::NotificationMessage(Texts::GetText(Texts::TextType::FavoriteSlotFull));
 					break;
 				case Wheeler::AddToSlotResult::NoSuchSlot:
 					Note(std::string("wheel ") + std::to_string(wheel + 1) + " has no slot " + std::to_string(slot + 1), false);
@@ -647,6 +672,7 @@ namespace FavoritesToSlots
 			g_seeded = false;
 		}
 		g_framesSinceScan = 0;
+		g_followWas = false;   // 1.7.0: a save loaded with Follow Favorites on is lined up with its favourites at the load
 		if (Config::Control::Wheel::FavoritesSystem) { Queue(); }   // the snapshot is taken at the load, not at the first menu
 	}
 
@@ -823,7 +849,7 @@ namespace FavoritesToSlots
 		std::string types;
 		for (int i = 0; i < kSlotCount; ++i) { types += (i ? "," : ""); types += std::to_string(Config::SlotAssignments::Type[i]); }
 		const int inv = Wheeler::FindWheelIndexByRole("inventory"), mag = Wheeler::FindWheelIndexByRole("magic");
-		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"skyUICategories\":" + std::string(Config::SlotAssignments::SkyUICategories ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::SlotAssignments::WeaponTypeSlots ? "true" : "false") + ",\"removeOnUnfavorite\":" + std::string(Config::SlotAssignments::RemoveOnUnfavorite ? "true" : "false") + ",\"slotTypes\":[" + types + "],\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
+		return "{\"enabled\":" + std::string(Config::Control::Wheel::FavoritesSystem ? "true" : "false") + ",\"skyUICategories\":" + std::string(Config::SlotAssignments::SkyUICategories ? "true" : "false") + ",\"weaponTypeSlots\":" + std::string(Config::SlotAssignments::WeaponTypeSlots ? "true" : "false") + ",\"removeOnUnfavorite\":" + std::string(Config::SlotAssignments::RemoveOnUnfavorite ? "true" : "false") + ",\"followFavorites\":" + std::string(FollowOn() ? "true" : "false") + ",\"slotTypes\":[" + types + "],\"inventoryWheel\":" + std::to_string(inv) + ",\"magicWheel\":" + std::to_string(mag) + ",\"seeded\":" + (g_seeded ? "true" : "false") +
 			",\"known\":" + std::to_string(g_known.size()) + ",\"scans\":" + std::to_string(g_scans) + ",\"added\":" + std::to_string(g_added) +
 			",\"skipped\":" + std::to_string(g_skipped) + ",\"removed\":" + std::to_string(g_removed) + ",\"lastAdded\":" + std::to_string(g_lastAddedFormID) + ",\"categories\":[" + cats + "],\"last\":\"" + esc + "\",\"inspect\":" + (g_lastInspect.empty() ? std::string("null") : g_lastInspect) + "}";
 	}

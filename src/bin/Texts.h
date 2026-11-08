@@ -101,6 +101,9 @@ public:
 		SkyUICategoriesDesc,
 		RemoveOnUnfavoriteName,   // 1.7.0
 		RemoveOnUnfavoriteDesc,
+		FollowFavoritesName,   // 1.7.0
+		FollowFavoritesDesc,
+		FollowFavoritesPlacementLocked,
 		SlotTypeGroupName,
 		SlotTypeRowDesc,
 		FavoritesMenuTabDesc,
@@ -248,6 +251,9 @@ private:
 		MAP_ENTRY(SkyUICategoriesDesc, "Favorites go to the slot whose SkyUI category takes them, set in the Inventory Wheel dropdowns below. Turn By Type off to turn this on. With both off, favoriting adds nothing to the Inventory Wheel. On by default."),
 		MAP_ENTRY(RemoveOnUnfavoriteName, "Remove When Un-favorited"),
 		MAP_ENTRY(RemoveOnUnfavoriteDesc, "Un-favoriting an item takes it off the wheel again, if the favorites system put it there. Items you placed on the wheel yourself always stay. Off by default, for compatibility: with it off, un-favoriting removes nothing."),
+		MAP_ENTRY(FollowFavoritesName, "Follow Favorites"),
+		MAP_ENTRY(FollowFavoritesDesc, "The wheels follow your favorites. Every favorite goes onto the wheel by the sorting chosen on the Favorites Menu tab (SkyUI Categories or By Type), and un-favoriting takes it off again. Placing items by hand is turned off: adding or removing an item in edit mode, and picking up or moving a slot. Items you placed by hand before stay on the wheel. Needs the Perfected Wheeler Favorites System. Off by default."),
+		MAP_ENTRY(FollowFavoritesPlacementLocked, "Follow Favorites is on: the wheel follows your favorites, so items are not placed by hand"),
 		MAP_ENTRY(SlotTypeGroupName, "Inventory Wheel - By Type"),
 		MAP_ENTRY(SlotTypeRowDesc, "What this slot of the Inventory Wheel takes in By Type mode. An Auto slot fills by itself with one weapon type. Slot 1 is the bottom of the wheel and the numbers run clockwise; slots 1 and 6 stay locked to Powers and Shouts."),
 		MAP_ENTRY(FavoritesMenuTabDesc, "The wheels are the Favorites menu while the Perfected Wheeler Favorites System is on (the General tab). The two switches choose how a favorite reaches the Inventory Wheel: by SkyUI category or by type. Turn one off to turn the other on. Slot 1 is the bottom of the wheel and the numbers run clockwise. Opening the wheel inside the Magic menu shows the Magic Wheel, inside the Inventory menu the Inventory Wheel, and closing it puts back the wheel you had. The presets on the General tab save these with everything else."),

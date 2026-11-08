@@ -569,6 +569,12 @@ namespace Config
 			// opened matching the menu). Off, the mod behaves as 1.2.9 did (the owner, 2026-09-17: "so it doesn't
 			// bleed into the non favorites wheeler"). Default ON. Lives in Controls.ini, which the presets cover.
 			inline bool FavoritesSystem = true;
+			// 1.7.0: FOLLOW FAVORITES (the owner, 2026-11-07: "add a toggle in the general settings that turns off Wheeler's
+			// originally. Item placement, so it just follows the favorites"). On, and only while FavoritesSystem is on: every
+			// favourite goes onto the wheel by the chosen sorting, un-favouriting always takes it off (whatever
+			// SlotAssignments::RemoveOnUnfavorite says), and Wheeler's own placement by hand is refused (edit-mode add and
+			// remove of an item, pick-up / drop and move of a slot). Items already placed by hand are KEPT. Default OFF.
+			inline bool FollowFavorites = false;
 			// 1.3.1: while the wheel is open the left stick stops moving the character and its four directions are
 			// gamepad buttons (Left Stick Up/Down/Left/Right, codes 282-285) the wheel's actions bind to; Move Wheel
 			// Forward / Back ship on Right / Left. The owner, 2026-09-17: "The whole point of dropping left stick
