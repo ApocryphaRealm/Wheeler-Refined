@@ -10,6 +10,11 @@ Written as changes happen, not reconstructed afterwards (rule 61). Each version 
 * **failed** - built but crashed or malfunctioned; the number was reclaimed
 * **scratch** - a hypothesis-test build that never held a real number
 
+## 1.7.1 - 2026-11-12 - untested
+
+### Fixed
+- Skyrim AE 1.6.1130 and later (1.6.1170 included): the game no longer crashes when a D-pad tap is handed back to the game (the D-pad hold-to-toggle replay, on by default) or when the DevBench driving tool presses a button. Wheeler read the game's input-context list at the address older Skyrim versions use; on 1.6.1130+ that address holds a different value, which was then followed as a pointer (crash at wheeler.dll+0095250, InputInject.cpp:42). The list is now found at the address for the running game version and checked before it is read; if it ever looks wrong, the press uses the gameplay controls instead of crashing. The input hook also skips this work entirely when nothing is queued. Reported with a crash log from a player on AE 1.6.1170.
+
 ## 1.7.0 - 2026-11-07 - untested (opened as 1.6.1, a fix; re-issued as 1.7.0 when the owner made it an option, 2026-11-07)
 
 ### Added

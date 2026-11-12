@@ -1,5 +1,7 @@
 #include "bin/DevBench/InputInject.h"
+#include "bin/DevBench/ContextStackRead.h"
 
+#include <atomic>
 #include <mutex>
 #include <vector>
 
@@ -18,6 +20,19 @@ namespace InputInject
 		std::mutex g_lock;
 		std::vector<Press> g_queue;
 		std::vector<const RE::InputEvent*> g_replayEvents;   // spliced this dispatch as replays
+		// 1.7.1: Service runs on EVERY input dispatch. With nothing queued and no replay pointers left from the last
+		// dispatch it returns before taking the lock or touching anything (both written under g_lock).
+		std::atomic<std::uint32_t> g_queued{ 0 };
+		std::atomic<std::uint32_t> g_replaysHeld{ 0 };
+
+		std::size_t StackOffset()
+		{
+			static const std::size_t offset = [] {
+				const auto v = REL::Module::get().version();
+				return ContextStack::OffsetFor(REL::Module::IsVR(), v[0], v[1], v[2]);
+			}();
+			return offset;
+		}
 
 		void Splice(RE::InputEvent** a_events, RE::INPUT_DEVICE a_device, std::uint32_t a_code, float a_value, float a_held, bool a_replay = false)
 		{
@@ -30,19 +45,22 @@ namespace InputInject
 			// 2026-09-13: the top context alone answered '').
 			std::string_view name{};
 			if (controlMap) {
-				// This repo's CommonLibSSE-NG checkout has no GetRuntimeData() on ControlMap (the 2026-09-22 change to it
-				// never compiled here), so the member is read directly - but guarded the way Back Pocket For Controller
-				// learned to (it crashed reading this stack at the wrong offset on SE 1.5.97, 2026-09-22): the game pushes
-				// a handful of contexts, so a depth beyond 64 or an id past kTotal means a misread, and the stack is
-				// skipped for the plain lookup below instead of being indexed.
-				const auto& stack = controlMap->contextPriorityStack;
-				constexpr std::uint32_t kMaxContextDepth = 64;
-				if (stack.size() <= kMaxContextDepth) {
-					for (std::uint32_t i = stack.size(); i > 0 && name.empty(); --i) {
-						const auto context = stack[i - 1];
-						if (context >= RE::UserEvents::INPUT_CONTEXT_ID::kTotal) { continue; }
-						name = controlMap->GetUserEventName(a_code, a_device, context);
+				// 1.7.1: never the member. This repo's CommonLibSSE-NG checkout has no GetRuntimeData() on ControlMap and
+				// lays the stack at SE's +0x100; on Skyrim 1.6.1130+ it is at +0x108, and the direct read crashed a
+				// player's AE 1.6.1170 game on the first replayed D-pad tap (crash-2026-11-12-04-45-32.log,
+				// InputInject.cpp:42 - the old guard checked the depth, never the pointer it then indexed).
+				// ContextStackRead.h picks the offset from the running game and refuses an array that does not look like
+				// one; a refusal falls through to the plain gameplay lookup below.
+				const auto stack = ContextStack::Read(controlMap, StackOffset(),
+					static_cast<std::uint32_t>(RE::UserEvents::INPUT_CONTEXT_ID::kTotal));
+				if (stack.refused) {
+					static std::atomic_bool warned{ false };
+					if (!warned.exchange(true)) {
+						logger::warn("[InputInject] input-context stack not read at ControlMap+0x{:X} ({}); using the gameplay context", StackOffset(), stack.refused);
 					}
+				}
+				for (std::uint32_t i = stack.count; i > 0 && name.empty(); --i) {
+					name = controlMap->GetUserEventName(a_code, a_device, static_cast<RE::UserEvents::INPUT_CONTEXT_ID>(stack.ids[i - 1]));
 				}
 				if (name.empty()) {
 					name = controlMap->GetUserEventName(a_code, a_device);
@@ -75,6 +93,7 @@ namespace InputInject
 		}
 		std::scoped_lock l(g_lock);
 		g_queue.push_back({ dev, a_code, a_holdFrames < 1 ? 1 : (a_holdFrames > 600 ? 600 : a_holdFrames), false, a_replay });
+		g_queued.store(static_cast<std::uint32_t>(g_queue.size()));
 	}
 
 	void Service(RE::InputEvent** a_events)
@@ -82,9 +101,14 @@ namespace InputInject
 		if (!a_events) {
 			return;
 		}
+		if (g_queued.load() == 0 && g_replaysHeld.load() == 0) {
+			return;   // nothing queued (no DevBench inject, no D-pad tap to replay) and no stale replay pointers
+		}
 		std::scoped_lock l(g_lock);
-		g_replayEvents.clear();   // last dispatch's pointers are dead
+		g_replayEvents.clear();   // last dispatch's pointers are dead - never let one match another mod's new event
+		g_replaysHeld.store(0);
 		if (g_queue.empty()) {
+			g_queued.store(0);
 			return;
 		}
 		for (auto it = g_queue.begin(); it != g_queue.end();) {
@@ -102,12 +126,14 @@ namespace InputInject
 			Splice(a_events, it->device, it->code, 0.0f, 0.1f, it->replay);
 			it = g_queue.erase(it);
 		}
+		g_queued.store(static_cast<std::uint32_t>(g_queue.size()));
+		g_replaysHeld.store(static_cast<std::uint32_t>(g_replayEvents.size()));
 	}
 
 	bool IsReplay(const RE::InputEvent* a_event)
 	{
-		if (!a_event) {
-			return false;
+		if (!a_event || g_replaysHeld.load() == 0) {
+			return false;   // pointer compare only, never a read through a_event: a foreign event is never taken for ours
 		}
 		std::scoped_lock l(g_lock);
 		for (const RE::InputEvent* e : g_replayEvents) {
