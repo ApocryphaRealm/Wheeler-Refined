@@ -20,7 +20,7 @@ if "%VCPKG_ROOT%"=="" (
 	echo VCPKG_ROOT is not set. Point it at your vcpkg checkout and try again.
 	exit /b 1
 )
-if "%CommonLibSSEPath_NG%"=="" set "CommonLibSSEPath_NG=C:\src\CommonLibSSE-NG"
+if "%CommonLibSSEPath_NG%"=="" set "CommonLibSSEPath_NG=D:\Dev\src\CommonLibSSE-NG"
 if not exist "%CommonLibSSEPath_NG%" (
 	echo CommonLibSSE-NG was not found at "%CommonLibSSEPath_NG%".
 	echo Set CommonLibSSEPath_NG to your checkout and try again.
